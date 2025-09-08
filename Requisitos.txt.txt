@@ -1,0 +1,6 @@
+PySide6
+opencv-python
+pyzbar
+pandas
+openpyxl
+reportlab
