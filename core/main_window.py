@@ -3,12 +3,13 @@ from PySide6.QtWidgets import (
     QApplication, QMainWindow, QWidget,
     QVBoxLayout, QListWidget, QTextEdit,
     QSplitter, QSizePolicy, QToolBar,
-    QPushButton
+    QPushButton, QStackedWidget
 )
 from PySide6.QtCore import Qt
 from PySide6.QtGui import QAction, QPalette, QColor, QGuiApplication
 
 from core.login_window import LoginWindow
+from core.visitor_list import VisitorListWidget
 
 class MainWindow(QMainWindow):
     def __init__(self):
@@ -37,9 +38,10 @@ class MainWindow(QMainWindow):
         root_layout.setSpacing(8)
 
         # Barra lateral para mejor navegación
-        sidebar = QListWidget()
-        sidebar.addItems(["Visitas", "Visitantes", "Zonas", "Reportes"])
-        sidebar.setSizePolicy(QSizePolicy.Preferred, QSizePolicy.Expanding)
+        self.sidebar = QListWidget()
+        self.sidebar.addItems(["Visitas", "Visitantes", "Zonas", "Reportes"])
+        self.sidebar.setSizePolicy(QSizePolicy.Preferred, QSizePolicy.Expanding)
+        self.sidebar.currentRowChanged.connect(self.change_page)
 
         # === Barra de herramientas con botón de tema ===
         toolbar = QToolBar("Opciones")
@@ -55,27 +57,55 @@ class MainWindow(QMainWindow):
         self.theme_action = QAction("🌙 Modo oscuro", self)
         self.theme_action.triggered.connect(self.toggle_theme)
         toolbar.addAction(self.theme_action)
-        # === Botones para rederigir a otras ventanas ===
-        self.btn_open_login = QPushButton("Abrir Login")
-        self.btn_open_login.clicked.connect(self.open_login)
-        self.btn_open_login.setFixedSize(150, 40)  # Primero es el ancho luego el alto
-        root_layout.addWidget(self.btn_open_login) # Esta linea puede decirle al boton donde posicionarse con un (self.btn_open_login, alignment=Qt.AlignCenter) 
         
-        # Área de contenido
-        content = QTextEdit()
-        content.setPlaceholderText("Contenido principal…")
-        content.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
-
+        # === Widget apilado para las diferentes páginas ===
+        self.stacked_widget = QStackedWidget()
+        
+        # Página de visitantes
+        self.visitor_widget = VisitorListWidget()
+        self.stacked_widget.addWidget(self.visitor_widget)
+        
+        # Páginas placeholder para otras secciones
+        self.create_placeholder_pages()
+        
         # Splitter para que ambas columnas se adapten
         splitter = QSplitter(Qt.Horizontal)
-        splitter.addWidget(sidebar)
-        splitter.addWidget(content)
+        splitter.addWidget(self.sidebar)
+        splitter.addWidget(self.stacked_widget)
         splitter.setStretchFactor(0, 1)  # sidebar
         splitter.setStretchFactor(1, 3)  # contenido
         splitter.setSizes([int(w * 0.25), int(w * 0.75)])
 
         root_layout.addWidget(splitter)
         self.setCentralWidget(central)
+        
+        # Establecer la página inicial
+        self.sidebar.setCurrentRow(1)  # Visitantes
+
+    def create_placeholder_pages(self):
+        """Crea páginas placeholder para las secciones no implementadas"""
+        # Página de Visitas
+        visits_page = QTextEdit()
+        visits_page.setPlaceholderText("Módulo de Visitas - En desarrollo...")
+        visits_page.setReadOnly(True)
+        self.stacked_widget.addWidget(visits_page)
+        
+        # Página de Zonas
+        zones_page = QTextEdit()
+        zones_page.setPlaceholderText("Módulo de Zonas - En desarrollo...")
+        zones_page.setReadOnly(True)
+        self.stacked_widget.addWidget(zones_page)
+        
+        # Página de Reportes
+        reports_page = QTextEdit()
+        reports_page.setPlaceholderText("Módulo de Reportes - En desarrollo...")
+        reports_page.setReadOnly(True)
+        self.stacked_widget.addWidget(reports_page)
+    
+    def change_page(self, index):
+        """Cambia la página mostrada según la selección del sidebar"""
+        if index >= 0 and index < self.stacked_widget.count():
+            self.stacked_widget.setCurrentIndex(index)
 
     def open_login(self):
         login = LoginWindow()
