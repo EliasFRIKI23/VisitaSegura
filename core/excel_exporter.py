@@ -120,3 +120,4 @@ class ExcelExporter:
             'generation_time': current_time,
             'destinations': destinations
         }
+

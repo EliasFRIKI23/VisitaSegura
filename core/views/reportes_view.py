@@ -1,12 +1,19 @@
 from PySide6.QtWidgets import (QWidget, QVBoxLayout, QHBoxLayout, QLabel, QPushButton, 
                                QFrame, QGridLayout, QTableWidget, QTableWidgetItem, 
                                QHeaderView, QMessageBox, QFileDialog, QProgressBar, QComboBox,
-                               QSizePolicy)
+                               QSizePolicy, QScrollArea)
 from PySide6.QtCore import Qt, QThread, Signal, QTimer
 from PySide6.QtGui import QFont, QPixmap, QColor, QGuiApplication
 import sys
 import os
-from datetime import datetime
+from datetime import datetime, timedelta
+import matplotlib
+matplotlib.use('Qt5Agg')
+import matplotlib.pyplot as plt
+import matplotlib.dates as mdates
+from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
+from matplotlib.figure import Figure
+import numpy as np
 
 # Agregar el directorio padre al path para importar módulos
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
@@ -17,6 +24,137 @@ try:
 except ImportError:
     from visitor_model import VisitorManager
     from excel_exporter import ExcelExporter
+
+class ChartWidget(QWidget):
+    """Widget personalizado para mostrar gráficos"""
+    
+    def __init__(self, parent=None):
+        super().__init__(parent)
+        try:
+            # Configuración optimizada para PySide6 y layout horizontal con scroll
+            self.figure = Figure(figsize=(8, 6), dpi=100)
+            self.canvas = FigureCanvas(self.figure)
+            
+            # Layout simple
+            layout = QVBoxLayout(self)
+            layout.setContentsMargins(5, 5, 5, 5)
+            layout.addWidget(self.canvas)
+            
+            # Tamaño optimizado para layout horizontal sin scroll horizontal
+            self.setFixedSize(450, 350)
+            
+        except Exception as e:
+            print(f"Error al inicializar ChartWidget: {e}")
+    
+    def clear(self):
+        """Limpia el gráfico"""
+        self.figure.clear()
+    
+    def plot_visitors_by_day(self, data):
+        """Gráfico de visitantes por día"""
+        try:
+            self.clear()
+            ax = self.figure.add_subplot(111)
+            
+            if not data:
+                ax.text(0.5, 0.5, 'Sin datos disponibles', ha='center', va='center', 
+                       transform=ax.transAxes, fontsize=12)
+                self.canvas.draw()
+                return
+            
+            dates = list(data.keys())
+            counts = list(data.values())
+            
+            # Gráfico de barras con colores
+            bars = ax.bar(range(len(dates)), counts, color='#007bff', alpha=0.7, edgecolor='#0056b3')
+            
+            # Agregar valores en las barras
+            for i, count in enumerate(counts):
+                if count > 0:
+                    ax.text(i, count + 0.1, str(count), ha='center', va='bottom', fontweight='bold')
+            
+            ax.set_title('Visitantes por Día (Últimos 7 días)', fontsize=12, fontweight='bold', pad=15)
+            ax.set_ylabel('Número de Visitantes', fontsize=10)
+            ax.set_xlabel('Fecha', fontsize=10)
+            ax.set_xticks(range(len(dates)))
+            ax.set_xticklabels([d.strftime('%d/%m') for d in dates], rotation=45, fontsize=9)
+            ax.grid(True, alpha=0.3, axis='y')
+            
+            self.figure.tight_layout()
+            self.canvas.draw()
+            
+        except Exception as e:
+            print(f"Error al dibujar gráfico de visitantes por día: {e}")
+    
+    def plot_visitors_status(self, current, departed):
+        """Gráfico de visitantes actuales vs que se fueron"""
+        try:
+            self.clear()
+            ax = self.figure.add_subplot(111)
+            
+            categories = ['Visitantes Actuales', 'Visitantes que se Fueron']
+            values = [current, departed]
+            colors = ['#28a745', '#dc3545']
+            
+            bars = ax.bar(categories, values, color=colors, alpha=0.8, edgecolor='black', linewidth=1)
+            
+            # Agregar valores en las barras
+            for bar, value in zip(bars, values):
+                height = bar.get_height()
+                ax.text(bar.get_x() + bar.get_width()/2., height + 0.1,
+                       f'{value}', ha='center', va='bottom', fontweight='bold', fontsize=11)
+            
+            ax.set_title('Estado de Visitantes', fontsize=12, fontweight='bold', pad=15)
+            ax.set_ylabel('Número de Visitantes', fontsize=10)
+            ax.grid(True, alpha=0.3, axis='y')
+            
+            # Rotar etiquetas del eje x
+            plt.setp(ax.get_xticklabels(), rotation=45, ha='right')
+            
+            self.figure.tight_layout()
+            self.canvas.draw()
+            
+        except Exception as e:
+            print(f"Error al dibujar gráfico de estado: {e}")
+    
+    def plot_popular_destinations(self, destinations):
+        """Gráfico de destinos más populares"""
+        try:
+            self.clear()
+            ax = self.figure.add_subplot(111)
+            
+            if not destinations:
+                ax.text(0.5, 0.5, 'Sin datos de destinos', ha='center', va='center', 
+                       transform=ax.transAxes, fontsize=12)
+                self.canvas.draw()
+                return
+                
+            # Ordenar por cantidad
+            sorted_dests = sorted(destinations.items(), key=lambda x: x[1], reverse=True)
+            labels = [item[0] for item in sorted_dests]
+            values = [item[1] for item in sorted_dests]
+            
+            # Gráfico de barras horizontales
+            y_pos = np.arange(len(labels))
+            bars = ax.barh(y_pos, values, color='#17a2b8', alpha=0.8, edgecolor='black', linewidth=1)
+            
+            # Agregar valores en las barras
+            for i, (bar, value) in enumerate(zip(bars, values)):
+                width = bar.get_width()
+                ax.text(width + 0.1, bar.get_y() + bar.get_height()/2.,
+                       f'{value}', ha='left', va='center', fontweight='bold', fontsize=10)
+            
+            ax.set_yticks(y_pos)
+            ax.set_yticklabels(labels, fontsize=10)
+            ax.set_xlabel('Número de Visitas', fontsize=10)
+            ax.set_title('Destinos Más Frecuentes', fontsize=12, fontweight='bold', pad=15)
+            ax.grid(True, alpha=0.3, axis='x')
+            
+            self.figure.tight_layout()
+            self.canvas.draw()
+            
+        except Exception as e:
+            print(f"Error al dibujar gráfico de destinos: {e}")
 
 class ReportesView(QWidget):
     """Vista para reportes y estadísticas"""
@@ -86,89 +224,127 @@ class ReportesView(QWidget):
         
         main_layout.addLayout(header_layout)
         
-        # Contenido principal responsivo
-        content_frame = QFrame()
-        content_frame.setFrameStyle(QFrame.StyledPanel)
-        content_layout = QVBoxLayout(content_frame)
+        # Crear área de scroll para todo el contenido
+        scroll_area = QScrollArea()
+        scroll_area.setWidgetResizable(True)
+        scroll_area.setVerticalScrollBarPolicy(Qt.ScrollBarAsNeeded)
+        scroll_area.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)  # Sin scroll horizontal
+        scroll_area.setFrameStyle(QFrame.NoFrame)
         
-        # Márgenes responsivos
+        # Widget contenedor para todo el contenido scrolleable
+        content_widget = QWidget()
+        content_layout = QVBoxLayout(content_widget)
+        
+        # Márgenes responsivos optimizados
         if available.width() >= 1920:
-            content_margin = 50
-            content_spacing = 25
-        elif available.width() >= 1366:
-            content_margin = 40
-            content_spacing = 20
-        else:
             content_margin = 30
+            content_spacing = 20
+        elif available.width() >= 1366:
+            content_margin = 25
             content_spacing = 15
+        else:
+            content_margin = 20
+            content_spacing = 10
             
         content_layout.setContentsMargins(content_margin, content_margin, content_margin, content_margin)
         content_layout.setSpacing(content_spacing)
         
-        # Estadísticas actuales
-        stats_title = QLabel("📈 Estadísticas Actuales")
-        # Fuente responsiva
-        if available.width() >= 1920:
-            title_font_size = 20
-        elif available.width() >= 1366:
-            title_font_size = 18
-        else:
-            title_font_size = 16
-            
-        stats_title.setFont(QFont("Arial", title_font_size, QFont.Bold))
-        stats_title.setAlignment(Qt.AlignCenter)
-        content_layout.addWidget(stats_title)
+        # Sección de Gráficos - Layout Horizontal
+        charts_title = QLabel("📊 Análisis Visual de Visitantes")
+        charts_title.setFont(QFont("Arial", 18, QFont.Bold))
+        charts_title.setAlignment(Qt.AlignCenter)
+        charts_title.setStyleSheet("""
+            QLabel {
+                color: #2c3e50;
+                padding: 15px;
+                background-color: #ecf0f1;
+                border-radius: 10px;
+                margin: 10px 0px;
+            }
+        """)
+        content_layout.addWidget(charts_title)
         
-        # Grid de estadísticas responsivo
-        stats_grid = QGridLayout()
-        # Espaciado responsivo
-        if available.width() >= 1920:
-            grid_spacing = 20
-        elif available.width() >= 1366:
-            grid_spacing = 15
-        else:
-            grid_spacing = 10
-        stats_grid.setSpacing(grid_spacing)
+        # Contenedor principal para los gráficos en layout horizontal
+        charts_container = QWidget()
+        charts_main_layout = QHBoxLayout(charts_container)
+        charts_main_layout.setSpacing(15)
+        charts_main_layout.setContentsMargins(5, 5, 5, 5)
         
-        # Crear las tarjetas de estadísticas dinámicas con referencias a los labels
-        self.stat1, self.stat1_value = self.create_stat_card_with_reference("👥 Visitantes Hoy", "0", "#28a745", "Visitantes registrados hoy")
-        stats_grid.addWidget(self.stat1, 0, 0)
+        # Gráfico 1: Visitantes por Día
+        chart1_container = QWidget()
+        chart1_layout = QVBoxLayout(chart1_container)
+        chart1_layout.setSpacing(5)
         
-        self.stat2, self.stat2_value = self.create_stat_card_with_reference("🏢 Zonas Activas", "0", "#007bff", "Zonas con visitantes")
-        stats_grid.addWidget(self.stat2, 0, 1)
+        chart1_title = QLabel("👥 Visitantes por Día")
+        chart1_title.setFont(QFont("Arial", 14, QFont.Bold))
+        chart1_title.setAlignment(Qt.AlignCenter)
+        chart1_title.setStyleSheet("""
+            QLabel {
+                color: #2c3e50;
+                padding: 8px;
+                background-color: #e8f4fd;
+                border-radius: 6px;
+                margin: 2px;
+            }
+        """)
+        chart1_layout.addWidget(chart1_title)
         
-        self.stat3, self.stat3_value = self.create_stat_card_with_reference("📋 Visitas Totales", "0", "#ffc107", "Visitas registradas")
-        stats_grid.addWidget(self.stat3, 1, 0)
+        self.chart1 = ChartWidget()
+        chart1_layout.addWidget(self.chart1)
         
-        self.stat4, self.stat4_value = self.create_stat_card_with_reference("⏰ Promedio Visita", "0 min", "#dc3545", "Tiempo promedio de visita")
-        stats_grid.addWidget(self.stat4, 1, 1)
+        charts_main_layout.addWidget(chart1_container)
         
-        content_layout.addLayout(stats_grid)
+        # Gráfico 2: Estado de Visitantes
+        chart2_container = QWidget()
+        chart2_layout = QVBoxLayout(chart2_container)
+        chart2_layout.setSpacing(5)
         
-        # Estadísticas detalladas
-        detailed_stats_title = QLabel("📊 Estadísticas Detalladas")
-        detailed_stats_title.setFont(QFont("Arial", 16, QFont.Bold))
-        detailed_stats_title.setAlignment(Qt.AlignCenter)
-        content_layout.addWidget(detailed_stats_title)
+        chart2_title = QLabel("👤 Estado de Visitantes")
+        chart2_title.setFont(QFont("Arial", 14, QFont.Bold))
+        chart2_title.setAlignment(Qt.AlignCenter)
+        chart2_title.setStyleSheet("""
+            QLabel {
+                color: #2c3e50;
+                padding: 8px;
+                background-color: #e8f5e8;
+                border-radius: 6px;
+                margin: 2px;
+            }
+        """)
+        chart2_layout.addWidget(chart2_title)
         
-        # Grid de estadísticas detalladas
-        detailed_stats_grid = QGridLayout()
-        detailed_stats_grid.setSpacing(15)
+        self.chart2 = ChartWidget()
+        chart2_layout.addWidget(self.chart2)
         
-        # Crear las tarjetas de estadísticas detalladas con referencias
-        self.detailed_stat1, self.detailed_stat1_value = self.create_stat_card_with_reference("🏢 Zona Más Visitada", "N/A", "#17a2b8", "Zona con más visitantes")
-        detailed_stats_grid.addWidget(self.detailed_stat1, 0, 0)
+        charts_main_layout.addWidget(chart2_container)
         
-        self.detailed_stat2, self.detailed_stat2_value = self.create_stat_card_with_reference("👥 Visitantes Actuales", "0", "#28a745", "Visitantes dentro del edificio")
-        detailed_stats_grid.addWidget(self.detailed_stat2, 0, 1)
+        # Gráfico 3: Destinos Más Frecuentes
+        chart3_container = QWidget()
+        chart3_layout = QVBoxLayout(chart3_container)
+        chart3_layout.setSpacing(5)
         
-        self.detailed_stat3, self.detailed_stat3_value = self.create_stat_card_with_reference("📅 Visitas Esta Semana", "0", "#6f42c1", "Visitas de los últimos 7 días")
-        detailed_stats_grid.addWidget(self.detailed_stat3, 1, 0)
+        chart3_title = QLabel("🏢 Destinos Más Frecuentes")
+        chart3_title.setFont(QFont("Arial", 14, QFont.Bold))
+        chart3_title.setAlignment(Qt.AlignCenter)
+        chart3_title.setStyleSheet("""
+            QLabel {
+                color: #2c3e50;
+                padding: 8px;
+                background-color: #fff3cd;
+                border-radius: 6px;
+                margin: 2px;
+            }
+        """)
+        chart3_layout.addWidget(chart3_title)
         
-        self.detailed_stat4, self.detailed_stat4_value = self.create_stat_card_with_reference("⏰ Visita Más Larga", "N/A", "#fd7e14", "Duración de la visita más larga")
-        detailed_stats_grid.addWidget(self.detailed_stat4, 1, 1)
+        self.chart3 = ChartWidget()
+        chart3_layout.addWidget(self.chart3)
         
-        content_layout.addLayout(detailed_stats_grid)
+        charts_main_layout.addWidget(chart3_container)
+        
+        # Agregar el contenedor de gráficos al layout principal
+        content_layout.addWidget(charts_container)
+        
         
         # Reporte de Visitantes
         current_visitors_title = QLabel("👥 Reporte de Visitantes")
@@ -359,8 +535,9 @@ class ReportesView(QWidget):
         self.refresh_visitors_data()
         self.update_statistics()
         
-        main_layout.addWidget(content_frame)
-        main_layout.addStretch()
+        # Configurar el área de scroll con el contenido
+        scroll_area.setWidget(content_widget)
+        main_layout.addWidget(scroll_area)
         
         # Botón de regreso
         back_button = QPushButton("⬅️ Volver al Menú Principal")
@@ -672,34 +849,80 @@ class ReportesView(QWidget):
         self.info_label.setText(info_text)
     
     def update_statistics(self):
-        """Actualiza las estadísticas dinámicas"""
+        """Actualiza los gráficos con datos actuales"""
         try:
             # Obtener todos los visitantes
             all_visitors = self.visitor_manager.get_all_visitors()
             print(f"Debug: Encontrados {len(all_visitors)} visitantes")
             
-            # Calcular estadísticas
-            stats = self.calculate_statistics(all_visitors)
-            print(f"Debug: Estadísticas calculadas: {stats}")
+            # Actualizar los gráficos
+            self.update_charts(all_visitors)
             
-            # Actualizar las tarjetas de estadísticas básicas usando referencias directas
-            self.stat1_value.setText(str(stats['visitors_today']))
-            self.stat2_value.setText(str(stats['active_zones']))
-            self.stat3_value.setText(str(stats['total_visits']))
-            self.stat4_value.setText(str(stats['avg_visit_time']))
-            
-            # Actualizar las tarjetas de estadísticas detalladas usando referencias directas
-            self.detailed_stat1_value.setText(str(stats['most_visited_zone']))
-            self.detailed_stat2_value.setText(str(stats['current_visitors']))
-            self.detailed_stat3_value.setText(str(stats['visits_this_week']))
-            self.detailed_stat4_value.setText(str(stats['longest_visit']))
-            
-            print("Debug: Estadísticas actualizadas en la interfaz")
+            print("Debug: Gráficos actualizados en la interfaz")
             
         except Exception as e:
-            print(f"Error al actualizar estadísticas: {e}")
+            print(f"Error al actualizar gráficos: {e}")
             import traceback
             traceback.print_exc()
+    
+    def update_charts(self, visitors):
+        """Actualiza los gráficos con datos actuales"""
+        try:
+            # Calcular datos para los gráficos
+            visitors_by_day = self.calculate_visitors_by_day(visitors)
+            current_visitors, departed_visitors = self.calculate_visitor_status(visitors)
+            popular_destinations = self.calculate_popular_destinations(visitors)
+            
+            # Actualizar los gráficos
+            self.chart1.plot_visitors_by_day(visitors_by_day)
+            self.chart2.plot_visitors_status(current_visitors, departed_visitors)
+            self.chart3.plot_popular_destinations(popular_destinations)
+            
+            print("Debug: Gráficos actualizados correctamente")
+            
+        except Exception as e:
+            print(f"Error al actualizar gráficos: {e}")
+            import traceback
+            traceback.print_exc()
+    
+    def calculate_visitors_by_day(self, visitors):
+        """Calcula visitantes por día para el gráfico"""
+        from datetime import datetime, timedelta
+        
+        # Obtener los últimos 7 días
+        today = datetime.now().date()
+        visitors_by_day = {}
+        
+        for i in range(7):
+            date = today - timedelta(days=i)
+            visitors_by_day[date] = 0
+        
+        # Contar visitantes por día
+        for visitor in visitors:
+            try:
+                visit_date = datetime.strptime(visitor.fecha_ingreso, "%Y-%m-%d %H:%M:%S").date()
+                if visit_date in visitors_by_day:
+                    visitors_by_day[visit_date] += 1
+            except:
+                continue
+        
+        # Ordenar por fecha
+        sorted_dates = sorted(visitors_by_day.keys())
+        return {date: visitors_by_day[date] for date in sorted_dates}
+    
+    def calculate_visitor_status(self, visitors):
+        """Calcula visitantes actuales vs que se fueron"""
+        current = len([v for v in visitors if v.estado == "Dentro"])
+        departed = len([v for v in visitors if v.estado == "Fuera"])
+        return current, departed
+    
+    def calculate_popular_destinations(self, visitors):
+        """Calcula los destinos más populares"""
+        destinations = {}
+        for visitor in visitors:
+            dest = visitor.sector
+            destinations[dest] = destinations.get(dest, 0) + 1
+        return destinations
     
     def calculate_statistics(self, visitors):
         """Calcula las estadísticas basadas en los datos de visitantes"""

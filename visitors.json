@@ -48,5 +48,15 @@
     "acompañante": "asdasdasd",
     "sector": "Financiamiento",
     "estado": "Dentro"
+  },
+  {
+    "id": "VIS20250913095359046697",
+    "rut": "1831723871",
+    "nombre_completo": "ldajsdljadhjas",
+    "fecha_ingreso": "2025-09-13 09:53:59",
+    "fecha_salida": null,
+    "acompañante": "asdasdasdasd",
+    "sector": "CITT",
+    "estado": "Dentro"
   }
 ]
