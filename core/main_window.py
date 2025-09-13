@@ -1,17 +1,12 @@
 import sys
-from PySide6.QtCore import Qt, QSettings
-from core.visitor_list import VisitorListWidget
-from PySide6.QtGui import QAction, QPalette, QColor, QGuiApplication, QFont, QPixmap
 from PySide6.QtWidgets import (
     QApplication, QMainWindow, QWidget,
-
     QVBoxLayout, QHBoxLayout, QGridLayout,
     QSizePolicy, QToolBar, QPushButton,
-    QLabel, QFrame, QListWidget, QTextEdit,
-    QSplitter,QStackedWidget
+    QLabel, QFrame
 )
-
-
+from PySide6.QtCore import Qt, QSettings
+from PySide6.QtGui import QAction, QPalette, QColor, QGuiApplication, QFont, QPixmap
 
 try:
     from core.login_window import LoginWindow
@@ -42,8 +37,6 @@ class MainWindow(QMainWindow):
         # Tamaño mínimo razonable
         self.setMinimumSize(900, 560)
 
-
-
         # === Barra de herramientas con botón de tema ===
         toolbar = QToolBar("Opciones")
         self.addToolBar(toolbar)
@@ -58,7 +51,6 @@ class MainWindow(QMainWindow):
         self.theme_action = QAction("🌙 Modo oscuro", self)
         self.theme_action.triggered.connect(self.toggle_theme)
         toolbar.addAction(self.theme_action)
-
 
         # === Contenido principal con distribución de botones ===
         central = QWidget(self)
