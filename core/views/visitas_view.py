@@ -99,4 +99,12 @@ class VisitasView(QWidget):
                 background-color: #5a6268;
             }
         """)
+        back_button.clicked.connect(self.go_to_main)
         main_layout.addWidget(back_button, alignment=Qt.AlignCenter)
+    
+    def go_to_main(self):
+        """Regresa al menú principal"""
+        if hasattr(self.parent(), 'navigation_manager'):
+            self.parent().navigation_manager.navigate_to("main")
+        elif hasattr(self.parent(), 'go_to_main'):
+            self.parent().go_to_main()

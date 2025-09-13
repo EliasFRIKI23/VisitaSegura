@@ -21,12 +21,14 @@ Sistema completo de gestión de visitantes integrado con navegación fluida, log
 - **🔄 Navegación fluida** entre todas las secciones
 - **🏢 Logo Duoc UC** integrado en todas las vistas
 
-### 🚀 **Sistema de Navegación**
+### 🚀 **Sistema de Navegación Completo**
 - **🏠 Botón Inicio** para regresar al menú principal
+- **⬅️ Botones de Regreso** en todas las vistas
 - **📱 Widget apilado** para transiciones suaves
 - **🎯 Navegación centralizada** con NavigationManager
 - **💾 Estado persistente** de configuración
 - **🔄 Títulos dinámicos** según la sección activa
+- **🎮 Navegación fluida** entre todas las secciones
 
 ## 🏗️ Arquitectura del Sistema
 
@@ -77,21 +79,26 @@ core/
 
 ### 🚀 **Inicio Rápido**
 ```bash
-# Ejecutar el sistema completo
+# Ejecutar el sistema completo con navegación
 python demo_completo.py
 
-# O ejecutar solo el módulo de visitantes
+# Demo específico de navegación
+python demo_navegacion_completa.py
+
+# Solo el módulo de visitantes
 python demo_visitors.py
 ```
 
 ### 🏠 **Navegación Principal**
 1. **Menú Principal**: Vista inicial con botones de navegación
 2. **Botones de Sección**: 
-   - 📋 Registrar Visitas
-   - 👥 Visitantes Actuales
-   - 🏢 Zonas
-   - 📊 Reportes
+   - 📋 Registrar Visitas (con botón de regreso)
+   - 👥 Visitantes Actuales (con botón de regreso)
+   - 🏢 Zonas (con botón de regreso)
+   - 📊 Reportes (con botón de regreso)
 3. **🔐 Administración**: Abre el sistema de login
+4. **🔄 Botones de Regreso**: "⬅️ Volver al Menú Principal" en todas las vistas
+5. **🏠 Botón Inicio**: Aparece automáticamente en la barra superior
 
 ### 👥 **Gestión de Visitantes (Completo)**
 - **➕ Nuevo Visitante**: Formulario completo con validaciones

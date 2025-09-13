@@ -261,6 +261,25 @@ class VisitorListWidget(QWidget):
         splitter.setSizes([700, 300])
         
         main_layout.addWidget(splitter)
+        
+        # Botón de regreso al menú principal
+        back_button = QPushButton("⬅️ Volver al Menú Principal")
+        back_button.setFixedSize(200, 40)
+        back_button.setStyleSheet("""
+            QPushButton {
+                background-color: #6c757d;
+                color: white;
+                border: none;
+                border-radius: 8px;
+                font-size: 14px;
+                font-weight: bold;
+            }
+            QPushButton:hover {
+                background-color: #5a6268;
+            }
+        """)
+        back_button.clicked.connect(self.go_to_main)
+        main_layout.addWidget(back_button, alignment=Qt.AlignCenter)
     
     def setup_connections(self):
         """Configura las conexiones de señales"""
@@ -419,6 +438,13 @@ class VisitorListWidget(QWidget):
         """Muestra el diálogo de ayuda"""
         help_dialog = HelpDialog(self)
         help_dialog.exec()
+    
+    def go_to_main(self):
+        """Regresa al menú principal"""
+        if hasattr(self.parent(), 'navigation_manager'):
+            self.parent().navigation_manager.navigate_to("main")
+        elif hasattr(self.parent(), 'go_to_main'):
+            self.parent().go_to_main()
     
     def refresh_list(self):
         """Actualiza la lista de visitantes"""
