@@ -110,7 +110,7 @@ class HelpDialog(QDialog):
         <ul>
             <li>Usar el menú desplegable "🔍 Filtrar"</li>
             <li>Filtrar por estado: "Dentro", "Fuera"</li>
-            <li>Filtrar por sector: "Financiamiento", "CITT", "Auditorio"</li>
+            <li>Filtrar por sector: "Financiamiento", "CITT", "Auditorio", "Administración"</li>
         </ul>
         </div>
         """)

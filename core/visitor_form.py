@@ -101,7 +101,7 @@ class VisitorFormDialog(QDialog):
         
         # Sector con tooltip
         self.sector_combo = QComboBox()
-        self.sector_combo.addItems(["Financiamiento", "CITT", "Auditorio"])
+        self.sector_combo.addItems(["Financiamiento", "CITT", "Auditorio", "Administración"])
         self.sector_combo.setToolTip("🏢 Seleccione el sector al que se dirige el visitante")
         
         sector_help = QToolButton()
@@ -288,7 +288,7 @@ class QuickVisitorForm(QWidget):
         
         # Sector
         self.sector_combo = QComboBox()
-        self.sector_combo.addItems(["Financiamiento", "CITT", "Auditorio"])
+        self.sector_combo.addItems(["Financiamiento", "CITT", "Auditorio", "Administración"])
         self.sector_combo.setToolTip("🏢 Sector de destino")
         form_layout.addRow("🏢 Sector:", self.sector_combo)
         

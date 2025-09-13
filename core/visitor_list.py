@@ -86,7 +86,7 @@ class VisitorListWidget(QWidget):
         filter_label = QLabel("🔍 Filtrar:")
         filter_label.setFont(QFont("Arial", 10, QFont.Bold))
         self.filter_combo = QComboBox()
-        self.filter_combo.addItems(["Todos", "Dentro", "Fuera", "Financiamiento", "CITT", "Auditorio"])
+        self.filter_combo.addItems(["Todos", "Dentro", "Fuera", "Financiamiento", "CITT", "Auditorio", "Administración"])
         self.filter_combo.setMaximumWidth(150)
         self.filter_combo.setToolTip("Filtrar visitantes por estado o sector")
         header_layout.addWidget(filter_label)
