@@ -1,26 +1,23 @@
 import sys
-from PySide6.QtCore import Qt, QSettings
-from core.visitor_list import VisitorListWidget
-from PySide6.QtGui import QAction, QPalette, QColor, QGuiApplication, QFont, QPixmap
 from PySide6.QtWidgets import (
     QApplication, QMainWindow, QWidget,
-
-    QVBoxLayout, QListWidget, QTextEdit,
-    QSplitter, QSizePolicy, QToolBar,
-    QPushButton, QStackedWidget
+    QVBoxLayout, QHBoxLayout, QGridLayout,
+    QSizePolicy, QToolBar, QPushButton,
+    QLabel, QFrame, QStackedWidget
 )
-from PySide6.QtCore import Qt
-from PySide6.QtGui import QAction, QPalette, QColor, QGuiApplication
-
-from core.login_window import LoginWindow
-from core.visitor_list import VisitorListWidget
-
-
+from PySide6.QtCore import Qt, QSettings
+from PySide6.QtGui import QAction, QPalette, QColor, QGuiApplication, QFont, QPixmap
 
 try:
     from core.login_window import LoginWindow
+    from core.visitor_list import VisitorListWidget
+    from core.views import VisitasView, ZonasView, ReportesView
+    from core.navigation_manager import NavigationManager
 except ImportError:
     from login_window import LoginWindow
+    from visitor_list import VisitorListWidget
+    from views import VisitasView, ZonasView, ReportesView
+    from navigation_manager import NavigationManager
 
 class MainWindow(QMainWindow):
     def __init__(self):
@@ -28,66 +25,100 @@ class MainWindow(QMainWindow):
 
         # Nombre de la ventana
         self.setWindowTitle("VisitaSegura")
-        # Estado inicial del tema
-        self.dark_mode = False
+        
+        # Configuración para persistencia
+        self.settings = QSettings("VisitaSegura", "Settings")
+        
+        # Estado inicial del tema (cargar desde configuración)
+        self.dark_mode = self.settings.value("dark_mode", False, type=bool)
+        
+        # Inicializar el sistema de navegación
+        self.navigation_manager = NavigationManager(self)
+        self.current_view = "main"  # Vista principal por defecto
 
         # === Tamaño inicial relativo y centrado (robusto) ===
         available = QGuiApplication.primaryScreen().availableGeometry()
-        w = int(available.width() * 0.8)
-        h = int(available.height() * 0.8)
+        w = int(available.width() * 0.9)
+        h = int(available.height() * 0.9)
         self.resize(w, h)
         # Centrar ventana
         self.move(available.center() - self.rect().center())
 
         # Tamaño mínimo razonable
-        self.setMinimumSize(900, 560)
+        self.setMinimumSize(1000, 700)
 
-        # === Contenido con layouts y splitter (adaptativo) ===
-        central = QWidget(self)
-        root_layout = QVBoxLayout(central)
-        root_layout.setContentsMargins(8, 8, 8, 8)
-        root_layout.setSpacing(8)
-
-
-        # === Barra de herramientas con botón de tema ===
-        toolbar = QToolBar("Opciones")
+        # === Barra de herramientas con navegación y tema ===
+        toolbar = QToolBar("Navegación")
         self.addToolBar(toolbar)
         toolbar.setMovable(False)   # evita que se arrastre
         toolbar.setFloatable(False) # evita que se desacople 
+
+        # Botón de inicio
+        self.home_action = QAction("🏠 Inicio", self)
+        self.home_action.triggered.connect(self.go_to_main)
+        self.home_action.setVisible(False)  # Oculto inicialmente
+        toolbar.addAction(self.home_action)
+
+        # Separador
+        toolbar.addSeparator()
 
         # == Damos espacio ===
         spacer = QWidget()
         spacer.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Preferred)
         toolbar.addWidget(spacer)
 
+        # Botón de tema
         self.theme_action = QAction("🌙 Modo oscuro", self)
         self.theme_action.triggered.connect(self.toggle_theme)
         toolbar.addAction(self.theme_action)
-        
-        # === Widget apilado para las diferentes páginas ===
+
+        # === Sistema de navegación con widget apilado ===
         self.stacked_widget = QStackedWidget()
+        self.navigation_manager.set_stacked_widget(self.stacked_widget)
         
-        # Página de visitantes
-        self.visitor_widget = VisitorListWidget()
-        self.stacked_widget.addWidget(self.visitor_widget)
+        # Crear y registrar todas las vistas
+        self.setup_views()
         
-        # Páginas placeholder para otras secciones
-        self.create_placeholder_pages()
+        # Conectar señales del sistema de navegación
+        self.navigation_manager.view_changed.connect(self.on_view_changed)
+        self.navigation_manager.theme_changed.connect(self.on_theme_changed)
         
-        # Splitter para que ambas columnas se adapten
-        splitter = QSplitter(Qt.Horizontal)
-        splitter.addWidget(self.sidebar)
-        splitter.addWidget(self.stacked_widget)
-        splitter.setStretchFactor(0, 1)  # sidebar
-        splitter.setStretchFactor(1, 3)  # contenido
-        splitter.setSizes([int(w * 0.25), int(w * 0.75)])
-
-
-        # === Contenido principal con distribución de botones ===
-        central = QWidget(self)
-        root_layout = QVBoxLayout(central)
-        root_layout.setContentsMargins(20, 20, 20, 20)
-        root_layout.setSpacing(20)
+        self.setCentralWidget(self.stacked_widget)
+        
+        # Aplicar tema inicial
+        self.apply_theme()
+    
+    def setup_views(self):
+        """Configura y registra todas las vistas del sistema"""
+        # Vista principal (menú de inicio)
+        main_view = self.create_main_view()
+        self.navigation_manager.register_view("main", main_view)
+        
+        # Vista de visitas
+        visitas_view = VisitasView(self)
+        self.navigation_manager.register_view("visitas", visitas_view)
+        
+        # Vista de visitantes (sistema completo)
+        visitor_view = VisitorListWidget()
+        self.navigation_manager.register_view("visitantes", visitor_view)
+        
+        # Vista de zonas
+        zonas_view = ZonasView(self)
+        self.navigation_manager.register_view("zonas", zonas_view)
+        
+        # Vista de reportes
+        reportes_view = ReportesView(self)
+        self.navigation_manager.register_view("reportes", reportes_view)
+        
+        # Establecer la vista principal como inicial
+        self.navigation_manager.navigate_to("main")
+    
+    def create_main_view(self):
+        """Crea la vista principal con el menú de inicio"""
+        main_widget = QWidget()
+        layout = QVBoxLayout(main_widget)
+        layout.setContentsMargins(20, 20, 20, 20)
+        layout.setSpacing(20)
 
         # Título principal
         title_label = QLabel("VisitaSegura")
@@ -96,7 +127,7 @@ class MainWindow(QMainWindow):
         title_font.setBold(True)
         title_label.setFont(title_font)
         title_label.setAlignment(Qt.AlignCenter)
-        root_layout.addWidget(title_label)
+        layout.addWidget(title_label)
 
         # Subtítulo
         subtitle_label = QLabel("Sistema de Gestión de Visitas Para La sede de San Bernardo")
@@ -104,17 +135,15 @@ class MainWindow(QMainWindow):
         subtitle_font.setPointSize(12)
         subtitle_label.setFont(subtitle_font)
         subtitle_label.setAlignment(Qt.AlignCenter)
-        root_layout.addWidget(subtitle_label)
+        layout.addWidget(subtitle_label)
 
         # Logo de Duoc
         logo_label = QLabel()
         logo_pixmap = QPixmap("Logo Duoc .png")
         if not logo_pixmap.isNull():
-            # Redimensionar el logo manteniendo la proporción
             scaled_pixmap = logo_pixmap.scaled(200, 100, Qt.KeepAspectRatio, Qt.SmoothTransformation)
             logo_label.setPixmap(scaled_pixmap)
         else:
-            # Si no se puede cargar la imagen, mostrar texto alternativo
             logo_label.setText("Logo Duoc UC")
             logo_font = QFont()
             logo_font.setPointSize(14)
@@ -122,12 +151,12 @@ class MainWindow(QMainWindow):
             logo_label.setFont(logo_font)
         
         logo_label.setAlignment(Qt.AlignCenter)
-        root_layout.addWidget(logo_label)
+        layout.addWidget(logo_label)
 
         # Espaciador
         spacer1 = QWidget()
         spacer1.setFixedHeight(30)
-        root_layout.addWidget(spacer1)
+        layout.addWidget(spacer1)
 
         # Grid de botones principales
         buttons_frame = QFrame()
@@ -137,17 +166,16 @@ class MainWindow(QMainWindow):
         # Crear botones para las diferentes secciones
         self.create_main_buttons(buttons_layout)
 
-        root_layout.addWidget(buttons_frame, alignment=Qt.AlignCenter)
+        layout.addWidget(buttons_frame, alignment=Qt.AlignCenter)
 
         # Espaciador final
         spacer2 = QWidget()
         spacer2.setSizePolicy(QSizePolicy.Preferred, QSizePolicy.Expanding)
-        root_layout.addWidget(spacer2)
+        layout.addWidget(spacer2)
 
         # Botón de login en la parte inferior
         self.btn_open_login = QPushButton("🔐 Administración")
         self.btn_open_login.clicked.connect(self.open_login)
-        print("✅ Botón de administración configurado y conectado")
         self.btn_open_login.setFixedSize(200, 50)
         self.btn_open_login.setStyleSheet("""
             QPushButton {
@@ -165,14 +193,9 @@ class MainWindow(QMainWindow):
                 background-color: #495057;
             }
         """)
-        root_layout.addWidget(self.btn_open_login, alignment=Qt.AlignCenter)
-
-        root_layout.addWidget(splitter)
-        self.setCentralWidget(central)
+        layout.addWidget(self.btn_open_login, alignment=Qt.AlignCenter)
         
-
-        # Aplicar tema inicial
-        self.apply_theme()
+        return main_widget
 
     def create_main_buttons(self, layout):
         """Crea los botones principales para las diferentes secciones"""
@@ -237,35 +260,67 @@ class MainWindow(QMainWindow):
     def open_visitas(self):
         """Abre la sección de visitas"""
         print("Abriendo sección de Visitas")
-        # Aquí puedes agregar la lógica para abrir la ventana de visitas
-        # Por ejemplo: self.visitas_window = VisitasWindow()
+        self.navigation_manager.navigate_to("visitas")
 
     def open_visitantes(self):
         """Abre la sección de visitantes"""
         print("Abriendo sección de Visitantes")
-        # Aquí puedes agregar la lógica para abrir la ventana de visitantes
+        self.navigation_manager.navigate_to("visitantes")
 
     def open_zonas(self):
         """Abre la sección de zonas"""
         print("Abriendo sección de Zonas")
-        # Aquí puedes agregar la lógica para abrir la ventana de zonas
+        self.navigation_manager.navigate_to("zonas")
 
     def open_reportes(self):
         """Abre la sección de reportes"""
         print("Abriendo sección de Reportes")
-        # Aquí puedes agregar la lógica para abrir la ventana de reportes
-
+        self.navigation_manager.navigate_to("reportes")
+    
+    def go_to_main(self):
+        """Regresa al menú principal"""
+        self.navigation_manager.navigate_to("main")
+    
+    def on_view_changed(self, view_name):
+        """Maneja el cambio de vista"""
+        self.current_view = view_name
+        self.home_action.setVisible(view_name != "main")
+        
+        # Actualizar título de la ventana
+        if view_name == "main":
+            self.setWindowTitle("VisitaSegura - Menú Principal")
+        elif view_name == "visitas":
+            self.setWindowTitle("VisitaSegura - Registro de Visitas")
+        elif view_name == "visitantes":
+            self.setWindowTitle("VisitaSegura - Gestión de Visitantes")
+        elif view_name == "zonas":
+            self.setWindowTitle("VisitaSegura - Gestión de Zonas")
+        elif view_name == "reportes":
+            self.setWindowTitle("VisitaSegura - Reportes y Estadísticas")
+    
+    def on_theme_changed(self, dark_mode):
+        """Maneja el cambio de tema"""
+        self.dark_mode = dark_mode
+        self.apply_theme()
 
     def open_login(self):
-        login = LoginWindow()
-        if login.exec():
-            print("Login aceptado")
+        print("🔍 Intentando abrir ventana de login...")
+        try:
+            login = LoginWindow(self.dark_mode)
+            print("✅ Ventana de login creada correctamente")
+            result = login.exec()
+            print(f"🔍 Resultado del login: {result}")
+            if result:
+                print("✅ Login aceptado")
+            else:
+                print("❌ Login cancelado")
+        except Exception as e:
+            print(f"❌ Error al abrir ventana de login: {e}")
+            import traceback
+            traceback.print_exc()
 
-    
-    def toggle_theme(self):
-        """Cambia entre tema claro y oscuro."""
-        self.dark_mode = not self.dark_mode
-
+    def apply_theme(self):
+        """Aplica el tema actual (claro u oscuro)"""
         if self.dark_mode:
             palette = QPalette()
             # === Colores modo oscuro ===
@@ -288,6 +343,16 @@ class MainWindow(QMainWindow):
             self.theme_action.setText("🌙 Modo oscuro")
 
         QApplication.instance().setPalette(palette)
+    
+    def toggle_theme(self):
+        """Cambia entre tema claro y oscuro."""
+        self.dark_mode = not self.dark_mode
+        
+        # Guardar el estado en configuración
+        self.settings.setValue("dark_mode", self.dark_mode)
+        
+        # Propagar el cambio de tema a través del sistema de navegación
+        self.navigation_manager.set_theme(self.dark_mode)
 
 
 if __name__ == "__main__":

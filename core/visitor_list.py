@@ -5,7 +5,7 @@ from PySide6.QtWidgets import (
     QDialog
 )
 from PySide6.QtCore import Qt, Signal, QTimer
-from PySide6.QtGui import QFont, QAction, QIcon, QColor
+from PySide6.QtGui import QFont, QAction, QIcon, QColor, QPixmap
 from datetime import datetime
 from .visitor_model import VisitorManager
 from .visitor_form import VisitorFormDialog, QuickVisitorForm
@@ -47,6 +47,20 @@ class VisitorListWidget(QWidget):
         header_layout.addWidget(title)
         
         header_layout.addStretch()
+        
+        # Logo Duoc
+        logo_label = QLabel()
+        logo_pixmap = QPixmap("Logo Duoc .png")
+        if not logo_pixmap.isNull():
+            scaled_pixmap = logo_pixmap.scaled(120, 60, Qt.KeepAspectRatio, Qt.SmoothTransformation)
+            logo_label.setPixmap(scaled_pixmap)
+        else:
+            logo_label.setText("🏢 Duoc UC")
+            logo_font = QFont("Arial", 12, QFont.Bold)
+            logo_label.setFont(logo_font)
+        
+        logo_label.setAlignment(Qt.AlignRight)
+        header_layout.addWidget(logo_label)
         
         # Botón de ayuda
         self.help_btn = QToolButton()
