@@ -36,16 +36,31 @@ class MainWindow(QMainWindow):
         self.navigation_manager = NavigationManager(self)
         self.current_view = "main"  # Vista principal por defecto
 
-        # === Tamaño inicial relativo y centrado (robusto) ===
+        # === Tamaño inicial responsivo y centrado ===
         available = QGuiApplication.primaryScreen().availableGeometry()
-        w = int(available.width() * 0.9)
-        h = int(available.height() * 0.9)
+        
+        # Calcular tamaño responsivo basado en la resolución de pantalla
+        if available.width() >= 1920:  # Pantallas grandes (Full HD+)
+            w = int(available.width() * 0.85)
+            h = int(available.height() * 0.85)
+            min_w, min_h = 1200, 800
+        elif available.width() >= 1366:  # Pantallas medianas (HD+)
+            w = int(available.width() * 0.9)
+            h = int(available.height() * 0.9)
+            min_w, min_h = 1000, 700
+        else:  # Pantallas pequeñas
+            w = int(available.width() * 0.95)
+            h = int(available.height() * 0.95)
+            min_w, min_h = 800, 600
+        
         self.resize(w, h)
+        self.setMinimumSize(min_w, min_h)
+        
         # Centrar ventana
         self.move(available.center() - self.rect().center())
-
-        # Tamaño mínimo razonable
-        self.setMinimumSize(1000, 700)
+        
+        # Configurar redimensionamiento responsivo
+        self.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
 
         # === Barra de herramientas con navegación y tema ===
         toolbar = QToolBar("Navegación")
@@ -199,35 +214,53 @@ class MainWindow(QMainWindow):
 
     def create_main_buttons(self, layout):
         """Crea los botones principales para las diferentes secciones"""
+        # Obtener tamaño de pantalla para hacer botones responsivos
+        available = QGuiApplication.primaryScreen().availableGeometry()
+        
+        # Calcular tamaño de botones basado en la resolución
+        if available.width() >= 1920:
+            btn_width, btn_height = 220, 140
+            font_size = 16
+        elif available.width() >= 1366:
+            btn_width, btn_height = 184, 122
+            font_size = 14
+        else:
+            btn_width, btn_height = 150, 100
+            font_size = 12
+        
         # Botón de Visitas
         self.btn_visitas = QPushButton("📋 Registrar Visitas")
         self.btn_visitas.clicked.connect(self.open_visitas)
-        self.btn_visitas.setFixedSize(184, 122)  # Aumentado en ~2%
-        self.btn_visitas.setStyleSheet(self.get_button_style("#007bff"))
+        self.btn_visitas.setMinimumSize(btn_width, btn_height)
+        self.btn_visitas.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
+        self.btn_visitas.setStyleSheet(self.get_button_style("#007bff", font_size))
         layout.addWidget(self.btn_visitas, 0, 0)
 
         # Botón de Visitantes
         self.btn_visitantes = QPushButton("👥 Visitantes Actuales")
         self.btn_visitantes.clicked.connect(self.open_visitantes)
-        self.btn_visitantes.setFixedSize(184, 122)  # Aumentado en ~2%
-        self.btn_visitantes.setStyleSheet(self.get_button_style("#28a745"))
+        self.btn_visitantes.setMinimumSize(btn_width, btn_height)
+        self.btn_visitantes.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
+        self.btn_visitantes.setStyleSheet(self.get_button_style("#28a745", font_size))
         layout.addWidget(self.btn_visitantes, 0, 1)
 
         # Botón de Zonas
         self.btn_zonas = QPushButton("🏢 Zonas")
         self.btn_zonas.clicked.connect(self.open_zonas)
-        self.btn_zonas.setFixedSize(184, 122)  # Aumentado en ~2%
-        self.btn_zonas.setStyleSheet(self.get_button_style("#ffc107"))
+        self.btn_zonas.setMinimumSize(btn_width, btn_height)
+        self.btn_zonas.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
+        self.btn_zonas.setStyleSheet(self.get_button_style("#ffc107", font_size))
         layout.addWidget(self.btn_zonas, 1, 0)
 
         # Botón de Reportes
         self.btn_reportes = QPushButton("📊 Reportes")
         self.btn_reportes.clicked.connect(self.open_reportes)
-        self.btn_reportes.setFixedSize(184, 122)  # Aumentado en ~2%
-        self.btn_reportes.setStyleSheet(self.get_button_style("#dc3545"))
+        self.btn_reportes.setMinimumSize(btn_width, btn_height)
+        self.btn_reportes.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
+        self.btn_reportes.setStyleSheet(self.get_button_style("#dc3545", font_size))
         layout.addWidget(self.btn_reportes, 1, 1)
 
-    def get_button_style(self, color):
+    def get_button_style(self, color, font_size=16):
         """Retorna el estilo CSS para los botones principales"""
         return f"""
             QPushButton {{
@@ -235,7 +268,7 @@ class MainWindow(QMainWindow):
                 color: white;
                 border: none;
                 border-radius: 12px;
-                font-size: 16px;
+                font-size: {font_size}px;
                 font-weight: bold;
                 padding: 12px;
             }}

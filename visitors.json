@@ -4,6 +4,7 @@
     "rut": "20",
     "nombre_completo": "pepito aravena",
     "fecha_ingreso": "2025-09-12 20:26:50",
+    "fecha_salida": null,
     "acompañante": "elias papita",
     "sector": "Auditorio",
     "estado": "Fuera"
@@ -13,8 +14,39 @@
     "rut": "19920145-k",
     "nombre_completo": "Nicolas perez",
     "fecha_ingreso": "2025-09-12 20:29:38",
+    "fecha_salida": null,
     "acompañante": "Huvito rey",
     "sector": "CITT",
+    "estado": "Dentro"
+  },
+  {
+    "id": "VIS20250913084629577326",
+    "rut": "213861409",
+    "nombre_completo": "martin velazco",
+    "fecha_ingreso": "2025-09-13 08:46:29",
+    "fecha_salida": null,
+    "acompañante": "don jorge",
+    "sector": "CITT",
+    "estado": "Dentro"
+  },
+  {
+    "id": "VIS20250913090353402969",
+    "rut": "398231231",
+    "nombre_completo": "juanita ramita",
+    "fecha_ingreso": "2025-09-13 09:03:53",
+    "fecha_salida": "2025-09-13 09:04:02",
+    "acompañante": "hugo perez",
+    "sector": "Administración",
+    "estado": "Fuera"
+  },
+  {
+    "id": "VIS20250913091635727278",
+    "rut": "231723612",
+    "nombre_completo": "asdasdasd",
+    "fecha_ingreso": "2025-09-13 09:16:35",
+    "fecha_salida": null,
+    "acompañante": "asdasdasd",
+    "sector": "Financiamiento",
     "estado": "Dentro"
   }
 ]

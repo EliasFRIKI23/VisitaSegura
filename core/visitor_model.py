@@ -10,6 +10,7 @@ class Visitor:
         self.rut = rut
         self.nombre_completo = nombre_completo
         self.fecha_ingreso = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        self.fecha_salida = None  # Se establecerá cuando el visitante salga
         self.acompañante = acompañante
         self.sector = sector
         self.estado = estado  # "Dentro" o "Fuera"
@@ -26,6 +27,7 @@ class Visitor:
             'rut': self.rut,
             'nombre_completo': self.nombre_completo,
             'fecha_ingreso': self.fecha_ingreso,
+            'fecha_salida': self.fecha_salida,
             'acompañante': self.acompañante,
             'sector': self.sector,
             'estado': self.estado
@@ -43,14 +45,17 @@ class Visitor:
         )
         visitor.id = data['id']
         visitor.fecha_ingreso = data['fecha_ingreso']
+        visitor.fecha_salida = data.get('fecha_salida', None)
         return visitor
     
     def toggle_estado(self):
         """Cambia el estado del visitante entre 'Dentro' y 'Fuera'"""
         if self.estado == "Dentro":
             self.estado = "Fuera"
+            self.fecha_salida = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
         else:
             self.estado = "Dentro"
+            self.fecha_salida = None
 
 class VisitorManager:
     def __init__(self, data_file: str = "visitors.json"):
@@ -138,3 +143,42 @@ class VisitorManager:
     def get_visitors_by_sector(self, sector: str) -> List[Visitor]:
         """Obtiene visitantes por sector"""
         return [v for v in self.visitors if v.sector == sector]
+    
+    def get_current_visitors(self) -> List[Visitor]:
+        """Obtiene visitantes que están actualmente dentro (estado 'Dentro')"""
+        return [v for v in self.visitors if v.estado == "Dentro"]
+    
+    def get_visitor_report_data(self, include_departed: bool = True) -> List[Dict]:
+        """Obtiene datos de visitantes para reportes"""
+        if include_departed:
+            # Incluir todos los visitantes (actuales y que ya se fueron)
+            all_visitors = self.visitors
+        else:
+            # Solo visitantes actuales
+            all_visitors = self.get_current_visitors()
+        
+        report_data = []
+        
+        for visitor in all_visitors:
+            # Determinar el estado de la fecha de salida
+            if visitor.fecha_salida:
+                fecha_salida = visitor.fecha_salida
+                estado_visita = "Finalizada"
+            else:
+                fecha_salida = "Aún en el edificio"
+                estado_visita = "En curso"
+            
+            report_data.append({
+                'nombre': visitor.nombre_completo,
+                'rut': visitor.rut,
+                'fecha_entrada': visitor.fecha_ingreso,
+                'fecha_salida': fecha_salida,
+                'destino': visitor.sector,
+                'acompañante': visitor.acompañante,
+                'estado_visita': estado_visita
+            })
+        
+        # Ordenar por fecha de entrada (más recientes primero)
+        report_data.sort(key=lambda x: x['fecha_entrada'], reverse=True)
+        
+        return report_data
