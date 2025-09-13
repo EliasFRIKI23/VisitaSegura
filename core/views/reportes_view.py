@@ -148,10 +148,16 @@ class ReportesView(QWidget):
     
     def go_to_main(self):
         """Regresa al menú principal"""
-        if hasattr(self.parent(), 'navigation_manager'):
-            self.parent().navigation_manager.navigate_to("main")
-        elif hasattr(self.parent(), 'go_to_main'):
-            self.parent().go_to_main()
+        # Buscar la ventana principal que contiene el navigation_manager
+        parent = self.parent()
+        while parent is not None:
+            if hasattr(parent, 'navigation_manager'):
+                parent.navigation_manager.navigate_to("main")
+                return
+            elif hasattr(parent, 'go_to_main'):
+                parent.go_to_main()
+                return
+            parent = parent.parent()
     
     def create_stat_card(self, title, value, color, description):
         """Crea una tarjeta de estadística"""
