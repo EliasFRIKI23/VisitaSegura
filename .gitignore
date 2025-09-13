@@ -1,29 +1,63 @@
-# Entorno virtual
-venv/
-.env/
-.venv/
+# Archivos de demo y testing (no necesarios en producción)
+demos/
 
 # Archivos de Python
 __pycache__/
 *.py[cod]
-*.pyo
-*.pyd
-*.pyc
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+MANIFEST
 
-# Archivos de logs
-*.log
+# Entornos virtuales
+venv/
+env/
+ENV/
+env.bak/
+venv.bak/
 
-# Archivos de configuración locales
-*.sqlite3
-*.db
+# IDEs
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
 
-# Archivos de sistema
+# Sistema operativo
 .DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
 Thumbs.db
 
-# Archivos de dependencias
-Requisitos.txt
+# Archivos de configuración local
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
 
-# Otros posibles archivos ocultos
-*.bak
-*.swp
+# Logs
+*.log
+logs/
+
+# Archivos temporales
+*.tmp
+*.temp
