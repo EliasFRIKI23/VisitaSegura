@@ -19,6 +19,20 @@ except ImportError:
     from views import VisitasView, ZonasView, ReportesView
     from navigation_manager import NavigationManager
 
+# Tema institucional Duoc UC
+try:
+    from core.theme import DUOC_PRIMARY, DUOC_SECONDARY, darken_color as duoc_darken
+except Exception:
+    DUOC_PRIMARY = "#003A70"
+    DUOC_SECONDARY = "#FFB81C"
+    def duoc_darken(color, factor=0.2):
+        color = color.lstrip('#')
+        r, g, b = tuple(int(color[i:i+2], 16) for i in (0, 2, 4))
+        r = max(0, int(r * (1 - factor)))
+        g = max(0, int(g * (1 - factor)))
+        b = max(0, int(b * (1 - factor)))
+        return f"#{r:02x}{g:02x}{b:02x}"
+
 class MainWindow(QMainWindow):
     def __init__(self):
         super().__init__()
@@ -233,7 +247,7 @@ class MainWindow(QMainWindow):
         self.btn_visitas.clicked.connect(self.open_visitas)
         self.btn_visitas.setMinimumSize(btn_width, btn_height)
         self.btn_visitas.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
-        self.btn_visitas.setStyleSheet(self.get_button_style("#007bff", font_size))
+        self.btn_visitas.setStyleSheet(self.get_button_style(DUOC_PRIMARY, font_size))
         layout.addWidget(self.btn_visitas, 0, 0)
 
         # Botón de Visitantes
@@ -241,7 +255,7 @@ class MainWindow(QMainWindow):
         self.btn_visitantes.clicked.connect(self.open_visitantes)
         self.btn_visitantes.setMinimumSize(btn_width, btn_height)
         self.btn_visitantes.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
-        self.btn_visitantes.setStyleSheet(self.get_button_style("#28a745", font_size))
+        self.btn_visitantes.setStyleSheet(self.get_button_style(DUOC_SECONDARY, font_size))
         layout.addWidget(self.btn_visitantes, 0, 1)
 
         # Botón de Zonas
@@ -249,7 +263,7 @@ class MainWindow(QMainWindow):
         self.btn_zonas.clicked.connect(self.open_zonas)
         self.btn_zonas.setMinimumSize(btn_width, btn_height)
         self.btn_zonas.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
-        self.btn_zonas.setStyleSheet(self.get_button_style("#ffc107", font_size))
+        self.btn_zonas.setStyleSheet(self.get_button_style(DUOC_SECONDARY, font_size))
         layout.addWidget(self.btn_zonas, 1, 0)
 
         # Botón de Reportes
@@ -257,7 +271,7 @@ class MainWindow(QMainWindow):
         self.btn_reportes.clicked.connect(self.open_reportes)
         self.btn_reportes.setMinimumSize(btn_width, btn_height)
         self.btn_reportes.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
-        self.btn_reportes.setStyleSheet(self.get_button_style("#dc3545", font_size))
+        self.btn_reportes.setStyleSheet(self.get_button_style(DUOC_PRIMARY, font_size))
         layout.addWidget(self.btn_reportes, 1, 1)
 
     def get_button_style(self, color, font_size=16):
@@ -273,22 +287,15 @@ class MainWindow(QMainWindow):
                 padding: 12px;
             }}
             QPushButton:hover {{
-                background-color: {self.darken_color(color)};
+                background-color: {duoc_darken(color)};
                 transform: scale(1.05);
             }}
             QPushButton:pressed {{
-                background-color: {self.darken_color(color, 0.3)};
+                background-color: {duoc_darken(color, 0.3)};
             }}
         """
 
-    def darken_color(self, color, factor=0.2):
-        """Oscurece un color hexadecimal"""
-        color = color.lstrip('#')
-        r, g, b = tuple(int(color[i:i+2], 16) for i in (0, 2, 4))
-        r = max(0, int(r * (1 - factor)))
-        g = max(0, int(g * (1 - factor)))
-        b = max(0, int(b * (1 - factor)))
-        return f"#{r:02x}{g:02x}{b:02x}"
+    # Ya usamos duoc_darken desde core.theme
 
     def open_visitas(self):
         """Abre la sección de visitas"""
@@ -357,22 +364,25 @@ class MainWindow(QMainWindow):
         if self.dark_mode:
             palette = QPalette()
             # === Colores modo oscuro ===
-            palette.setColor(QPalette.Window, QColor(53, 53, 53))
+            palette.setColor(QPalette.Window, QColor(30, 30, 30))
             palette.setColor(QPalette.WindowText, Qt.white)
-            palette.setColor(QPalette.Base, QColor(35, 35, 35))
-            palette.setColor(QPalette.AlternateBase, QColor(53, 53, 53))
+            palette.setColor(QPalette.Base, QColor(25, 25, 25))
+            palette.setColor(QPalette.AlternateBase, QColor(40, 40, 40))
             palette.setColor(QPalette.ToolTipBase, Qt.white)
             palette.setColor(QPalette.ToolTipText, Qt.white)
             palette.setColor(QPalette.Text, Qt.white)
-            palette.setColor(QPalette.Button, QColor(53, 53, 53))
+            palette.setColor(QPalette.Button, QColor(40, 40, 40))
             palette.setColor(QPalette.ButtonText, Qt.white)
             palette.setColor(QPalette.BrightText, Qt.red)
-            palette.setColor(QPalette.Highlight, QColor(142, 45, 197).lighter())
+            palette.setColor(QPalette.Highlight, QColor(DUOC_SECONDARY))
             palette.setColor(QPalette.HighlightedText, Qt.black)
             self.theme_action.setText("☀️ Modo claro")
         else:
             # Restaurar tema claro (default del estilo actual)
             palette = QApplication.style().standardPalette()
+            # Acentos institucionals
+            palette.setColor(QPalette.Highlight, QColor(DUOC_PRIMARY))
+            palette.setColor(QPalette.HighlightedText, Qt.white)
             self.theme_action.setText("🌙 Modo oscuro")
 
         QApplication.instance().setPalette(palette)

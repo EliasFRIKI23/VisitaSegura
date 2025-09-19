@@ -13,6 +13,25 @@ import matplotlib.pyplot as plt
 import matplotlib.dates as mdates
 from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
 from matplotlib.figure import Figure
+try:
+    from core.theme import DUOC_PRIMARY, DUOC_SECONDARY, darken_color as duoc_darken, lighten_color as duoc_lighten
+except Exception:
+    DUOC_PRIMARY = "#003A70"
+    DUOC_SECONDARY = "#FFB81C"
+    def duoc_darken(color, factor=0.2):
+        color = color.lstrip('#')
+        r, g, b = tuple(int(color[i:i+2], 16) for i in (0, 2, 4))
+        r = max(0, int(r * (1 - factor)))
+        g = max(0, int(g * (1 - factor)))
+        b = max(0, int(b * (1 - factor)))
+        return f"#{r:02x}{g:02x}{b:02x}"
+    def duoc_lighten(color, factor=0.1):
+        color = color.lstrip('#')
+        r, g, b = tuple(int(color[i:i+2], 16) for i in (0, 2, 4))
+        r = min(255, int(r + (255 - r) * factor))
+        g = min(255, int(g + (255 - g) * factor))
+        b = min(255, int(b + (255 - b) * factor))
+        return f"#{r:02x}{g:02x}{b:02x}"
 import numpy as np
 
 # Agregar el directorio padre al path para importar módulos
@@ -66,7 +85,7 @@ class ChartWidget(QWidget):
             counts = list(data.values())
             
             # Gráfico de barras con colores
-            bars = ax.bar(range(len(dates)), counts, color='#007bff', alpha=0.7, edgecolor='#0056b3')
+            bars = ax.bar(range(len(dates)), counts, color=DUOC_PRIMARY, alpha=0.8, edgecolor=duoc_darken(DUOC_PRIMARY, 0.3))
             
             # Agregar valores en las barras
             for i, count in enumerate(counts):
@@ -94,7 +113,7 @@ class ChartWidget(QWidget):
             
             categories = ['Visitantes Actuales', 'Visitantes que se Fueron']
             values = [current, departed]
-            colors = ['#28a745', '#dc3545']
+            colors = [DUOC_SECONDARY, '#dc3545']
             
             bars = ax.bar(categories, values, color=colors, alpha=0.8, edgecolor='black', linewidth=1)
             
@@ -136,7 +155,7 @@ class ChartWidget(QWidget):
             
             # Gráfico de barras horizontales
             y_pos = np.arange(len(labels))
-            bars = ax.barh(y_pos, values, color='#17a2b8', alpha=0.8, edgecolor='black', linewidth=1)
+            bars = ax.barh(y_pos, values, color=DUOC_PRIMARY, alpha=0.8, edgecolor='black', linewidth=1)
             
             # Agregar valores en las barras
             for i, (bar, value) in enumerate(zip(bars, values)):
@@ -381,7 +400,7 @@ class ReportesView(QWidget):
         self.btn_refresh.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Preferred)
         self.btn_refresh.setStyleSheet(f"""
             QPushButton {{
-                background-color: #28a745;
+                background-color: {DUOC_SECONDARY};
                 color: white;
                 border: none;
                 border-radius: 8px;
@@ -389,7 +408,7 @@ class ReportesView(QWidget):
                 font-weight: bold;
             }}
             QPushButton:hover {{
-                background-color: #218838;
+                background-color: {duoc_darken(DUOC_SECONDARY)};
             }}
         """)
         self.btn_refresh.clicked.connect(self.refresh_visitors_data)
@@ -407,12 +426,12 @@ class ReportesView(QWidget):
         self.filter_combo.setStyleSheet(f"""
             QComboBox {{
                 padding: 5px;
-                border: 2px solid #ced4da;
+                border: 2px solid {duoc_lighten(DUOC_PRIMARY, 0.6)};
                 border-radius: 5px;
                 font-size: {btn_font_size}px;
             }}
             QComboBox:focus {{
-                border-color: #007bff;
+                border-color: {DUOC_PRIMARY};
             }}
         """)
         self.filter_combo.currentTextChanged.connect(self.refresh_visitors_data)
@@ -424,7 +443,7 @@ class ReportesView(QWidget):
         self.btn_export.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Preferred)
         self.btn_export.setStyleSheet(f"""
             QPushButton {{
-                background-color: #007bff;
+                background-color: {DUOC_PRIMARY};
                 color: white;
                 border: none;
                 border-radius: 8px;
@@ -432,7 +451,7 @@ class ReportesView(QWidget):
                 font-weight: bold;
             }}
             QPushButton:hover {{
-                background-color: #0056b3;
+                background-color: {duoc_darken(DUOC_PRIMARY)};
             }}
         """)
         self.btn_export.clicked.connect(self.export_to_excel)
@@ -459,6 +478,8 @@ class ReportesView(QWidget):
         self.visitors_table.horizontalHeader().setSectionResizeMode(QHeaderView.Stretch)
         self.visitors_table.setAlternatingRowColors(True)
         self.visitors_table.setSelectionBehavior(QTableWidget.SelectRows)
+        # Ocultar barra de desplazamiento vertical en la tabla
+        self.visitors_table.setVerticalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
         
         # Configurar altura de filas responsiva
         available = QGuiApplication.primaryScreen().availableGeometry()
@@ -475,43 +496,43 @@ class ReportesView(QWidget):
         self.visitors_table.verticalHeader().setDefaultSectionSize(row_height)
         
         # Estilo mejorado para la tabla
-        self.visitors_table.setStyleSheet("""
-            QTableWidget {
+        self.visitors_table.setStyleSheet(f"""
+            QTableWidget {{
                 gridline-color: #d0d0d0;
                 background-color: white;
                 alternate-background-color: #f8f9fa;
                 font-size: 12px;
                 border: 1px solid #dee2e6;
                 border-radius: 8px;
-            }
-            QTableWidget::item {
+            }}
+            QTableWidget::item {{
                 padding: 8px;
                 border-bottom: 1px solid #e9ecef;
-            }
-            QTableWidget::item:selected {
-                background-color: #007bff;
+            }}
+            QTableWidget::item:selected {{
+                background-color: {DUOC_PRIMARY};
                 color: white;
-            }
-            QHeaderView::section {
-                background-color: #495057;
+            }}
+            QHeaderView::section {{
+                background-color: {DUOC_PRIMARY};
                 color: white;
                 padding: 12px 8px;
-                border: 1px solid #6c757d;
+                border: 1px solid {duoc_darken(DUOC_PRIMARY)};
                 font-weight: bold;
                 font-size: 13px;
                 text-align: center;
-            }
-            QHeaderView::section:first {
+            }}
+            QHeaderView::section:first {{
                 border-top-left-radius: 8px;
-            }
-            QHeaderView::section:last {
+            }}
+            QHeaderView::section:last {{
                 border-top-right-radius: 8px;
-            }
-            QTableCornerButton::section {
-                background-color: #495057;
-                border: 1px solid #6c757d;
+            }}
+            QTableCornerButton::section {{
+                background-color: {DUOC_PRIMARY};
+                border: 1px solid {duoc_darken(DUOC_PRIMARY)};
                 border-top-left-radius: 8px;
-            }
+            }}
         """)
         
         content_layout.addWidget(self.visitors_table)
