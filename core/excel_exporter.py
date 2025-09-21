@@ -40,6 +40,15 @@ class ExcelExporter:
             # Crear DataFrame con los datos
             df = pd.DataFrame(visitors_data)
             
+            # Asegurar que solo tenemos las 7 columnas esperadas
+            expected_columns = [
+                'nombre', 'rut', 'fecha_entrada', 'fecha_salida', 
+                'destino', 'acompañante', 'estado_visita'
+            ]
+            
+            # Filtrar solo las columnas que necesitamos
+            df = df[expected_columns]
+            
             # Renombrar columnas para mejor presentación
             df.columns = [
                 'Nombre del Visitante',
@@ -47,7 +56,8 @@ class ExcelExporter:
                 'Fecha y Hora de Entrada',
                 'Fecha y Hora de Salida',
                 'Destino/Lugar',
-                'Acompañante'
+                'Acompañante',
+                'Estado de Visita'
             ]
             
             # Crear archivo Excel con formato
@@ -85,7 +95,7 @@ class ExcelExporter:
         )
         
         # Aplicar formato al encabezado (fila 1)
-        for col in range(1, 7):  # 6 columnas
+        for col in range(1, 8):  # 7 columnas
             cell = worksheet.cell(row=1, column=col)
             cell.font = header_font
             cell.fill = header_fill
@@ -94,13 +104,13 @@ class ExcelExporter:
         
         # Aplicar formato a las celdas de datos
         for row in range(2, num_rows + 2):  # +2 porque empezamos desde la fila 2
-            for col in range(1, 7):
+            for col in range(1, 8):
                 cell = worksheet.cell(row=row, column=col)
                 cell.alignment = data_alignment
                 cell.border = border
         
         # Ajustar ancho de columnas
-        column_widths = [25, 15, 20, 20, 20, 20]  # Anchos para cada columna
+        column_widths = [25, 15, 20, 20, 20, 20, 15]  # Anchos para cada columna
         for i, width in enumerate(column_widths, 1):
             worksheet.column_dimensions[worksheet.cell(row=1, column=i).column_letter].width = width
     

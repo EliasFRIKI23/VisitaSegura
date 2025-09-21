@@ -188,25 +188,92 @@ class ReportesView(QWidget):
         self.refresh_timer = QTimer()
         self.refresh_timer.timeout.connect(self.refresh_visitors_data)
         self.refresh_timer.start(10000)  # 10 segundos
+        
+        # Conectar el evento de cambio de tamaño para ajustar las columnas
+        self.resizeEvent = self.on_resize_event
+    
+    def on_resize_event(self, event):
+        """Maneja el evento de cambio de tamaño de la ventana"""
+        super().resizeEvent(event)
+        # Ajustar las columnas después de un pequeño delay para que el resize se complete
+        QTimer.singleShot(100, self.adjust_table_columns)
+    
+    def adjust_table_columns(self):
+        """Ajusta las columnas de la tabla según el tamaño actual"""
+        if hasattr(self, 'visitors_table'):
+            # Forzar el recálculo del layout de la tabla
+            self.visitors_table.horizontalHeader().setSectionResizeMode(QHeaderView.Stretch)
+            self.visitors_table.horizontalHeader().setStretchLastSection(True)
+    
+    def _get_screen_config(self):
+        """Obtiene la configuración responsiva basada en el tamaño de pantalla"""
+        available = QGuiApplication.primaryScreen().availableGeometry()
+        if available.width() >= 1920:
+            return {
+                'margin': 30,
+                'spacing': 25,
+                'content_margin': 30,
+                'content_spacing': 20,
+                'btn_width': 180,
+                'btn_height': 50,
+                'btn_font_size': 16,
+                'row_height': 45,
+                'font_size': 12,
+                'value_font_size': 28,
+                'title_font_size': 14,
+                'desc_font_size': 11,
+                'border_radius': 15,
+                'padding': 25
+            }
+        elif available.width() >= 1366:
+            return {
+                'margin': 20,
+                'spacing': 20,
+                'content_margin': 25,
+                'content_spacing': 15,
+                'btn_width': 150,
+                'btn_height': 40,
+                'btn_font_size': 14,
+                'row_height': 40,
+                'font_size': 11,
+                'value_font_size': 24,
+                'title_font_size': 12,
+                'desc_font_size': 9,
+                'border_radius': 12,
+                'padding': 20
+            }
+        else:
+            return {
+                'margin': 15,
+                'spacing': 15,
+                'content_margin': 20,
+                'content_spacing': 10,
+                'btn_width': 120,
+                'btn_height': 35,
+                'btn_font_size': 12,
+                'row_height': 35,
+                'font_size': 10,
+                'value_font_size': 20,
+                'title_font_size': 10,
+                'desc_font_size': 8,
+                'border_radius': 10,
+                'padding': 15
+            }
     
     def setup_ui(self):
         """Configura la interfaz de usuario"""
         main_layout = QVBoxLayout(self)
         
-        # Hacer responsivo basado en el tamaño de pantalla
-        available = QGuiApplication.primaryScreen().availableGeometry()
-        if available.width() >= 1920:
-            margin = 30
-            spacing = 25
-        elif available.width() >= 1366:
-            margin = 20
-            spacing = 20
-        else:
-            margin = 15
-            spacing = 15
-            
-        main_layout.setContentsMargins(margin, margin, margin, margin)
-        main_layout.setSpacing(spacing)
+        # Configuración responsiva centralizada
+        self.screen_config = self._get_screen_config()
+        
+        main_layout.setContentsMargins(
+            self.screen_config['margin'], 
+            self.screen_config['margin'], 
+            self.screen_config['margin'], 
+            self.screen_config['margin']
+        )
+        main_layout.setSpacing(self.screen_config['spacing'])
         
         # Header con título y logo
         header_layout = QHBoxLayout()
@@ -249,24 +316,20 @@ class ReportesView(QWidget):
         scroll_area.setVerticalScrollBarPolicy(Qt.ScrollBarAsNeeded)
         scroll_area.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)  # Sin scroll horizontal
         scroll_area.setFrameStyle(QFrame.NoFrame)
+        scroll_area.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
         
         # Widget contenedor para todo el contenido scrolleable
         content_widget = QWidget()
         content_layout = QVBoxLayout(content_widget)
         
-        # Márgenes responsivos optimizados
-        if available.width() >= 1920:
-            content_margin = 30
-            content_spacing = 20
-        elif available.width() >= 1366:
-            content_margin = 25
-            content_spacing = 15
-        else:
-            content_margin = 20
-            content_spacing = 10
-            
-        content_layout.setContentsMargins(content_margin, content_margin, content_margin, content_margin)
-        content_layout.setSpacing(content_spacing)
+        # Márgenes responsivos optimizados usando configuración centralizada
+        content_layout.setContentsMargins(
+            self.screen_config['content_margin'], 
+            self.screen_config['content_margin'], 
+            self.screen_config['content_margin'], 
+            self.screen_config['content_margin']
+        )
+        content_layout.setSpacing(self.screen_config['content_spacing'])
         
         # Sección de Gráficos - Layout Horizontal
         charts_title = QLabel("📊 Análisis Visual de Visitantes")
@@ -285,6 +348,7 @@ class ReportesView(QWidget):
         
         # Contenedor principal para los gráficos en layout horizontal
         charts_container = QWidget()
+        charts_container.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Preferred)
         charts_main_layout = QHBoxLayout(charts_container)
         charts_main_layout.setSpacing(15)
         charts_main_layout.setContentsMargins(5, 5, 5, 5)
@@ -385,18 +449,7 @@ class ReportesView(QWidget):
         
         # Botón para actualizar datos responsivo
         self.btn_refresh = QPushButton("🔄 Actualizar Datos")
-        # Tamaños responsivos para botones
-        if available.width() >= 1920:
-            btn_width, btn_height = 180, 50
-            btn_font_size = 16
-        elif available.width() >= 1366:
-            btn_width, btn_height = 150, 40
-            btn_font_size = 14
-        else:
-            btn_width, btn_height = 120, 35
-            btn_font_size = 12
-            
-        self.btn_refresh.setMinimumSize(btn_width, btn_height)
+        self.btn_refresh.setMinimumSize(self.screen_config['btn_width'], self.screen_config['btn_height'])
         self.btn_refresh.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Preferred)
         self.btn_refresh.setStyleSheet(f"""
             QPushButton {{
@@ -404,7 +457,7 @@ class ReportesView(QWidget):
                 color: white;
                 border: none;
                 border-radius: 8px;
-                font-size: {btn_font_size}px;
+                font-size: {self.screen_config['btn_font_size']}px;
                 font-weight: bold;
             }}
             QPushButton:hover {{
@@ -416,19 +469,19 @@ class ReportesView(QWidget):
         
         # Filtro de visitantes responsivo
         filter_label = QLabel("Filtrar:")
-        filter_label.setFont(QFont("Arial", btn_font_size, QFont.Bold))
+        filter_label.setFont(QFont("Arial", self.screen_config['btn_font_size'], QFont.Bold))
         action_layout.addWidget(filter_label)
         
         self.filter_combo = QComboBox()
         self.filter_combo.addItems(["Todos los visitantes", "Solo visitantes actuales", "Solo visitantes que se fueron"])
-        self.filter_combo.setMinimumSize(btn_width * 1.3, btn_height)
+        self.filter_combo.setMinimumSize(self.screen_config['btn_width'] * 1.3, self.screen_config['btn_height'])
         self.filter_combo.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Preferred)
         self.filter_combo.setStyleSheet(f"""
             QComboBox {{
                 padding: 5px;
                 border: 2px solid {duoc_lighten(DUOC_PRIMARY, 0.6)};
                 border-radius: 5px;
-                font-size: {btn_font_size}px;
+                font-size: {self.screen_config['btn_font_size']}px;
             }}
             QComboBox:focus {{
                 border-color: {DUOC_PRIMARY};
@@ -439,7 +492,7 @@ class ReportesView(QWidget):
         
         # Botón para exportar a Excel responsivo
         self.btn_export = QPushButton("📊 Exportar a Excel")
-        self.btn_export.setMinimumSize(btn_width, btn_height)
+        self.btn_export.setMinimumSize(self.screen_config['btn_width'], self.screen_config['btn_height'])
         self.btn_export.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Preferred)
         self.btn_export.setStyleSheet(f"""
             QPushButton {{
@@ -447,7 +500,7 @@ class ReportesView(QWidget):
                 color: white;
                 border: none;
                 border-radius: 8px;
-                font-size: {btn_font_size}px;
+                font-size: {self.screen_config['btn_font_size']}px;
                 font-weight: bold;
             }}
             QPushButton:hover {{
@@ -462,7 +515,7 @@ class ReportesView(QWidget):
         
         # Tabla de visitantes
         self.visitors_table = QTableWidget()
-        self.visitors_table.setColumnCount(7)
+        self.visitors_table.setColumnCount(7)  # 7 columnas como se muestra en la imagen
         self.visitors_table.setHorizontalHeaderLabels([
             "Nombre del Visitante",
             "RUT", 
@@ -473,7 +526,7 @@ class ReportesView(QWidget):
             "Estado de Visita"
         ])
         
-        # Configurar tabla responsiva
+        # Configurar tabla responsiva con mejor distribución de columnas
         self.visitors_table.horizontalHeader().setStretchLastSection(True)
         self.visitors_table.horizontalHeader().setSectionResizeMode(QHeaderView.Stretch)
         self.visitors_table.setAlternatingRowColors(True)
@@ -481,61 +534,101 @@ class ReportesView(QWidget):
         # Ocultar barra de desplazamiento vertical en la tabla
         self.visitors_table.setVerticalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
         
-        # Configurar altura de filas responsiva
-        available = QGuiApplication.primaryScreen().availableGeometry()
-        if available.width() >= 1920:
-            row_height = 45
-            font_size = 12
-        elif available.width() >= 1366:
-            row_height = 40
-            font_size = 11
-        else:
-            row_height = 35
-            font_size = 10
-            
-        self.visitors_table.verticalHeader().setDefaultSectionSize(row_height)
+        # Configurar proporciones de columnas para que se ajusten al espacio disponible
+        # Las columnas se distribuirán proporcionalmente según estos valores
+        column_stretch_factors = [3, 1, 2, 2, 2, 2, 2]  # Factores de estiramiento para 7 columnas
+        for i, factor in enumerate(column_stretch_factors):
+            self.visitors_table.horizontalHeader().setSectionResizeMode(i, QHeaderView.Stretch)
+            self.visitors_table.horizontalHeader().setStretchLastSection(True)
         
-        # Estilo mejorado para la tabla
+        # Configurar altura de filas responsiva usando configuración centralizada
+        self.visitors_table.verticalHeader().setDefaultSectionSize(self.screen_config['row_height'])
+        
+        # Estilo mejorado para la tabla con diseño más limpio
         self.visitors_table.setStyleSheet(f"""
             QTableWidget {{
                 gridline-color: #d0d0d0;
-                background-color: white;
+                background-color: #ffffff;
                 alternate-background-color: #f8f9fa;
                 font-size: 12px;
-                border: 1px solid #dee2e6;
-                border-radius: 8px;
+                border: none;
+                border-radius: 0px;
+                selection-background-color: {DUOC_PRIMARY};
+                font-family: 'Segoe UI', Arial, sans-serif;
             }}
             QTableWidget::item {{
-                padding: 8px;
-                border-bottom: 1px solid #e9ecef;
+                padding: 12px 10px;
+                border-bottom: 1px solid #e8e8e8;
+                border-right: 1px solid #e8e8e8;
+                font-family: 'Segoe UI', Arial, sans-serif;
             }}
             QTableWidget::item:selected {{
                 background-color: {DUOC_PRIMARY};
                 color: white;
             }}
+            QTableWidget::item:hover {{
+                background-color: #e3f2fd;
+                border: 1px solid #bbdefb;
+            }}
             QHeaderView::section {{
-                background-color: {DUOC_PRIMARY};
+                background-color: #2c3e50 !important;
                 color: white;
-                padding: 12px 8px;
-                border: 1px solid {duoc_darken(DUOC_PRIMARY)};
+                padding: 18px 12px;
+                border: none;
+                border-right: 1px solid rgba(255, 255, 255, 0.15);
                 font-weight: bold;
                 font-size: 13px;
                 text-align: center;
+                min-height: 25px;
+                font-family: 'Segoe UI', Arial, sans-serif;
             }}
             QHeaderView::section:first {{
-                border-top-left-radius: 8px;
+                border-top-left-radius: 0px;
             }}
             QHeaderView::section:last {{
-                border-top-right-radius: 8px;
+                background-color: #2c3e50 !important;
+                border-top-right-radius: 0px;
+                border-right: none;
             }}
             QTableCornerButton::section {{
+                background-color: #2c3e50 !important;
+                border: none;
+                border-top-left-radius: 0px;
+            }}
+            QHeaderView {{
+                background-color: #2c3e50;
+            }}
+            QHeaderView::section:hover {{
+                background-color: #34495e !important;
+            }}
+            QTableWidget::item {{
+                border-bottom-left-radius: 0px;
+                border-bottom-right-radius: 0px;
+            }}
+            QTableWidget::item:first {{
+                border-bottom-left-radius: 18px;
+            }}
+            QTableWidget::item:last {{
+                border-bottom-right-radius: 18px;
+            }}
+            QScrollBar:vertical {{
+                background-color: #f1f1f1;
+                width: 12px;
+                border-radius: 6px;
+            }}
+            QScrollBar::handle:vertical {{
                 background-color: {DUOC_PRIMARY};
-                border: 1px solid {duoc_darken(DUOC_PRIMARY)};
-                border-top-left-radius: 8px;
+                border-radius: 6px;
+                min-height: 20px;
+            }}
+            QScrollBar::handle:vertical:hover {{
+                background-color: {duoc_darken(DUOC_PRIMARY)};
             }}
         """)
         
-        content_layout.addWidget(self.visitors_table)
+        # Configurar la tabla para que use todo el espacio disponible
+        self.visitors_table.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
+        content_layout.addWidget(self.visitors_table, 1)  # El 1 hace que tome todo el espacio disponible
         
         # Información del reporte
         self.info_label = QLabel()
@@ -558,7 +651,7 @@ class ReportesView(QWidget):
         
         # Configurar el área de scroll con el contenido
         scroll_area.setWidget(content_widget)
-        main_layout.addWidget(scroll_area)
+        main_layout.addWidget(scroll_area, 1)  # El 1 hace que tome todo el espacio disponible
         
         # Botón de regreso
         back_button = QPushButton("⬅️ Volver al Menú Principal")
@@ -597,33 +690,12 @@ class ReportesView(QWidget):
         card = QFrame()
         card.setFrameStyle(QFrame.StyledPanel)
         
-        # Tamaños responsivos
-        available = QGuiApplication.primaryScreen().availableGeometry()
-        if available.width() >= 1920:
-            padding = 25
-            value_font_size = 28
-            title_font_size = 14
-            desc_font_size = 11
-            border_radius = 15
-        elif available.width() >= 1366:
-            padding = 20
-            value_font_size = 24
-            title_font_size = 12
-            desc_font_size = 9
-            border_radius = 12
-        else:
-            padding = 15
-            value_font_size = 20
-            title_font_size = 10
-            desc_font_size = 8
-            border_radius = 10
-            
         card.setStyleSheet(f"""
             QFrame {{
                 background-color: white;
                 border: 2px solid {color};
-                border-radius: {border_radius}px;
-                padding: {padding}px;
+                border-radius: {self.screen_config['border_radius']}px;
+                padding: {self.screen_config['padding']}px;
             }}
             QFrame:hover {{
                 background-color: {self.lighten_color(color)};
@@ -635,20 +707,20 @@ class ReportesView(QWidget):
         
         # Valor
         value_label = QLabel(value)
-        value_label.setFont(QFont("Arial", value_font_size, QFont.Bold))
+        value_label.setFont(QFont("Arial", self.screen_config['value_font_size'], QFont.Bold))
         value_label.setAlignment(Qt.AlignCenter)
         value_label.setStyleSheet(f"color: {color};")
         layout.addWidget(value_label)
         
         # Título
         title_label = QLabel(title)
-        title_label.setFont(QFont("Arial", title_font_size, QFont.Bold))
+        title_label.setFont(QFont("Arial", self.screen_config['title_font_size'], QFont.Bold))
         title_label.setAlignment(Qt.AlignCenter)
         layout.addWidget(title_label)
         
         # Descripción
         desc_label = QLabel(description)
-        desc_label.setFont(QFont("Arial", desc_font_size))
+        desc_label.setFont(QFont("Arial", self.screen_config['desc_font_size']))
         desc_label.setAlignment(Qt.AlignCenter)
         desc_label.setWordWrap(True)
         desc_label.setStyleSheet("color: #6c757d;")
@@ -661,33 +733,12 @@ class ReportesView(QWidget):
         card = QFrame()
         card.setFrameStyle(QFrame.StyledPanel)
         
-        # Tamaños responsivos
-        available = QGuiApplication.primaryScreen().availableGeometry()
-        if available.width() >= 1920:
-            padding = 25
-            value_font_size = 28
-            title_font_size = 14
-            desc_font_size = 11
-            border_radius = 15
-        elif available.width() >= 1366:
-            padding = 20
-            value_font_size = 24
-            title_font_size = 12
-            desc_font_size = 9
-            border_radius = 12
-        else:
-            padding = 15
-            value_font_size = 20
-            title_font_size = 10
-            desc_font_size = 8
-            border_radius = 10
-            
         card.setStyleSheet(f"""
             QFrame {{
                 background-color: white;
                 border: 2px solid {color};
-                border-radius: {border_radius}px;
-                padding: {padding}px;
+                border-radius: {self.screen_config['border_radius']}px;
+                padding: {self.screen_config['padding']}px;
             }}
             QFrame:hover {{
                 background-color: {self.lighten_color(color)};
@@ -699,20 +750,20 @@ class ReportesView(QWidget):
         
         # Valor (con referencia)
         value_label = QLabel(value)
-        value_label.setFont(QFont("Arial", value_font_size, QFont.Bold))
+        value_label.setFont(QFont("Arial", self.screen_config['value_font_size'], QFont.Bold))
         value_label.setAlignment(Qt.AlignCenter)
         value_label.setStyleSheet(f"color: {color};")
         layout.addWidget(value_label)
         
         # Título
         title_label = QLabel(title)
-        title_label.setFont(QFont("Arial", title_font_size, QFont.Bold))
+        title_label.setFont(QFont("Arial", self.screen_config['title_font_size'], QFont.Bold))
         title_label.setAlignment(Qt.AlignCenter)
         layout.addWidget(title_label)
         
         # Descripción
         desc_label = QLabel(description)
-        desc_label.setFont(QFont("Arial", desc_font_size))
+        desc_label.setFont(QFont("Arial", self.screen_config['desc_font_size']))
         desc_label.setAlignment(Qt.AlignCenter)
         desc_label.setWordWrap(True)
         desc_label.setStyleSheet("color: #6c757d;")
@@ -796,9 +847,14 @@ class ReportesView(QWidget):
             # Llenar la tabla con los datos
             for row, visitor in enumerate(visitors_data):
                 # Crear items con texto centrado y mejor formato
+                # Asegurar que el RUT se muestre completo
+                rut_display = str(visitor['rut']) if visitor['rut'] else "N/A"
+                if len(rut_display) < 8:  # Si el RUT parece truncado, intentar obtener el completo
+                    rut_display = f"{visitor['rut']:0>8}" if visitor['rut'] else "N/A"
+                
                 items = [
                     QTableWidgetItem(str(visitor['nombre'])),
-                    QTableWidgetItem(str(visitor['rut'])),
+                    QTableWidgetItem(rut_display),
                     QTableWidgetItem(str(visitor['fecha_entrada'])),
                     QTableWidgetItem(str(visitor['fecha_salida'])),
                     QTableWidgetItem(str(visitor['destino'])),
@@ -806,18 +862,10 @@ class ReportesView(QWidget):
                     QTableWidgetItem(str(visitor['estado_visita']))
                 ]
                 
-                # Configurar alineación y estilo para cada item
-                available = QGuiApplication.primaryScreen().availableGeometry()
-                if available.width() >= 1920:
-                    font_size = 12
-                elif available.width() >= 1366:
-                    font_size = 11
-                else:
-                    font_size = 10
-                    
+                # Configurar alineación y estilo para cada item usando configuración centralizada
                 for col, item in enumerate(items):
                     item.setTextAlignment(Qt.AlignCenter | Qt.AlignVCenter)
-                    item.setFont(QFont("Arial", font_size))
+                    item.setFont(QFont("Arial", self.screen_config['font_size']))
                     
                     # Colorear según el estado
                     if col == 3:  # Fecha de salida
@@ -841,6 +889,8 @@ class ReportesView(QWidget):
             # Ajustar altura de filas
             for row in range(len(visitors_data)):
                 self.visitors_table.setRowHeight(row, 40)
+            
+            # Las esquinas inferiores se manejan con CSS
             
             # Actualizar información del reporte
             self.update_report_info(visitors_data)
@@ -1124,6 +1174,15 @@ class ReportesView(QWidget):
                 import pandas as pd
                 df = pd.DataFrame(visitors_data)
                 
+                # Asegurar que solo tenemos las 7 columnas esperadas
+                expected_columns = [
+                    'nombre', 'rut', 'fecha_entrada', 'fecha_salida', 
+                    'destino', 'acompañante', 'estado_visita'
+                ]
+                
+                # Filtrar solo las columnas que necesitamos
+                df = df[expected_columns]
+                
                 # Renombrar columnas para mejor presentación
                 df.columns = [
                     'Nombre del Visitante',
@@ -1177,6 +1236,16 @@ class ReportesView(QWidget):
                 bottom=Side(style='thin')
             )
             
+            # Limpiar cualquier formato previo que pueda causar íconos
+            for row in range(1, num_rows + 2):
+                for col in range(1, 8):
+                    cell = worksheet.cell(row=row, column=col)
+                    # Limpiar comentarios y validaciones que puedan causar íconos
+                    if cell.comment:
+                        cell.comment = None
+                    if hasattr(cell, 'data_validation') and cell.data_validation:
+                        cell.data_validation = None
+            
             # Aplicar formato al encabezado (fila 1)
             for col in range(1, 8):  # 7 columnas
                 cell = worksheet.cell(row=1, column=col)
@@ -1201,19 +1270,27 @@ class ReportesView(QWidget):
             print(f"Error al aplicar formato al Excel: {e}")
     
     def lighten_color(self, color, factor=0.1):
-        """Aclara un color hexadecimal"""
-        color = color.lstrip('#')
-        r, g, b = tuple(int(color[i:i+2], 16) for i in (0, 2, 4))
-        r = min(255, int(r + (255 - r) * factor))
-        g = min(255, int(g + (255 - g) * factor))
-        b = min(255, int(b + (255 - b) * factor))
-        return f"#{r:02x}{g:02x}{b:02x}"
+        """Aclara un color hexadecimal - usa la función del tema si está disponible"""
+        try:
+            return duoc_lighten(color, factor)
+        except:
+            # Fallback si no está disponible la función del tema
+            color = color.lstrip('#')
+            r, g, b = tuple(int(color[i:i+2], 16) for i in (0, 2, 4))
+            r = min(255, int(r + (255 - r) * factor))
+            g = min(255, int(g + (255 - g) * factor))
+            b = min(255, int(b + (255 - b) * factor))
+            return f"#{r:02x}{g:02x}{b:02x}"
     
     def darken_color(self, color, factor=0.2):
-        """Oscurece un color hexadecimal"""
-        color = color.lstrip('#')
-        r, g, b = tuple(int(color[i:i+2], 16) for i in (0, 2, 4))
-        r = max(0, int(r * (1 - factor)))
-        g = max(0, int(g * (1 - factor)))
-        b = max(0, int(b * (1 - factor)))
-        return f"#{r:02x}{g:02x}{b:02x}"
+        """Oscurece un color hexadecimal - usa la función del tema si está disponible"""
+        try:
+            return duoc_darken(color, factor)
+        except:
+            # Fallback si no está disponible la función del tema
+            color = color.lstrip('#')
+            r, g, b = tuple(int(color[i:i+2], 16) for i in (0, 2, 4))
+            r = max(0, int(r * (1 - factor)))
+            g = max(0, int(g * (1 - factor)))
+            b = max(0, int(b * (1 - factor)))
+            return f"#{r:02x}{g:02x}{b:02x}"
