@@ -5,13 +5,14 @@ from PySide6.QtWidgets import (
 )
 from PySide6.QtCore import Qt
 from PySide6.QtGui import QFont, QPalette, QColor, QIcon
-from .visitor_model import Visitor
+from .visitor_model import Visitor, VisitorManager
 
 class VisitorFormDialog(QDialog):
     def __init__(self, parent=None, visitor=None):
         super().__init__(parent)
         self.visitor = visitor
         self.is_edit_mode = visitor is not None
+        self.visitor_manager = VisitorManager()
         
         self.setWindowTitle("Editar Visitante" if self.is_edit_mode else "Registrar Nuevo Visitante")
         self.setModal(True)
@@ -215,6 +216,25 @@ class VisitorFormDialog(QDialog):
         if not self.validate_form():
             return
         
+        # Verificar cupo máximo solo para nuevos visitantes
+        if not self.is_edit_mode:
+            selected_sector = self.sector_combo.currentText()
+            current_visitors = self.visitor_manager.get_visitors_by_sector(selected_sector)
+            current_count = len([v for v in current_visitors if v.estado == "Dentro"])
+            
+            if current_count >= 20:
+                reply = QMessageBox.question(
+                    self, 
+                    "⚠️ Cupo Máximo Alcanzado",
+                    f"La zona {selected_sector} ya tiene {current_count} visitantes (cupo máximo: 20).\n\n"
+                    f"¿Estás seguro que quieres agregar más visitantes a esta zona?",
+                    QMessageBox.Yes | QMessageBox.No,
+                    QMessageBox.No
+                )
+                
+                if reply == QMessageBox.No:
+                    return
+        
         try:
             if self.is_edit_mode and self.visitor:
                 # Modo edición
@@ -245,6 +265,7 @@ class QuickVisitorForm(QWidget):
     """Formulario rápido para registro de visitantes desde la lista"""
     def __init__(self, parent=None):
         super().__init__(parent)
+        self.visitor_manager = VisitorManager()
         self.setup_ui()
     
     def setup_ui(self):
@@ -321,6 +342,25 @@ class QuickVisitorForm(QWidget):
             'acompañante': self.acompañante_input.text().strip(),
             'sector': self.sector_combo.currentText()
         }
+    
+    def validate_capacity(self) -> bool:
+        """Valida si la zona seleccionada tiene cupo disponible"""
+        selected_sector = self.sector_combo.currentText()
+        current_visitors = self.visitor_manager.get_visitors_by_sector(selected_sector)
+        current_count = len([v for v in current_visitors if v.estado == "Dentro"])
+        
+        if current_count >= 20:
+            reply = QMessageBox.question(
+                self, 
+                "⚠️ Cupo Máximo Alcanzado",
+                f"La zona {selected_sector} ya tiene {current_count} visitantes (cupo máximo: 20).\n\n"
+                f"¿Estás seguro que quieres agregar más visitantes a esta zona?",
+                QMessageBox.Yes | QMessageBox.No,
+                QMessageBox.No
+            )
+            return reply == QMessageBox.Yes
+        
+        return True
     
     def clear_form(self):
         """Limpia el formulario"""

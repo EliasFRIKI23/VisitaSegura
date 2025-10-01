@@ -55,17 +55,17 @@ class MainWindow(QMainWindow):
         
         # Calcular tamaño responsivo basado en la resolución de pantalla
         if available.width() >= 1920:  # Pantallas grandes (Full HD+)
-            w = int(available.width() * 0.85)
-            h = int(available.height() * 0.85)
-            min_w, min_h = 1200, 800
+            w = int(available.width() * 0.95)
+            h = int(available.height() * 0.95)
+            min_w, min_h = 1400, 900
         elif available.width() >= 1366:  # Pantallas medianas (HD+)
-            w = int(available.width() * 0.9)
-            h = int(available.height() * 0.9)
-            min_w, min_h = 1000, 700
+            w = int(available.width() * 0.95)
+            h = int(available.height() * 0.95)
+            min_w, min_h = 1200, 800
         else:  # Pantallas pequeñas
             w = int(available.width() * 0.95)
             h = int(available.height() * 0.95)
-            min_w, min_h = 800, 600
+            min_w, min_h = 1000, 700
         
         self.resize(w, h)
         self.setMinimumSize(min_w, min_h)
@@ -288,7 +288,6 @@ class MainWindow(QMainWindow):
             }}
             QPushButton:hover {{
                 background-color: {duoc_darken(color)};
-                transform: scale(1.05);
             }}
             QPushButton:pressed {{
                 background-color: {duoc_darken(color, 0.3)};

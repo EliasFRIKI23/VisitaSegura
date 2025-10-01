@@ -121,7 +121,6 @@ class VisitasView(QWidget):
             }
             QPushButton:hover {
                 background-color: #0056b3;
-                transform: scale(1.02);
             }
             QPushButton:pressed {
                 background-color: #004085;
@@ -178,7 +177,6 @@ class VisitasView(QWidget):
             }
             QPushButton:hover {
                 background-color: #218838;
-                transform: scale(1.02);
             }
             QPushButton:pressed {
                 background-color: #1e7e34;
@@ -236,7 +234,6 @@ class VisitasView(QWidget):
             }
             QPushButton:hover {
                 background-color: #5a32a3;
-                transform: scale(1.02);
             }
             QPushButton:pressed {
                 background-color: #4c2a85;
