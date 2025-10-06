@@ -94,13 +94,20 @@ class VisitorListWidget(QWidget):
         """)
         header_layout.addWidget(self.help_btn)
         
-        # Filtros
-        filter_label = QLabel("🔍 Filtrar:")
+        # Barra de búsqueda y filtros
+        self.search_input = QLineEdit()
+        self.search_input.setPlaceholderText("Buscar por RUT, nombre, acompañante o sector…")
+        self.search_input.setClearButtonEnabled(True)
+        self.search_input.setMaximumWidth(300)
+        self.search_input.setToolTip("Escriba para filtrar la lista en tiempo real")
+        header_layout.addWidget(self.search_input)
+
+        filter_label = QLabel("Filtro:")
         filter_label.setFont(QFont("Arial", 10, QFont.Bold))
         self.filter_combo = QComboBox()
         self.filter_combo.addItems(["Todos", "Dentro", "Fuera", "Financiamiento", "CITT", "Auditorio", "Administración"])
-        self.filter_combo.setMaximumWidth(150)
-        self.filter_combo.setToolTip("Filtrar visitantes por estado o sector")
+        self.filter_combo.setMaximumWidth(170)
+        self.filter_combo.setToolTip("Filtrar por estado o sector")
         header_layout.addWidget(filter_label)
         header_layout.addWidget(self.filter_combo)
         
@@ -209,8 +216,34 @@ class VisitorListWidget(QWidget):
         self.visitor_table.setAlternatingRowColors(True)
         self.visitor_table.setSortingEnabled(True)
         self.visitor_table.setContextMenuPolicy(Qt.CustomContextMenu)
-        # Ocultar barra de desplazamiento vertical en la tabla
-        self.visitor_table.setVerticalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
+        # Scroll según necesidad
+        self.visitor_table.setVerticalScrollBarPolicy(Qt.ScrollBarAsNeeded)
+        self.visitor_table.setHorizontalScrollBarPolicy(Qt.ScrollBarAsNeeded)
+
+        # Estética de encabezados y filas
+        vh = self.visitor_table.verticalHeader()
+        vh.setVisible(False)
+        vh.setDefaultSectionSize(36)
+
+        self.visitor_table.setStyleSheet("""
+            QTableWidget {
+                background: white;
+                gridline-color: #e9ecef;
+                alternate-background-color: #f8f9fa;
+                selection-background-color: %s;
+                selection-color: white;
+            }
+            QHeaderView::section {
+                background-color: #f1f3f5;
+                color: #343a40;
+                font-weight: bold;
+                border: none;
+                padding: 8px 10px;
+            }
+            QTableWidget::item {
+                padding: 6px;
+            }
+        """ % DUOC_PRIMARY)
         
         # Ajustar columnas
         header = self.visitor_table.horizontalHeader()
@@ -223,6 +256,13 @@ class VisitorListWidget(QWidget):
         header.setSectionResizeMode(6, QHeaderView.ResizeToContents) # Hora
         
         left_layout.addWidget(self.visitor_table)
+
+        # Estado vacío amigable
+        self.empty_state = QLabel("\nNo hay visitantes para mostrar.\n\nUse \"Nuevo Visitante\" para registrar o modifique los filtros/búsqueda.")
+        self.empty_state.setAlignment(Qt.AlignCenter)
+        self.empty_state.setStyleSheet("color: #6c757d; border: 1px dashed #dee2e6; border-radius: 8px; padding: 16px;")
+        self.empty_state.setVisible(False)
+        left_layout.addWidget(self.empty_state)
         
         # Panel derecho - Formulario rápido
         right_panel = QWidget()
@@ -302,6 +342,7 @@ class VisitorListWidget(QWidget):
         self.delete_btn.clicked.connect(self.delete_visitor)
         self.refresh_btn.clicked.connect(self.refresh_list)
         self.filter_combo.currentTextChanged.connect(self.apply_filter)
+        self.search_input.textChanged.connect(self.apply_filter)
         self.quick_register_btn.clicked.connect(self.quick_register)
         
         self.visitor_table.itemSelectionChanged.connect(self.on_selection_changed)
@@ -309,6 +350,34 @@ class VisitorListWidget(QWidget):
         self.visitor_table.customContextMenuRequested.connect(self.show_context_menu)
         self.help_btn.clicked.connect(self.show_help)
     
+    # === Métodos públicos para integración con otras vistas ===
+    def set_zone_filter(self, sector: str):
+        """Aplica un filtro directo por sector desde otras vistas."""
+        if sector in ["Financiamiento", "CITT", "Auditorio", "Administración"]:
+            self.filter_combo.setCurrentText(sector)
+        else:
+            self.filter_combo.setCurrentText("Todos")
+        if hasattr(self, 'search_input'):
+            self.search_input.clear()
+        self.refresh_list()
+
+    def open_new_with_sector(self, sector: str):
+        """Abre el formulario de nuevo visitante con el sector preseleccionado."""
+        dialog = VisitorFormDialog(self)
+        try:
+            idx = dialog.sector_combo.findText(sector)
+            if idx >= 0:
+                dialog.sector_combo.setCurrentIndex(idx)
+        except Exception:
+            pass
+        if dialog.exec() == QDialog.Accepted:
+            visitor = dialog.get_visitor()
+            if self.visitor_manager.add_visitor(visitor):
+                self.refresh_list()
+                QMessageBox.information(self, "✅ Éxito", f"👤 Visitante registrado en {sector}")
+            else:
+                QMessageBox.warning(self, "⚠️ Error", "🔍 Ya existe un visitante con ese RUT en el sistema")
+
     def add_visitor(self):
         """Abre el formulario para agregar un nuevo visitante"""
         dialog = VisitorFormDialog(self)
@@ -477,6 +546,18 @@ class VisitorListWidget(QWidget):
                 visitors = [v for v in visitors if v.estado == filter_text]
             else:
                 visitors = [v for v in visitors if v.sector == filter_text]
+
+        # Aplicar búsqueda
+        query = self.search_input.text().strip().lower() if hasattr(self, 'search_input') else ""
+        if query:
+            def match(v):
+                return any([
+                    query in (v.rut or '').lower(),
+                    query in (v.nombre_completo or '').lower(),
+                    query in (v.acompañante or '').lower(),
+                    query in (v.sector or '').lower(),
+                ])
+            visitors = [v for v in visitors if match(v)]
         
         # Ordenar por fecha de ingreso (más recientes primero)
         visitors.sort(key=lambda x: x.fecha_ingreso, reverse=True)
@@ -513,6 +594,9 @@ class VisitorListWidget(QWidget):
             fecha_str = fecha_formatted.strftime("%d/%m/%Y %H:%M")
             self.visitor_table.setItem(row, 6, QTableWidgetItem(fecha_str))
         
+        # Mostrar/ocultar estado vacío
+        self.empty_state.setVisible(len(visitors) == 0)
+
         # Actualizar estadísticas
         self.update_stats(visitors)
     

@@ -51,7 +51,7 @@ class ChartWidget(QWidget):
         super().__init__(parent)
         try:
             # Configuración optimizada para PySide6 y layout horizontal con scroll
-            self.figure = Figure(figsize=(8, 6), dpi=100)
+            self.figure = Figure(figsize=(8, 6), dpi=110)
             self.canvas = FigureCanvas(self.figure)
             
             # Layout simple
@@ -65,6 +65,21 @@ class ChartWidget(QWidget):
         except Exception as e:
             print(f"Error al inicializar ChartWidget: {e}")
     
+    def _style_axes(self, ax, facecolor="#ffffff"):
+        """Aplica un estilo limpio y legible a los ejes del gráfico."""
+        try:
+            ax.set_facecolor(facecolor)
+            # Limpiar spines y ticks
+            ax.spines['top'].set_visible(False)
+            ax.spines['right'].set_visible(False)
+            ax.spines['left'].set_color('#cccccc')
+            ax.spines['bottom'].set_color('#cccccc')
+            ax.tick_params(colors='#495057', labelsize=9)
+            # Grid sutil en eje Y
+            ax.grid(True, alpha=0.25, color='#d9d9d9', linestyle='--', linewidth=0.7, axis='y')
+        except Exception:
+            pass
+    
     def clear(self):
         """Limpia el gráfico"""
         self.figure.clear()
@@ -74,6 +89,7 @@ class ChartWidget(QWidget):
         try:
             self.clear()
             ax = self.figure.add_subplot(111)
+            self._style_axes(ax)
             
             if not data:
                 ax.text(0.5, 0.5, 'Sin datos disponibles', ha='center', va='center', 
@@ -84,20 +100,24 @@ class ChartWidget(QWidget):
             dates = list(data.keys())
             counts = list(data.values())
             
-            # Gráfico de barras con colores
-            bars = ax.bar(range(len(dates)), counts, color=DUOC_PRIMARY, alpha=0.8, edgecolor=duoc_darken(DUOC_PRIMARY, 0.3))
+            # Gráfico de barras con colores (variación suave según valor)
+            max_count = max(counts) if counts else 1
+            colors = [duoc_lighten(DUOC_PRIMARY, min(0.35, 0.1 + (c / max_count) * 0.25)) for c in counts]
+            bars = ax.bar(range(len(dates)), counts, color=colors, alpha=0.95, edgecolor='white', linewidth=0.8)
             
             # Agregar valores en las barras
             for i, count in enumerate(counts):
                 if count > 0:
-                    ax.text(i, count + 0.1, str(count), ha='center', va='bottom', fontweight='bold')
+                    ax.text(
+                        i, count + 0.1, str(count), ha='center', va='bottom', fontweight='bold', fontsize=9,
+                        color='#2c3e50', bbox=dict(boxstyle='round,pad=0.2', facecolor='#f8f9fa', edgecolor='none', alpha=0.9)
+                    )
             
-            ax.set_title('Visitantes por Día (Últimos 7 días)', fontsize=12, fontweight='bold', pad=15)
+            ax.set_title('Visitantes por Día (Últimos 7 días)', fontsize=12, fontweight='bold', pad=15, color='#2c3e50')
             ax.set_ylabel('Número de Visitantes', fontsize=10)
             ax.set_xlabel('Fecha', fontsize=10)
             ax.set_xticks(range(len(dates)))
             ax.set_xticklabels([d.strftime('%d/%m') for d in dates], rotation=45, fontsize=9)
-            ax.grid(True, alpha=0.3, axis='y')
             
             self.figure.tight_layout()
             self.canvas.draw()
@@ -114,21 +134,19 @@ class ChartWidget(QWidget):
             categories = ['Visitantes Actuales', 'Visitantes que se Fueron']
             values = [current, departed]
             colors = [DUOC_SECONDARY, '#dc3545']
-            
-            bars = ax.bar(categories, values, color=colors, alpha=0.8, edgecolor='black', linewidth=1)
-            
-            # Agregar valores en las barras
+
+            bars = ax.bar(categories, values, color=colors)
+
+            # Etiquetas de valores simples sobre cada barra
             for bar, value in zip(bars, values):
                 height = bar.get_height()
-                ax.text(bar.get_x() + bar.get_width()/2., height + 0.1,
-                       f'{value}', ha='center', va='bottom', fontweight='bold', fontsize=11)
-            
-            ax.set_title('Estado de Visitantes', fontsize=12, fontweight='bold', pad=15)
+                ax.text(bar.get_x() + bar.get_width()/2., height, str(value),
+                        ha='center', va='bottom', fontweight='bold')
+
+            ax.set_title('Estado de Visitantes', fontsize=12, fontweight='bold', pad=12)
             ax.set_ylabel('Número de Visitantes', fontsize=10)
-            ax.grid(True, alpha=0.3, axis='y')
-            
-            # Rotar etiquetas del eje x
-            plt.setp(ax.get_xticklabels(), rotation=45, ha='right')
+            ax.set_ylim(0, max(1, max(values)) * 1.2)
+            plt.setp(ax.get_xticklabels(), rotation=0, ha='center')
             
             self.figure.tight_layout()
             self.canvas.draw()
@@ -141,6 +159,7 @@ class ChartWidget(QWidget):
         try:
             self.clear()
             ax = self.figure.add_subplot(111)
+            self._style_axes(ax)
             
             if not destinations:
                 ax.text(0.5, 0.5, 'Sin datos de destinos', ha='center', va='center', 
@@ -155,19 +174,21 @@ class ChartWidget(QWidget):
             
             # Gráfico de barras horizontales
             y_pos = np.arange(len(labels))
-            bars = ax.barh(y_pos, values, color=DUOC_PRIMARY, alpha=0.8, edgecolor='black', linewidth=1)
+            bars = ax.barh(y_pos, values, color=duoc_lighten(DUOC_PRIMARY, 0.2), alpha=0.95, edgecolor='white', linewidth=1)
             
             # Agregar valores en las barras
             for i, (bar, value) in enumerate(zip(bars, values)):
                 width = bar.get_width()
-                ax.text(width + 0.1, bar.get_y() + bar.get_height()/2.,
-                       f'{value}', ha='left', va='center', fontweight='bold', fontsize=10)
+                ax.text(
+                    width + 0.2, bar.get_y() + bar.get_height()/2.,
+                    f'{value}', ha='left', va='center', fontweight='bold', fontsize=9,
+                    color='#2c3e50', bbox=dict(boxstyle='round,pad=0.2', facecolor='#f8f9fa', edgecolor='none', alpha=0.9)
+                )
             
             ax.set_yticks(y_pos)
             ax.set_yticklabels(labels, fontsize=10)
             ax.set_xlabel('Número de Visitas', fontsize=10)
-            ax.set_title('Destinos Más Frecuentes', fontsize=12, fontweight='bold', pad=15)
-            ax.grid(True, alpha=0.3, axis='x')
+            ax.set_title('Destinos Más Frecuentes', fontsize=12, fontweight='bold', pad=15, color='#2c3e50')
             
             self.figure.tight_layout()
             self.canvas.draw()
@@ -182,6 +203,7 @@ class ReportesView(QWidget):
         super().__init__(parent)
         self.visitor_manager = VisitorManager()
         self.excel_exporter = ExcelExporter()
+        self.range_days = 7  # Rango inicial para el gráfico de visitantes por día
         self.setup_ui()
         
         # Timer para actualizar automáticamente cada 10 segundos
@@ -332,19 +354,35 @@ class ReportesView(QWidget):
         content_layout.setSpacing(self.screen_config['content_spacing'])
         
         # Sección de Gráficos - Layout Horizontal
+        # Encabezado de gráficos con selector de rango
+        charts_header = QHBoxLayout()
         charts_title = QLabel("📊 Análisis Visual de Visitantes")
         charts_title.setFont(QFont("Arial", 18, QFont.Bold))
-        charts_title.setAlignment(Qt.AlignCenter)
+        charts_title.setAlignment(Qt.AlignLeft)
         charts_title.setStyleSheet("""
             QLabel {
                 color: #2c3e50;
-                padding: 15px;
+                padding: 12px 16px;
                 background-color: #ecf0f1;
                 border-radius: 10px;
                 margin: 10px 0px;
             }
         """)
-        content_layout.addWidget(charts_title)
+        charts_header.addWidget(charts_title)
+        charts_header.addStretch()
+        range_label = QLabel("Rango:")
+        range_label.setFont(QFont("Arial", 11, QFont.Bold))
+        charts_header.addWidget(range_label)
+        self.range_combo = QComboBox()
+        self.range_combo.addItems(["7 días", "14 días", "30 días"])
+        self.range_combo.setCurrentIndex(0)
+        self.range_combo.setStyleSheet("""
+            QComboBox { padding: 6px 10px; border: 1px solid #dee2e6; border-radius: 6px; }
+            QComboBox:focus { border-color: #003A70; }
+        """)
+        self.range_combo.currentTextChanged.connect(self.on_range_changed)
+        charts_header.addWidget(self.range_combo)
+        content_layout.addLayout(charts_header)
         
         # Contenedor principal para los gráficos en layout horizontal
         charts_container = QWidget()
@@ -354,9 +392,17 @@ class ReportesView(QWidget):
         charts_main_layout.setContentsMargins(5, 5, 5, 5)
         
         # Gráfico 1: Visitantes por Día
-        chart1_container = QWidget()
+        chart1_container = QFrame()
         chart1_layout = QVBoxLayout(chart1_container)
         chart1_layout.setSpacing(5)
+        chart1_container.setStyleSheet("""
+            QFrame {
+                background: #ffffff;
+                border: 1px solid #e9ecef;
+                border-radius: 10px;
+                padding: 8px;
+            }
+        """)
         
         chart1_title = QLabel("👥 Visitantes por Día")
         chart1_title.setFont(QFont("Arial", 14, QFont.Bold))
@@ -373,14 +419,24 @@ class ReportesView(QWidget):
         chart1_layout.addWidget(chart1_title)
         
         self.chart1 = ChartWidget()
+        # Hacer el gráfico flexible dentro de su card
+        self.chart1.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
         chart1_layout.addWidget(self.chart1)
         
         charts_main_layout.addWidget(chart1_container)
         
         # Gráfico 2: Estado de Visitantes
-        chart2_container = QWidget()
+        chart2_container = QFrame()
         chart2_layout = QVBoxLayout(chart2_container)
         chart2_layout.setSpacing(5)
+        chart2_container.setStyleSheet("""
+            QFrame {
+                background: #ffffff;
+                border: 1px solid #e9ecef;
+                border-radius: 10px;
+                padding: 8px;
+            }
+        """)
         
         chart2_title = QLabel("👤 Estado de Visitantes")
         chart2_title.setFont(QFont("Arial", 14, QFont.Bold))
@@ -397,14 +453,23 @@ class ReportesView(QWidget):
         chart2_layout.addWidget(chart2_title)
         
         self.chart2 = ChartWidget()
+        self.chart2.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
         chart2_layout.addWidget(self.chart2)
         
         charts_main_layout.addWidget(chart2_container)
         
         # Gráfico 3: Destinos Más Frecuentes
-        chart3_container = QWidget()
+        chart3_container = QFrame()
         chart3_layout = QVBoxLayout(chart3_container)
         chart3_layout.setSpacing(5)
+        chart3_container.setStyleSheet("""
+            QFrame {
+                background: #ffffff;
+                border: 1px solid #e9ecef;
+                border-radius: 10px;
+                padding: 8px;
+            }
+        """)
         
         chart3_title = QLabel("🏢 Destinos Más Frecuentes")
         chart3_title.setFont(QFont("Arial", 14, QFont.Bold))
@@ -421,14 +486,43 @@ class ReportesView(QWidget):
         chart3_layout.addWidget(chart3_title)
         
         self.chart3 = ChartWidget()
+        self.chart3.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
         chart3_layout.addWidget(self.chart3)
         
         charts_main_layout.addWidget(chart3_container)
+
+        # Ajustar proporciones más equilibradas (2:1:1) y misma altura mínima
+        charts_main_layout.setStretch(0, 2)
+        charts_main_layout.setStretch(1, 1)
+        charts_main_layout.setStretch(2, 1)
+        min_height = 360 if self.screen_config['value_font_size'] >= 24 else 320
+        chart1_container.setMinimumHeight(min_height)
+        chart2_container.setMinimumHeight(min_height)
+        chart3_container.setMinimumHeight(min_height)
         
         # Agregar el contenedor de gráficos al layout principal
         content_layout.addWidget(charts_container)
         
         
+        # Tarjetas de métricas resumidas
+        metrics_container = QWidget()
+        metrics_layout = QHBoxLayout(metrics_container)
+        metrics_layout.setSpacing(12)
+        metrics_layout.setContentsMargins(0, 0, 0, 0)
+        self.metric_cards = {}
+        # Placeholders; se actualizan en update_statistics
+        cards_spec = [
+            ("👥 Visitantes Hoy", "0", DUOC_SECONDARY, "Ingresos del día"),
+            ("🏢 Zonas Activas", "0", DUOC_PRIMARY, "Zonas con visitantes"),
+            ("📈 Total Visitas", "0", "#6f42c1", "Acumulado de registros"),
+            ("⏱️ Promedio Estancia", "N/A", "#20c997", "Tiempo promedio")
+        ]
+        for title, value, color, desc in cards_spec:
+            card = self.create_stat_card(title, value, color, desc)
+            self.metric_cards[title] = card
+            metrics_layout.addWidget(card)
+        content_layout.addWidget(metrics_container)
+
         # Reporte de Visitantes
         current_visitors_title = QLabel("👥 Reporte de Visitantes")
         current_visitors_title.setFont(QFont("Arial", 18, QFont.Bold))
@@ -531,8 +625,9 @@ class ReportesView(QWidget):
         self.visitors_table.horizontalHeader().setSectionResizeMode(QHeaderView.Stretch)
         self.visitors_table.setAlternatingRowColors(True)
         self.visitors_table.setSelectionBehavior(QTableWidget.SelectRows)
-        # Ocultar barra de desplazamiento vertical en la tabla
-        self.visitors_table.setVerticalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
+        # Scrollbars según necesidad
+        self.visitors_table.setVerticalScrollBarPolicy(Qt.ScrollBarAsNeeded)
+        self.visitors_table.setHorizontalScrollBarPolicy(Qt.ScrollBarAsNeeded)
         
         # Configurar proporciones de columnas para que se ajusten al espacio disponible
         # Las columnas se distribuirán proporcionalmente según estos valores
@@ -629,6 +724,13 @@ class ReportesView(QWidget):
         # Configurar la tabla para que use todo el espacio disponible
         self.visitors_table.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
         content_layout.addWidget(self.visitors_table, 1)  # El 1 hace que tome todo el espacio disponible
+
+        # Estado vacío
+        self.empty_state = QLabel("\nNo hay datos para mostrar con el filtro seleccionado.\n")
+        self.empty_state.setAlignment(Qt.AlignCenter)
+        self.empty_state.setStyleSheet("color: #6c757d; border: 1px dashed #dee2e6; border-radius: 10px; padding: 16px;")
+        self.empty_state.setVisible(False)
+        content_layout.addWidget(self.empty_state)
         
         # Información del reporte
         self.info_label = QLabel()
@@ -892,6 +994,11 @@ class ReportesView(QWidget):
             
             # Las esquinas inferiores se manejan con CSS
             
+            # Alternar estado vacío
+            no_rows = len(visitors_data) == 0
+            self.empty_state.setVisible(no_rows)
+            self.visitors_table.setVisible(not no_rows)
+
             # Actualizar información del reporte
             self.update_report_info(visitors_data)
             
@@ -928,6 +1035,24 @@ class ReportesView(QWidget):
             
             # Actualizar los gráficos
             self.update_charts(all_visitors)
+
+            # Actualizar tarjetas de métricas
+            stats = self.calculate_statistics(all_visitors)
+            cards_map = {
+                "👥 Visitantes Hoy": stats.get('visitors_today', '0'),
+                "🏢 Zonas Activas": stats.get('active_zones', '0'),
+                "📈 Total Visitas": stats.get('total_visits', '0'),
+                "⏱️ Promedio Estancia": stats.get('avg_visit_time', 'N/A'),
+            }
+            for title, value in cards_map.items():
+                card = self.metric_cards.get(title)
+                if card:
+                    # actualizar el primer label (valor) dentro del card
+                    layout = card.layout()
+                    if layout and layout.count() > 0:
+                        w = layout.itemAt(0).widget()
+                        if isinstance(w, QLabel):
+                            w.setText(str(value))
             
             print("Debug: Gráficos actualizados en la interfaz")
             
@@ -945,7 +1070,10 @@ class ReportesView(QWidget):
             popular_destinations = self.calculate_popular_destinations(visitors)
             
             # Actualizar los gráficos
-            self.chart1.plot_visitors_by_day(visitors_by_day)
+            items = list(visitors_by_day.items())
+            limit = max(1, min(self.range_days, len(items)))
+            limited_visitors_by_day = dict(items[-limit:])
+            self.chart1.plot_visitors_by_day(limited_visitors_by_day)
             self.chart2.plot_visitors_status(current_visitors, departed_visitors)
             self.chart3.plot_popular_destinations(popular_destinations)
             
@@ -955,6 +1083,20 @@ class ReportesView(QWidget):
             print(f"Error al actualizar gráficos: {e}")
             import traceback
             traceback.print_exc()
+
+    def on_range_changed(self, text: str):
+        """Cambia el rango del gráfico 1 sin alterar la lógica de datos."""
+        try:
+            if text.startswith("7"):
+                self.range_days = 7
+            elif text.startswith("14"):
+                self.range_days = 14
+            else:
+                self.range_days = 30
+        except Exception:
+            self.range_days = 7
+        # Redibujar con el nuevo rango
+        self.update_statistics()
     
     def calculate_visitors_by_day(self, visitors):
         """Calcula visitantes por día para el gráfico"""

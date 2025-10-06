@@ -1,4 +1,4 @@
-from PySide6.QtWidgets import QWidget, QVBoxLayout, QHBoxLayout, QLabel, QPushButton, QFrame, QGridLayout, QMessageBox, QScrollArea
+from PySide6.QtWidgets import QWidget, QVBoxLayout, QHBoxLayout, QLabel, QPushButton, QFrame, QGridLayout, QMessageBox, QScrollArea, QLineEdit, QComboBox, QProgressBar
 from PySide6.QtCore import Qt, QTimer
 from PySide6.QtGui import QFont, QPixmap, QGuiApplication
 import sys
@@ -9,12 +9,13 @@ from visitor_model import VisitorManager
 # Colores institucionales de DuocUC
 DUOC_PRIMARY = "#003A70"      # Azul institucional
 DUOC_SECONDARY = "#FFB800"    # Amarillo institucional
-DUOC_ACCENT = "#307FE2"       # blanco institucional
+DUOC_ACCENT = "#307FE2"       # Azul acento
 DUOC_NEUTRAL = "#6C757D"      # Gris neutro
 DUOC_LIGHT = "#F8F9FA"        # Gris claro
 DUOC_DARK = "#212529"         # Gris oscuro
-DUOC_SUCCESS = "#28a745"      # Verde para pocos visitantes
+DUOC_SUCCESS = "#28a745"      # Verde para capacidad baja
 DUOC_WARNING = "#ffc107"      # Amarillo para advertencia
+DUOC_DANGER = "#dc3545"       # Rojo para capacidad alta
 
 class ZonasView(QWidget):
     """Vista para la gestión de zonas"""
@@ -110,6 +111,23 @@ class ZonasView(QWidget):
         header_layout.addWidget(logo_label)
         
         main_layout.addLayout(header_layout)
+
+        # Barra de búsqueda y filtro
+        controls_layout = QHBoxLayout()
+        self.search_input = QLineEdit()
+        self.search_input.setPlaceholderText("Buscar zona por nombre o descripción…")
+        self.search_input.setClearButtonEnabled(True)
+        self.search_input.setMaximumWidth(350)
+        controls_layout.addWidget(self.search_input)
+
+        controls_layout.addStretch()
+
+        self.zone_filter = QComboBox()
+        self.zone_filter.addItems(["Todas", "Financiamiento", "CITT", "Auditorio", "Administración"])
+        controls_layout.addWidget(QLabel("Filtro:"))
+        controls_layout.addWidget(self.zone_filter)
+
+        main_layout.addLayout(controls_layout)
         
         # Contenido principal
         content_frame = QFrame()
@@ -148,35 +166,37 @@ class ZonasView(QWidget):
         # Grid de zonas
         zones_grid = QGridLayout()
         zones_grid.setSpacing(20)
+        self.zones_grid = zones_grid
+        self.zone_cards = {}
         
         # Zona Financiamiento
         fin_zone = self.create_zone_card("💰 Financiamiento", DUOC_SECONDARY, "Gestión de servicios financieros y becas", "Financiamiento")
         zones_grid.addWidget(fin_zone, 0, 0)
+        self.zone_cards["Financiamiento"] = fin_zone
         
         # Zona CITT
         citt_zone = self.create_zone_card("🎓 CITT", DUOC_PRIMARY, "Centro de Innovación y Transferencia Tecnológica", "CITT")
         zones_grid.addWidget(citt_zone, 0, 1)
+        self.zone_cards["CITT"] = citt_zone
         
         # Zona Auditorio
         aud_zone = self.create_zone_card("🎭 Auditorio", DUOC_ACCENT, "Espacios para eventos y presentaciones", "Auditorio")
         zones_grid.addWidget(aud_zone, 1, 0)
+        self.zone_cards["Auditorio"] = aud_zone
         
         # Zona Administración
         admin_zone = self.create_zone_card("👥 Administración", DUOC_NEUTRAL, "Oficinas administrativas y atención al público", "Administración")
         zones_grid.addWidget(admin_zone, 1, 1)
+        self.zone_cards["Administración"] = admin_zone
         
         content_layout.addLayout(zones_grid)
         
-        # Mensaje de desarrollo
-        dev_label = QLabel("""
-        <div style="text-align: center; padding: 30px; background-color: #fff3cd; border-radius: 15px; border: 3px solid #ffc107;">
-        <h3 style="color: #856404; margin: 0 0 15px 0; font-family: 'Segoe UI', sans-serif; font-size: 18px; font-weight: bold;">🚧 Módulo en Desarrollo</h3>
-        <p style="color: #856404; margin: 0; font-family: 'Segoe UI', sans-serif; font-size: 16px;">
-        La gestión avanzada de zonas estará disponible próximamente.
-        </p>
-        </div>
-        """)
-        content_layout.addWidget(dev_label)
+        # Estado vacío (si filtros ocultan todo)
+        self.empty_state = QLabel("\nNo hay zonas que coincidan con tu búsqueda/filtro.\n")
+        self.empty_state.setAlignment(Qt.AlignCenter)
+        self.empty_state.setStyleSheet("color: #6c757d; border: 1px dashed #dee2e6; border-radius: 12px; padding: 18px;")
+        self.empty_state.setVisible(False)
+        content_layout.addWidget(self.empty_state)
         
         main_layout.addWidget(content_frame)
         main_layout.addStretch()
@@ -224,6 +244,10 @@ class ZonasView(QWidget):
         layout = QVBoxLayout(self)
         layout.setContentsMargins(0, 0, 0, 0)
         layout.addWidget(scroll_area)
+
+        # Conexiones de controles
+        self.search_input.textChanged.connect(self.filter_zones)
+        self.zone_filter.currentTextChanged.connect(self.filter_zones)
     
     def go_to_main(self):
         """Regresa al menú principal"""
@@ -298,6 +322,28 @@ class ZonasView(QWidget):
         """)
         count_label.setObjectName(f"count_{zone_name}")
         layout.addWidget(count_label)
+
+        # Barra de progreso de capacidad (0-20)
+        progress = QProgressBar()
+        progress.setRange(0, 20)
+        progress.setValue(0)
+        progress.setFormat("%v / %m")
+        progress.setAlignment(Qt.AlignCenter)
+        progress.setObjectName(f"progress_{zone_name}")
+        progress.setStyleSheet("""
+            QProgressBar {
+                background-color: #f1f3f5;
+                border: 1px solid #dee2e6;
+                border-radius: 8px;
+                padding: 2px;
+                color: #343a40;
+            }
+            QProgressBar::chunk {
+                background-color: %s;
+                border-radius: 6px;
+            }
+        """ % color)
+        layout.addWidget(progress)
         
         # Descripción
         desc_label = QLabel(description)
@@ -308,10 +354,29 @@ class ZonasView(QWidget):
         desc_label.setStyleSheet(f"color: {DUOC_NEUTRAL}; padding: 6px; margin: 4px;")
         layout.addWidget(desc_label)
         
-        # Botón
-        manage_btn = QPushButton("🔧 Gestionar")
-        manage_btn.setFixedHeight(btn_height)
-        manage_btn.setStyleSheet(f"""
+        # Botones de acción rápida
+        actions = QHBoxLayout()
+        view_btn = QPushButton("👥 Ver visitantes")
+        view_btn.setFixedHeight(btn_height)
+        view_btn.setStyleSheet(f"""
+            QPushButton {{
+                background-color: {self.darken_color(color, 0.15)};
+                color: white;
+                border: none;
+                border-radius: 8px;
+                font-weight: bold;
+                font-size: {desc_font_size}px;
+                padding: 6px 10px;
+            }}
+            QPushButton:hover {{
+                background-color: {self.darken_color(color)};
+            }}
+        """)
+        view_btn.clicked.connect(lambda: self.go_to_visitors_with_filter(zone_name))
+
+        add_btn = QPushButton("➕ Registrar")
+        add_btn.setFixedHeight(btn_height)
+        add_btn.setStyleSheet(f"""
             QPushButton {{
                 background-color: {color};
                 color: white;
@@ -319,17 +384,17 @@ class ZonasView(QWidget):
                 border-radius: 8px;
                 font-weight: bold;
                 font-size: {desc_font_size}px;
-                margin: 4px;
+                padding: 6px 10px;
             }}
             QPushButton:hover {{
                 background-color: {self.darken_color(color)};
             }}
-            QPushButton:pressed {{
-                background-color: {self.darken_color(color, 0.3)};
-            }}
         """)
-        manage_btn.clicked.connect(lambda: self.manage_zone(zone_name))
-        layout.addWidget(manage_btn)
+        add_btn.clicked.connect(lambda: self.open_new_visitor_in_zone(zone_name))
+
+        actions.addWidget(view_btn)
+        actions.addWidget(add_btn)
+        layout.addLayout(actions)
         
         return card
     
@@ -360,19 +425,20 @@ class ZonasView(QWidget):
         
         for zone in zones:
             count_label = self.findChild(QLabel, f"count_{zone}")
+            progress = self.findChild(QProgressBar, f"progress_{zone}")
             if count_label:
                 current_visitors = self.visitor_manager.get_visitors_by_sector(zone)
                 current_count = len([v for v in current_visitors if v.estado == "Dentro"])
                 count_label.setText(f"👥 {current_count} visitantes actuales")
                 
                 # Estilo según número de visitantes 🚦
-                if current_count >= 20:  # Rojo
+                if current_count >= 20:  # Alto
                     count_label.setStyleSheet(f"""
                         color: white;
-                        background-color: {DUOC_ACCENT};
+                        background-color: {DUOC_DANGER};
                         border-radius: 12px; 
                         padding: 6px 12px;
-                        border: 2px solid {self.darken_color(DUOC_ACCENT)};
+                        border: 2px solid {self.darken_color(DUOC_DANGER)};
                         font-weight: bold;
                         margin: 5px;
                     """)
@@ -396,6 +462,58 @@ class ZonasView(QWidget):
                         font-weight: bold;
                         margin: 5px;
                     """)
+
+            if progress:
+                current_visitors = self.visitor_manager.get_visitors_by_sector(zone)
+                current_count = len([v for v in current_visitors if v.estado == "Dentro"])
+                progress.setValue(min(current_count, 20))
+                # Cambiar color del chunk según umbrales
+                if current_count >= 20:
+                    chunk_color = DUOC_DANGER
+                elif current_count >= 10:
+                    chunk_color = DUOC_WARNING
+                else:
+                    chunk_color = DUOC_SUCCESS
+                progress.setStyleSheet("""
+                    QProgressBar {
+                        background-color: #f1f3f5;
+                        border: 1px solid #dee2e6;
+                        border-radius: 8px;
+                        padding: 2px;
+                        color: #343a40;
+                    }
+                    QProgressBar::chunk {
+                        background-color: %s;
+                        border-radius: 6px;
+                    }
+                """ % chunk_color)
+
+        # Actualizar visibilidad por filtros/búsqueda (en caso de cambios en tiempo real)
+        self.filter_zones()
+
+    def filter_zones(self):
+        query = self.search_input.text().strip().lower()
+        selected = self.zone_filter.currentText()
+        any_visible = False
+        for zone_name, card in self.zone_cards.items():
+            match_filter = (selected == "Todas") or (zone_name == selected)
+            # Buscar en título y descripción dentro del card
+            # Usamos objectName para localizar labels hijos si fuese necesario
+            title_text = ""  # fallback
+            desc_text = ""
+            for child in card.findChildren(QLabel):
+                if child.text() and (" ") in child.text():
+                    # Heurística simple: el primero suele ser el título con emoji
+                    if not title_text:
+                        title_text = child.text()
+                    else:
+                        desc_text = child.text()
+                        break
+            match_query = (query == "") or (query in title_text.lower()) or (query in desc_text.lower())
+            visible = match_filter and match_query
+            card.setVisible(visible)
+            any_visible = any_visible or visible
+        self.empty_state.setVisible(not any_visible)
     
     def manage_zone(self, zone_name):
         current_visitors = self.visitor_manager.get_visitors_by_sector(zone_name)
@@ -421,3 +539,34 @@ class ZonasView(QWidget):
             f"Cupo máximo: 20\n\n"
             f"Funcionalidad de gestión en desarrollo..."
         )
+
+    def go_to_visitors_with_filter(self, sector: str):
+        # Navega a la vista de visitantes y aplica filtro por sector
+        parent = self.parent()
+        while parent is not None:
+            if hasattr(parent, 'navigation_manager'):
+                parent.navigation_manager.navigate_to("visitantes")
+                # Obtener el widget de visitantes para aplicar el filtro
+                try:
+                    visitors_widget = parent.navigation_manager.views.get("visitantes")
+                    if hasattr(visitors_widget, 'set_zone_filter'):
+                        visitors_widget.set_zone_filter(sector)
+                except Exception:
+                    pass
+                return
+            parent = parent.parent()
+
+    def open_new_visitor_in_zone(self, sector: str):
+        # Abre el formulario de nuevo visitante con sector preseleccionado
+        parent = self.parent()
+        while parent is not None:
+            if hasattr(parent, 'navigation_manager'):
+                parent.navigation_manager.navigate_to("visitantes")
+                try:
+                    visitors_widget = parent.navigation_manager.views.get("visitantes")
+                    if hasattr(visitors_widget, 'open_new_with_sector'):
+                        visitors_widget.open_new_with_sector(sector)
+                except Exception:
+                    pass
+                return
+            parent = parent.parent()
