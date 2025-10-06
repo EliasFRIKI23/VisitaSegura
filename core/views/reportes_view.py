@@ -74,7 +74,7 @@ class ChartWidget(QWidget):
             ax.spines['right'].set_visible(False)
             ax.spines['left'].set_color('#cccccc')
             ax.spines['bottom'].set_color('#cccccc')
-            ax.tick_params(colors='#495057', labelsize=9)
+            ax.tick_params(colors='#000000', labelsize=9)  # Texto negro
             # Grid sutil en eje Y
             ax.grid(True, alpha=0.25, color='#d9d9d9', linestyle='--', linewidth=0.7, axis='y')
         except Exception:
@@ -113,9 +113,9 @@ class ChartWidget(QWidget):
                         color='#2c3e50', bbox=dict(boxstyle='round,pad=0.2', facecolor='#f8f9fa', edgecolor='none', alpha=0.9)
                     )
             
-            ax.set_title('Visitantes por Día (Últimos 7 días)', fontsize=12, fontweight='bold', pad=15, color='#2c3e50')
-            ax.set_ylabel('Número de Visitantes', fontsize=10)
-            ax.set_xlabel('Fecha', fontsize=10)
+            ax.set_title('Visitantes por Día (Últimos 7 días)', fontsize=12, fontweight='bold', pad=15, color='#000000')
+            ax.set_ylabel('Número de Visitantes', fontsize=10, color='#000000')
+            ax.set_xlabel('Fecha', fontsize=10, color='#000000')
             ax.set_xticks(range(len(dates)))
             ax.set_xticklabels([d.strftime('%d/%m') for d in dates], rotation=45, fontsize=9)
             
@@ -143,8 +143,8 @@ class ChartWidget(QWidget):
                 ax.text(bar.get_x() + bar.get_width()/2., height, str(value),
                         ha='center', va='bottom', fontweight='bold')
 
-            ax.set_title('Estado de Visitantes', fontsize=12, fontweight='bold', pad=12)
-            ax.set_ylabel('Número de Visitantes', fontsize=10)
+            ax.set_title('Estado de Visitantes', fontsize=12, fontweight='bold', pad=12, color='#000000')
+            ax.set_ylabel('Número de Visitantes', fontsize=10, color='#000000')
             ax.set_ylim(0, max(1, max(values)) * 1.2)
             plt.setp(ax.get_xticklabels(), rotation=0, ha='center')
             
@@ -187,8 +187,8 @@ class ChartWidget(QWidget):
             
             ax.set_yticks(y_pos)
             ax.set_yticklabels(labels, fontsize=10)
-            ax.set_xlabel('Número de Visitas', fontsize=10)
-            ax.set_title('Destinos Más Frecuentes', fontsize=12, fontweight='bold', pad=15, color='#2c3e50')
+            ax.set_xlabel('Número de Visitas', fontsize=10, color='#000000')
+            ax.set_title('Destinos Más Frecuentes', fontsize=12, fontweight='bold', pad=15, color='#000000')
             
             self.figure.tight_layout()
             self.canvas.draw()
