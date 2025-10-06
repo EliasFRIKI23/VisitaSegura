@@ -230,65 +230,57 @@ class ReportesView(QWidget):
     def _get_screen_config(self):
         """Obtiene la configuración responsiva basada en el tamaño de pantalla"""
         available = QGuiApplication.primaryScreen().availableGeometry()
-        screen_width = available.width()
-        screen_height = available.height()
-        
-        # Calcular factor de escala basado en resolución
-        base_width = 1366
-        base_height = 768
-        scale_factor = min(screen_width / base_width, screen_height / base_height)
-        scale_factor = max(0.8, min(1.5, scale_factor))  # Limitar entre 0.8 y 1.5
-        
-        # Configuración base
-        base_config = {
-            'margin': int(20 * scale_factor),
-            'spacing': int(15 * scale_factor),
-            'content_margin': int(25 * scale_factor),
-            'content_spacing': int(12 * scale_factor),
-            'btn_width': int(150 * scale_factor),
-            'btn_height': int(40 * scale_factor),
-            'btn_font_size': int(14 * scale_factor),
-            'row_height': int(40 * scale_factor),
-            'font_size': int(11 * scale_factor),
-            'value_font_size': int(24 * scale_factor),
-            'title_font_size': int(12 * scale_factor),
-            'desc_font_size': int(9 * scale_factor),
-            'border_radius': int(12 * scale_factor),
-            'padding': int(20 * scale_factor),
-            'chart_height': int(360 * scale_factor),
-            'chart_width_1': int(520 * scale_factor),  # Gráfico principal
-            'chart_width_2': int(460 * scale_factor),   # Gráficos secundarios
-        }
-        
-        # Ajustes específicos por resolución
-        if screen_width >= 2560:  # 4K y superiores
-            base_config.update({
-                'margin': int(40 * scale_factor),
-                'content_margin': int(40 * scale_factor),
-                'btn_font_size': int(18 * scale_factor),
-                'value_font_size': int(32 * scale_factor),
-                'chart_height': int(420 * scale_factor),
-            })
-        elif screen_width >= 1920:  # Full HD
-            base_config.update({
-                'margin': int(30 * scale_factor),
-                'content_margin': int(30 * scale_factor),
-                'btn_font_size': int(16 * scale_factor),
-                'value_font_size': int(28 * scale_factor),
-                'chart_height': int(380 * scale_factor),
-            })
-        elif screen_width >= 1366:  # HD
-            pass  # Usar configuración base
-        else:  # Resoluciones menores
-            base_config.update({
-                'margin': int(15 * scale_factor),
-                'content_margin': int(20 * scale_factor),
-                'btn_font_size': int(12 * scale_factor),
-                'value_font_size': int(20 * scale_factor),
-                'chart_height': int(320 * scale_factor),
-            })
-        
-        return base_config
+        if available.width() >= 1920:
+            return {
+                'margin': 30,
+                'spacing': 25,
+                'content_margin': 30,
+                'content_spacing': 20,
+                'btn_width': 180,
+                'btn_height': 50,
+                'btn_font_size': 16,
+                'row_height': 45,
+                'font_size': 12,
+                'value_font_size': 28,
+                'title_font_size': 14,
+                'desc_font_size': 11,
+                'border_radius': 15,
+                'padding': 25
+            }
+        elif available.width() >= 1366:
+            return {
+                'margin': 20,
+                'spacing': 20,
+                'content_margin': 25,
+                'content_spacing': 15,
+                'btn_width': 150,
+                'btn_height': 40,
+                'btn_font_size': 14,
+                'row_height': 40,
+                'font_size': 11,
+                'value_font_size': 24,
+                'title_font_size': 12,
+                'desc_font_size': 9,
+                'border_radius': 12,
+                'padding': 20
+            }
+        else:
+            return {
+                'margin': 15,
+                'spacing': 15,
+                'content_margin': 20,
+                'content_spacing': 10,
+                'btn_width': 120,
+                'btn_height': 35,
+                'btn_font_size': 12,
+                'row_height': 35,
+                'font_size': 10,
+                'value_font_size': 20,
+                'title_font_size': 10,
+                'desc_font_size': 8,
+                'border_radius': 10,
+                'padding': 15
+            }
     
     def setup_ui(self):
         """Configura la interfaz de usuario"""
@@ -365,33 +357,28 @@ class ReportesView(QWidget):
         # Encabezado de gráficos con selector de rango
         charts_header = QHBoxLayout()
         charts_title = QLabel("📊 Análisis Visual de Visitantes")
-        charts_title.setFont(QFont("Arial", self.screen_config['title_font_size'] + 6, QFont.Bold))
+        charts_title.setFont(QFont("Arial", 18, QFont.Bold))
         charts_title.setAlignment(Qt.AlignLeft)
-        charts_title.setStyleSheet(f"""
-            QLabel {{
+        charts_title.setStyleSheet("""
+            QLabel {
                 color: #2c3e50;
-                padding: {self.screen_config['padding']}px {self.screen_config['padding'] + 4}px;
+                padding: 12px 16px;
                 background-color: #ecf0f1;
-                border-radius: {self.screen_config['border_radius']}px;
+                border-radius: 10px;
                 margin: 10px 0px;
-            }}
+            }
         """)
         charts_header.addWidget(charts_title)
         charts_header.addStretch()
         range_label = QLabel("Rango:")
-        range_label.setFont(QFont("Arial", self.screen_config['font_size'], QFont.Bold))
+        range_label.setFont(QFont("Arial", 11, QFont.Bold))
         charts_header.addWidget(range_label)
         self.range_combo = QComboBox()
         self.range_combo.addItems(["7 días", "14 días", "30 días"])
         self.range_combo.setCurrentIndex(0)
-        self.range_combo.setStyleSheet(f"""
-            QComboBox {{ 
-                padding: {self.screen_config['padding'] // 3}px {self.screen_config['padding'] // 2}px; 
-                border: 1px solid #dee2e6; 
-                border-radius: {self.screen_config['border_radius'] // 2}px; 
-                font-size: {self.screen_config['font_size']}px;
-            }}
-            QComboBox:focus {{ border-color: #003A70; }}
+        self.range_combo.setStyleSheet("""
+            QComboBox { padding: 6px 10px; border: 1px solid #dee2e6; border-radius: 6px; }
+            QComboBox:focus { border-color: #003A70; }
         """)
         self.range_combo.currentTextChanged.connect(self.on_range_changed)
         charts_header.addWidget(self.range_combo)
@@ -401,45 +388,39 @@ class ReportesView(QWidget):
         charts_container = QWidget()
         charts_container.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Preferred)
         charts_main_layout = QHBoxLayout(charts_container)
-        charts_main_layout.setSpacing(self.screen_config['spacing'])
-        charts_main_layout.setContentsMargins(
-            self.screen_config['spacing'] // 3, 
-            self.screen_config['spacing'] // 3, 
-            self.screen_config['spacing'] // 3, 
-            self.screen_config['spacing'] // 3
-        )
+        charts_main_layout.setSpacing(15)
+        charts_main_layout.setContentsMargins(5, 5, 5, 5)
         
         # Gráfico 1: Visitantes por Día
         chart1_container = QFrame()
         chart1_layout = QVBoxLayout(chart1_container)
-        chart1_layout.setSpacing(self.screen_config['spacing'] // 3)
-        chart1_container.setStyleSheet(f"""
-            QFrame {{
+        chart1_layout.setSpacing(5)
+        chart1_container.setStyleSheet("""
+            QFrame {
                 background: #ffffff;
                 border: 1px solid #e9ecef;
-                border-radius: {self.screen_config['border_radius']}px;
-                padding: {self.screen_config['padding'] // 2}px;
-            }}
+                border-radius: 10px;
+                padding: 8px;
+            }
         """)
         
         chart1_title = QLabel("👥 Visitantes por Día")
-        chart1_title.setFont(QFont("Arial", self.screen_config['title_font_size'] + 2, QFont.Bold))
+        chart1_title.setFont(QFont("Arial", 14, QFont.Bold))
         chart1_title.setAlignment(Qt.AlignCenter)
-        chart1_title.setStyleSheet(f"""
-            QLabel {{
+        chart1_title.setStyleSheet("""
+            QLabel {
                 color: #2c3e50;
-                padding: {self.screen_config['padding'] // 2}px;
+                padding: 8px;
                 background-color: #e8f4fd;
-                border-radius: {self.screen_config['border_radius'] // 2}px;
+                border-radius: 6px;
                 margin: 2px;
-            }}
+            }
         """)
         chart1_layout.addWidget(chart1_title)
         
         self.chart1 = ChartWidget()
         # Hacer el gráfico flexible dentro de su card
         self.chart1.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
-        self.chart1.setMinimumHeight(self.screen_config['chart_height'])
         chart1_layout.addWidget(self.chart1)
         
         charts_main_layout.addWidget(chart1_container)
@@ -447,33 +428,32 @@ class ReportesView(QWidget):
         # Gráfico 2: Estado de Visitantes
         chart2_container = QFrame()
         chart2_layout = QVBoxLayout(chart2_container)
-        chart2_layout.setSpacing(self.screen_config['spacing'] // 3)
-        chart2_container.setStyleSheet(f"""
-            QFrame {{
+        chart2_layout.setSpacing(5)
+        chart2_container.setStyleSheet("""
+            QFrame {
                 background: #ffffff;
                 border: 1px solid #e9ecef;
-                border-radius: {self.screen_config['border_radius']}px;
-                padding: {self.screen_config['padding'] // 2}px;
-            }}
+                border-radius: 10px;
+                padding: 8px;
+            }
         """)
         
         chart2_title = QLabel("👤 Estado de Visitantes")
-        chart2_title.setFont(QFont("Arial", self.screen_config['title_font_size'] + 2, QFont.Bold))
+        chart2_title.setFont(QFont("Arial", 14, QFont.Bold))
         chart2_title.setAlignment(Qt.AlignCenter)
-        chart2_title.setStyleSheet(f"""
-            QLabel {{
+        chart2_title.setStyleSheet("""
+            QLabel {
                 color: #2c3e50;
-                padding: {self.screen_config['padding'] // 2}px;
+                padding: 8px;
                 background-color: #e8f5e8;
-                border-radius: {self.screen_config['border_radius'] // 2}px;
+                border-radius: 6px;
                 margin: 2px;
-            }}
+            }
         """)
         chart2_layout.addWidget(chart2_title)
         
         self.chart2 = ChartWidget()
         self.chart2.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
-        self.chart2.setMinimumHeight(self.screen_config['chart_height'] // 2)
         chart2_layout.addWidget(self.chart2)
         
         charts_main_layout.addWidget(chart2_container)
@@ -481,33 +461,32 @@ class ReportesView(QWidget):
         # Gráfico 3: Destinos Más Frecuentes
         chart3_container = QFrame()
         chart3_layout = QVBoxLayout(chart3_container)
-        chart3_layout.setSpacing(self.screen_config['spacing'] // 3)
-        chart3_container.setStyleSheet(f"""
-            QFrame {{
+        chart3_layout.setSpacing(5)
+        chart3_container.setStyleSheet("""
+            QFrame {
                 background: #ffffff;
                 border: 1px solid #e9ecef;
-                border-radius: {self.screen_config['border_radius']}px;
-                padding: {self.screen_config['padding'] // 2}px;
-            }}
+                border-radius: 10px;
+                padding: 8px;
+            }
         """)
         
         chart3_title = QLabel("🏢 Destinos Más Frecuentes")
-        chart3_title.setFont(QFont("Arial", self.screen_config['title_font_size'] + 2, QFont.Bold))
+        chart3_title.setFont(QFont("Arial", 14, QFont.Bold))
         chart3_title.setAlignment(Qt.AlignCenter)
-        chart3_title.setStyleSheet(f"""
-            QLabel {{
+        chart3_title.setStyleSheet("""
+            QLabel {
                 color: #2c3e50;
-                padding: {self.screen_config['padding'] // 2}px;
+                padding: 8px;
                 background-color: #fff3cd;
-                border-radius: {self.screen_config['border_radius'] // 2}px;
+                border-radius: 6px;
                 margin: 2px;
-            }}
+            }
         """)
         chart3_layout.addWidget(chart3_title)
         
         self.chart3 = ChartWidget()
         self.chart3.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
-        self.chart3.setMinimumHeight(self.screen_config['chart_height'] // 2)
         chart3_layout.addWidget(self.chart3)
         
         charts_main_layout.addWidget(chart3_container)
