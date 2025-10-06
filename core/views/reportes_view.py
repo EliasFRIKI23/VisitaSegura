@@ -650,6 +650,7 @@ class ReportesView(QWidget):
                 border-radius: 0px;
                 selection-background-color: {DUOC_PRIMARY};
                 font-family: 'Segoe UI', Arial, sans-serif;
+                color: #000000;
             }}
             QTableWidget::item {{
                 padding: 12px 10px;
@@ -819,6 +820,7 @@ class ReportesView(QWidget):
         title_label.setFont(QFont("Arial", self.screen_config['title_font_size'], QFont.Bold))
         title_label.setAlignment(Qt.AlignCenter)
         layout.addWidget(title_label)
+        title_label.setStyleSheet("color: #000000;")
         
         # Descripción
         desc_label = QLabel(description)
@@ -862,6 +864,7 @@ class ReportesView(QWidget):
         title_label.setFont(QFont("Arial", self.screen_config['title_font_size'], QFont.Bold))
         title_label.setAlignment(Qt.AlignCenter)
         layout.addWidget(title_label)
+        title_label.setStyleSheet("color: #000000;")
         
         # Descripción
         desc_label = QLabel(description)
@@ -898,6 +901,7 @@ class ReportesView(QWidget):
         title_label.setAlignment(Qt.AlignCenter)
         title_label.setStyleSheet(f"color: {color};")
         layout.addWidget(title_label)
+        title_label.setStyleSheet("color: #000000;")
         
         # Descripción
         desc_label = QLabel(description)

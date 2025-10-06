@@ -226,24 +226,30 @@ class VisitorListWidget(QWidget):
         vh.setDefaultSectionSize(36)
 
         self.visitor_table.setStyleSheet("""
-            QTableWidget {
-                background: white;
-                gridline-color: #e9ecef;
-                alternate-background-color: #f8f9fa;
-                selection-background-color: %s;
-                selection-color: white;
-            }
-            QHeaderView::section {
-                background-color: #f1f3f5;
-                color: #343a40;
-                font-weight: bold;
-                border: none;
-                padding: 8px 10px;
-            }
-            QTableWidget::item {
-                padding: 6px;
-            }
-        """ % DUOC_PRIMARY)
+        QTableWidget {
+            background: white;
+            color: black;
+            gridline-color: #e9ecef;
+            alternate-background-color: #f8f9fa;
+            selection-background-color: %s;
+            selection-color: white;
+        }
+        QHeaderView::section {
+            background-color: #f1f3f5;
+            color: #212529;
+            font-weight: bold;
+            border: none;
+            padding: 8px 10px;
+        }
+        QTableWidget::item {
+            color: black;
+            padding: 6px;
+        }
+        QTableWidget::item:hover {
+            color: white;
+        }
+    """ % DUOC_PRIMARY)
+
         
         # Ajustar columnas
         header = self.visitor_table.horizontalHeader()
