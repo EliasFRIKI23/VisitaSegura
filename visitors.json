@@ -58,5 +58,15 @@
     "acompañante": "asdasdasdasd",
     "sector": "CITT",
     "estado": "Fuera"
+  },
+  {
+    "id": "VIS20251013124721586208",
+    "rut": "1831723871",
+    "nombre_completo": "sdsadas",
+    "fecha_ingreso": "2025-10-13 12:47:21",
+    "fecha_salida": null,
+    "acompañante": "sdadadsa",
+    "sector": "Auditorio",
+    "estado": "Dentro"
   }
 ]

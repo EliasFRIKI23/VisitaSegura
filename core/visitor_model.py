@@ -91,8 +91,9 @@ class VisitorManager:
     
     def add_visitor(self, visitor: Visitor) -> bool:
         """Agrega un nuevo visitante"""
-        # Verificar que no exista un RUT duplicado
-        if any(v.rut == visitor.rut for v in self.visitors):
+        # Permitir reingreso si el RUT existente está "Fuera".
+        # Bloquear solo si ya existe un visitante con ese RUT y estado "Dentro".
+        if any((v.rut == visitor.rut and v.estado == "Dentro") for v in self.visitors):
             return False
         
         self.visitors.append(visitor)
