@@ -467,6 +467,16 @@ class VisitorListWidget(QWidget):
         row = item.row()
         visitor_id = self.visitor_table.item(row, 0).text()
         
+        # Prevenir cambios si ya está fuera
+        visitor = self.visitor_manager.get_visitor_by_id(visitor_id)
+        if visitor and visitor.estado == "Fuera":
+            QMessageBox.information(
+                self,
+                "🔒 Cambio no permitido",
+                f"🚫 El visitante <b>{visitor.nombre_completo}</b> ya está <b>Fuera</b> y su estado no puede modificarse."
+            )
+            return
+
         if self.visitor_manager.toggle_visitor_status(visitor_id):
             self.refresh_list()
             

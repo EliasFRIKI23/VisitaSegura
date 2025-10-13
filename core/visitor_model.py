@@ -50,12 +50,15 @@ class Visitor:
     
     def toggle_estado(self):
         """Cambia el estado del visitante entre 'Dentro' y 'Fuera'"""
+        # Si ya está fuera, no permitir volver a "Dentro"
+        if self.estado == "Fuera":
+            return
         if self.estado == "Dentro":
             self.estado = "Fuera"
             self.fecha_salida = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
         else:
-            self.estado = "Dentro"
-            self.fecha_salida = None
+            # Estado desconocido: no hacer nada
+            return
 
 class VisitorManager:
     def __init__(self, data_file: str = "visitors.json"):
@@ -128,7 +131,10 @@ class VisitorManager:
         visitor = self.get_visitor_by_id(visitor_id)
         if not visitor:
             return False
-        
+        # Si el visitante ya está fuera, bloquear cualquier cambio
+        if visitor.estado == "Fuera":
+            return False
+
         visitor.toggle_estado()
         return self.save_visitors()
     
