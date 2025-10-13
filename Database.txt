@@ -1,0 +1,12 @@
+Para poder realizar la conexion a la base de datos se necesita lo siguiente:
+-Instalar dependencia de mongo "pymongo" con pip install.
+-Installar mongo DB y compass.
+-Una vez instalado ir a C: y crear carpeta : data y una sub carpeta dentro de data llamada: db.
+-Luego ejecutar mongod en C:\Program Files\MongoDB\Server\8.2\bin (la ruta es de ejemplo).
+-Abrir compass y establecer conexion con local. (Solo es abrir compass agregar y por defecto esta localhost, solo denle un nombre)
+-Crear base de datos dentro de localhost con las siguientes caracteristicas:
+-Nombre de la BD: "VisitaSegura".
+-Coleciones con los siguientes nombres: "Usuarios","Visitantes".
+-Ejecutar python Main.py en la consola y esperar el siguiente mensaje en la cmd:
+✅ Conectado a MongoDB correctamente
+💡 Conexión con MongoDB verificada correctamente
