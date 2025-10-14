@@ -2,6 +2,7 @@ from datetime import datetime
 from typing import List, Dict, Optional
 import json
 import os
+from database import get_visitantes_collection, connect_db
 
 class Visitor:
     def __init__(self, rut: str, nombre_completo: str, acompañante: str, 
@@ -64,29 +65,93 @@ class VisitorManager:
     def __init__(self, data_file: str = "visitors.json"):
         self.data_file = data_file
         self.visitors: List[Visitor] = []
+        self.collection = None
         self.load_visitors()
     
+    def _get_collection(self):
+        """Obtiene la colección de MongoDB"""
+        if self.collection is None:
+            try:
+                connect_db()
+                self.collection = get_visitantes_collection()
+            except Exception as e:
+                print(f"Error al conectar con MongoDB: {e}")
+                return None
+        return self.collection
+    
     def load_visitors(self):
-        """Carga los visitantes desde el archivo JSON"""
+        """Carga los visitantes desde MongoDB"""
+        try:
+            collection = self._get_collection()
+            if collection is None:
+                print("No se pudo conectar a MongoDB, cargando desde archivo JSON")
+                self._load_from_json()
+                return
+            
+            # Cargar desde MongoDB
+            cursor = collection.find({})
+            self.visitors = []
+            for doc in cursor:
+                # Convertir ObjectId a string si existe
+                if '_id' in doc:
+                    del doc['_id']
+                visitor = Visitor.from_dict(doc)
+                self.visitors.append(visitor)
+            
+            print(f"Cargados {len(self.visitors)} visitantes desde MongoDB")
+            
+        except Exception as e:
+            print(f"Error al cargar desde MongoDB: {e}")
+            print("Intentando cargar desde archivo JSON como respaldo")
+            self._load_from_json()
+    
+    def _load_from_json(self):
+        """Carga visitantes desde archivo JSON como respaldo"""
         if os.path.exists(self.data_file):
             try:
                 with open(self.data_file, 'r', encoding='utf-8') as f:
                     data = json.load(f)
                     self.visitors = [Visitor.from_dict(visitor_data) for visitor_data in data]
+                print(f"Cargados {len(self.visitors)} visitantes desde archivo JSON")
             except (json.JSONDecodeError, KeyError, FileNotFoundError):
                 self.visitors = []
+                print("No se encontraron visitantes en el archivo JSON")
         else:
             self.visitors = []
+            print("No existe archivo JSON de respaldo")
     
     def save_visitors(self):
-        """Guarda los visitantes en el archivo JSON"""
+        """Guarda los visitantes en MongoDB"""
+        try:
+            collection = self._get_collection()
+            if collection is None:
+                print("No se pudo conectar a MongoDB, guardando en archivo JSON")
+                return self._save_to_json()
+            
+            # Limpiar la colección y insertar todos los visitantes
+            collection.delete_many({})
+            if self.visitors:
+                data = [visitor.to_dict() for visitor in self.visitors]
+                collection.insert_many(data)
+            
+            print(f"Guardados {len(self.visitors)} visitantes en MongoDB")
+            return True
+            
+        except Exception as e:
+            print(f"Error al guardar en MongoDB: {e}")
+            print("Guardando en archivo JSON como respaldo")
+            return self._save_to_json()
+    
+    def _save_to_json(self):
+        """Guarda visitantes en archivo JSON como respaldo"""
         data = [visitor.to_dict() for visitor in self.visitors]
         try:
             with open(self.data_file, 'w', encoding='utf-8') as f:
                 json.dump(data, f, indent=2, ensure_ascii=False)
+            print(f"Guardados {len(self.visitors)} visitantes en archivo JSON")
             return True
         except Exception as e:
-            print(f"Error al guardar visitantes: {e}")
+            print(f"Error al guardar visitantes en JSON: {e}")
             return False
     
     def add_visitor(self, visitor: Visitor) -> bool:
