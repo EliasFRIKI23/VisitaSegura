@@ -9,15 +9,17 @@ from PySide6.QtCore import Qt, QSettings
 from PySide6.QtGui import QAction, QPalette, QColor, QGuiApplication, QFont, QPixmap
 
 try:
-    from core.login_window import LoginWindow
+    from core.login_window import LoginDialog
     from core.visitor_list import VisitorListWidget
     from core.views import VisitasView, ZonasView, ReportesView
     from core.navigation_manager import NavigationManager
+    from core.auth_manager import AuthManager
 except ImportError:
-    from login_window import LoginWindow
+    from login_window import LoginDialog
     from visitor_list import VisitorListWidget
     from views import VisitasView, ZonasView, ReportesView
     from navigation_manager import NavigationManager
+    from auth_manager import AuthManager
 
 # Tema institucional Duoc UC
 try:
@@ -48,6 +50,10 @@ class MainWindow(QMainWindow):
         
         # Inicializar el sistema de navegación
         self.navigation_manager = NavigationManager(self)
+        
+        # Inicializar el sistema de autenticación
+        self.auth_manager = AuthManager()
+        
         self.current_view = "main"  # Vista principal por defecto
 
         # === Tamaño inicial responsivo y centrado ===
@@ -205,7 +211,9 @@ class MainWindow(QMainWindow):
         # Botón de login en la parte inferior
         self.btn_open_login = QPushButton("🔐 Administración")
         self.btn_open_login.clicked.connect(self.open_login)
-        self.btn_open_login.setFixedSize(200, 50)
+        self.btn_open_login.setMinimumSize(200, 50)  # Cambié de setFixedSize a setMinimumSize
+        self.btn_open_login.setMaximumHeight(50)    # Mantener altura fija
+        self.btn_open_login.setSizePolicy(QSizePolicy.Preferred, QSizePolicy.Fixed)  # Expandir horizontalmente
         self.btn_open_login.setStyleSheet("""
             QPushButton {
                 background-color: #6c757d;
@@ -214,6 +222,7 @@ class MainWindow(QMainWindow):
                 border-radius: 8px;
                 font-size: 14px;
                 font-weight: bold;
+                padding: 8px 16px;
             }
             QPushButton:hover {
                 background-color: #5a6268;
@@ -298,21 +307,29 @@ class MainWindow(QMainWindow):
 
     def open_visitas(self):
         """Abre la sección de visitas"""
+        if not self.check_authentication():
+            return
         print("Abriendo sección de Visitas")
         self.navigation_manager.navigate_to("visitas")
 
     def open_visitantes(self):
         """Abre la sección de visitantes"""
+        if not self.check_authentication():
+            return
         print("Abriendo sección de Visitantes")
         self.navigation_manager.navigate_to("visitantes")
 
     def open_zonas(self):
         """Abre la sección de zonas"""
+        if not self.check_authentication():
+            return
         print("Abriendo sección de Zonas")
         self.navigation_manager.navigate_to("zonas")
 
     def open_reportes(self):
         """Abre la sección de reportes"""
+        if not self.check_authentication():
+            return
         print("Abriendo sección de Reportes")
         self.navigation_manager.navigate_to("reportes")
     
@@ -342,21 +359,81 @@ class MainWindow(QMainWindow):
         self.dark_mode = dark_mode
         self.apply_theme()
 
+    def check_authentication(self):
+        """Verifica si el usuario está autenticado"""
+        if self.auth_manager.is_logged_in():
+            return True
+        
+        # Si no está autenticado, mostrar ventana de login
+        from PySide6.QtWidgets import QMessageBox
+        reply = QMessageBox.question(
+            self, 
+            "🔐 Autenticación Requerida", 
+            "Debe iniciar sesión para acceder a esta función.\n\n¿Desea iniciar sesión ahora?",
+            QMessageBox.Yes | QMessageBox.No,
+            QMessageBox.Yes
+        )
+        
+        if reply == QMessageBox.Yes:
+            self.open_login()
+            return self.auth_manager.is_logged_in()
+        
+        return False
+
     def open_login(self):
         print("🔍 Intentando abrir ventana de login...")
         try:
-            login = LoginWindow(self.dark_mode)
+            login = LoginDialog(self.dark_mode)
             print("✅ Ventana de login creada correctamente")
             result = login.exec()
             print(f"🔍 Resultado del login: {result}")
             if result:
                 print("✅ Login aceptado")
+                # Actualizar el estado de autenticación
+                self.auth_manager = login.get_auth_manager()
+                self.update_ui_for_authentication()
             else:
                 print("❌ Login cancelado")
         except Exception as e:
             print(f"❌ Error al abrir ventana de login: {e}")
             import traceback
             traceback.print_exc()
+    
+    def update_ui_for_authentication(self):
+        """Actualiza la UI según el estado de autenticación"""
+        if self.auth_manager.is_logged_in():
+            user = self.auth_manager.get_current_user()
+            # Cambiar el texto del botón de administración
+            self.btn_open_login.setText(f"👤 {user['full_name']} (Cerrar Sesión)")
+            self.btn_open_login.clicked.disconnect()
+            self.btn_open_login.clicked.connect(self.logout)
+        else:
+            self.btn_open_login.setText("🔐 Administración")
+            self.btn_open_login.clicked.disconnect()
+            self.btn_open_login.clicked.connect(self.open_login)
+        
+        # Ajustar el tamaño del botón al contenido
+        self.btn_open_login.adjustSize()
+    
+    def logout(self):
+        """Cierra la sesión del usuario"""
+        from PySide6.QtWidgets import QMessageBox
+        reply = QMessageBox.question(
+            self, 
+            "🚪 Cerrar Sesión", 
+            "¿Está seguro de que desea cerrar la sesión?",
+            QMessageBox.Yes | QMessageBox.No,
+            QMessageBox.No
+        )
+        
+        if reply == QMessageBox.Yes:
+            self.auth_manager.logout()
+            self.update_ui_for_authentication()
+            QMessageBox.information(
+                self, 
+                "✅ Sesión Cerrada", 
+                "Ha cerrado sesión correctamente."
+            )
 
     def apply_theme(self):
         """Aplica el tema actual (claro u oscuro)"""

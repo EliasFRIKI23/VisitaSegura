@@ -1,19 +1,26 @@
+# login_window.py
 from PySide6.QtWidgets import (
     QDialog, QVBoxLayout, QHBoxLayout, QLabel, 
-    QLineEdit, QPushButton, QFrame, QWidget, QSpacerItem, QSizePolicy
+    QLineEdit, QPushButton, QFrame, QWidget, QSpacerItem, QSizePolicy, QMessageBox
 )
 from PySide6.QtGui import QAction, QPalette, QColor, QGuiApplication, QFont, QPixmap
-from PySide6.QtCore import Qt
+from PySide6.QtCore import Qt, Signal
+from core.auth_manager import AuthManager
 
-class LoginWindow(QDialog):
-    def __init__(self, dark_mode=False):
-        super().__init__()
+class LoginDialog(QDialog):
+    """Ventana de login con diseño profesional mejorado"""
+    
+    login_successful = Signal()  # Señal emitida cuando el login es exitoso
+    
+    def __init__(self, dark_mode=False, parent=None):
+        super().__init__(parent)
         self.dark_mode = dark_mode
+        self.auth_manager = AuthManager()
         self.setWindowTitle("🔐 Acceso Administrativo - VisitaSegura")
         self.setModal(True)
         
         # Configuración de ventana
-        self.setFixedSize(480, 650)
+        self.setFixedSize(520, 720)  # Aumenté de 480x650 a 520x720
         self.setWindowFlags(Qt.Dialog | Qt.CustomizeWindowHint | Qt.WindowTitleHint | Qt.WindowCloseButtonHint)
         
         # Layout principal
@@ -21,7 +28,10 @@ class LoginWindow(QDialog):
         
         # Aplicar tema
         self.apply_theme()
-
+        
+        # Configurar conexiones
+        self.setup_connections()
+    
     def setup_ui(self):
         """Configura toda la interfaz de usuario"""
         main_layout = QVBoxLayout(self)
@@ -52,6 +62,10 @@ class LoginWindow(QDialog):
         # === BUTTONS SECTION ===
         buttons_container = self.create_buttons_section()
         main_layout.addWidget(buttons_container)
+        
+        # === INFO SECTION ===
+        info_container = self.create_info_section()
+        main_layout.addWidget(info_container)
 
     def create_logo_section(self):
         """Crea la sección del logo"""
@@ -158,11 +172,11 @@ class LoginWindow(QDialog):
         
         layout = QVBoxLayout(container)
         layout.setContentsMargins(30, 30, 30, 30)
-        layout.setSpacing(25)
+        layout.setSpacing(35)  # Aumenté de 25 a 35 para más espacio entre campos
         
-        # Campo Correo Electrónico
-        email_section = self.create_input_section("Correo electrónico:", "Ingrese su correo")
-        layout.addLayout(email_section)
+        # Campo Usuario
+        user_section = self.create_input_section("Usuario:", "Ingrese su nombre de usuario")
+        layout.addLayout(user_section)
         
         # Campo Contraseña
         password_section = self.create_input_section("Contraseña:", "Ingrese su contraseña", is_password=True)
@@ -173,7 +187,7 @@ class LoginWindow(QDialog):
     def create_input_section(self, label_text, placeholder_text, is_password=False):
         """Crea una sección de entrada con etiqueta arriba"""
         layout = QVBoxLayout()
-        layout.setSpacing(8)
+        layout.setSpacing(12)  # Aumenté de 8 a 12 para más espacio entre label y campo
         
         # Etiqueta
         label = QLabel(label_text)
@@ -259,7 +273,6 @@ class LoginWindow(QDialog):
                 background-color: #495057;
             }
         """)
-        self.btn_cancel.clicked.connect(self.reject)
         
         # Botón Ingresar
         self.btn_login = QPushButton("✅ Ingresar")
@@ -282,12 +295,111 @@ class LoginWindow(QDialog):
                 background-color: #1e7e34;
             }
         """)
-        self.btn_login.clicked.connect(self.accept)
         
         layout.addWidget(self.btn_cancel)
         layout.addWidget(self.btn_login)
         
         return container
+    
+    def create_info_section(self):
+        """Crea la sección de información"""
+        container = QFrame()
+        container.setStyleSheet("""
+            QFrame {
+                background-color: transparent;
+                border: none;
+            }
+        """)
+        
+        layout = QVBoxLayout(container)
+        layout.setContentsMargins(0, 10, 0, 0)
+        layout.setSpacing(5)
+        
+        # Información de usuarios por defecto
+        info_label = QLabel("💡 Usuarios por defecto:")
+        info_label.setStyleSheet("""
+            QLabel {
+                color: #6c757d;
+                font-size: 12px;
+                font-weight: bold;
+                background-color: transparent;
+                border: none;
+                margin: 0px;
+                padding: 0px;
+            }
+        """)
+        info_label.setAlignment(Qt.AlignCenter)
+        layout.addWidget(info_label)
+        
+        users_label = QLabel("• admin / admin123\n• guardia1 / guardia123")
+        users_label.setStyleSheet("""
+            QLabel {
+                color: #95a5a6;
+                font-size: 11px;
+                background-color: transparent;
+                border: none;
+                margin: 0px;
+                padding: 0px;
+                line-height: 1.4;
+            }
+        """)
+        users_label.setAlignment(Qt.AlignCenter)
+        layout.addWidget(users_label)
+        
+        return container
+    
+    def setup_connections(self):
+        """Configura las conexiones de señales"""
+        self.btn_login.clicked.connect(self.attempt_login)
+        self.btn_cancel.clicked.connect(self.reject)
+        self.input_pass.returnPressed.connect(self.attempt_login)
+        self.input_user.returnPressed.connect(self.input_pass.setFocus)
+    
+    def attempt_login(self):
+        """Intenta realizar el login"""
+        username = self.input_user.text().strip()
+        password = self.input_pass.text()
+        
+        if not username or not password:
+            QMessageBox.warning(
+                self, 
+                "Campos Requeridos", 
+                "Por favor, complete todos los campos."
+            )
+            return
+        
+        # Deshabilitar botón durante la autenticación
+        self.btn_login.setEnabled(False)
+        self.btn_login.setText("🔄 Verificando...")
+        
+        # Intentar autenticación usando el AuthManager
+        if self.auth_manager.login(username, password):
+            # Login exitoso
+            user = self.auth_manager.get_current_user()
+            QMessageBox.information(
+                self, 
+                "Login Exitoso", 
+                f"Bienvenido, {user['full_name']}!\n\nRol: {user['role'].title()}"
+            )
+            
+            # Emitir señal de éxito
+            self.login_successful.emit()
+            self.accept()
+        else:
+            # Login fallido
+            QMessageBox.critical(
+                self, 
+                "Error de Autenticación", 
+                "Usuario o contraseña incorrectos.\n\nVerifique sus credenciales e intente nuevamente."
+            )
+            
+            # Limpiar campo de contraseña
+            self.input_pass.clear()
+            self.input_pass.setFocus()
+        
+        # Rehabilitar botón
+        self.btn_login.setEnabled(True)
+        self.btn_login.setText("✅ Ingresar")
 
     def apply_theme(self):
         """Aplica el tema actual (claro u oscuro)"""
@@ -386,3 +498,7 @@ class LoginWindow(QDialog):
                 self.input_user.setStyleSheet(input_style)
             if hasattr(self, 'input_pass'):
                 self.input_pass.setStyleSheet(input_style)
+    
+    def get_auth_manager(self) -> AuthManager:
+        """Retorna el gestor de autenticación"""
+        return self.auth_manager

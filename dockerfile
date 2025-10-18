@@ -15,7 +15,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     curl \
     git \
     # Dependencias para PySide6/Qt
-    libgl1-mesa-glx \
+    libgl1-mesa-dri \
     libglib2.0-0 \
     libfontconfig1 \
     libdbus-1-3 \
@@ -29,11 +29,9 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     libxcb-randr0 \
     libxcb-shm0 \
     libxcb-xfixes0 \
-    libxcb-xinerama0 \
     libxcb-xkb1 \
     libxcb-xtest0 \
     libxcb-xv0 \
-    libxcb-xxf86vm0 \
     libxcb1 \
     libxcomposite1 \
     libxcursor1 \
@@ -45,14 +43,11 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     libxrender1 \
     libxss1 \
     libxtst6 \
-    libegl1-mesa \
     libegl1 \
     libopengl0 \
-    libgles2-mesa \
     libgles2 \
     # Dependencias para OpenCV
     libopencv-dev \
-    python3-opencv \
     libgtk-3-0 \
     libavcodec-dev \
     libavformat-dev \
@@ -63,7 +58,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     libjpeg-dev \
     libpng-dev \
     libtiff-dev \
-    libatlas-base-dev \
+    libopenblas-dev \
     gfortran \
     # Dependencias para PyZbar
     libzbar0 \
