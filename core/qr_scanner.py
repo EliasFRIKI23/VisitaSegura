@@ -781,8 +781,27 @@ class QRScannerDialog(QDialog):
             return "visitor"
         except json.JSONDecodeError:
             # Verificar si parece ser un QR de carnet
-            if any(keyword in qr_data.lower() for keyword in ['rut', 'nombre', 'apellido', 'fecha', 'nacimiento']):
+            qr_lower = qr_data.lower()
+            
+            # Detectar URLs del Registro Civil (carnets chilenos)
+            if any(url in qr_lower for url in ['registrocivil.cl', 'sidiv.registrocivil.cl']):
+                print(f"DEBUG: QR detectado como carnet por URL del Registro Civil")
                 return "carnet"
+            
+            # Detectar por palabras clave comunes en carnets
+            carnet_keywords = ['rut', 'run', 'nombre', 'apellido', 'fecha', 'nacimiento', 'cédula', 'identidad']
+            if any(keyword in qr_lower for keyword in carnet_keywords):
+                print(f"DEBUG: QR detectado como carnet por palabras clave")
+                return "carnet"
+            
+            # Detectar RUT en el texto (formato 12345678-9 o 12345678-K)
+            import re
+            rut_pattern = r'\b\d{7,8}[-]?[0-9Kk]\b'
+            if re.search(rut_pattern, qr_data):
+                print(f"DEBUG: QR detectado como carnet por patrón de RUT")
+                return "carnet"
+            
+            print(f"DEBUG: QR detectado como genérico")
             return "generic"
     
     def parse_carnet_data(self, qr_data):
@@ -803,48 +822,78 @@ class QRScannerDialog(QDialog):
             # Método 1: Detectar URL del Registro Civil y extraer RUT
             if 'registrocivil.cl' in clean_text.lower() or 'sidiv.registrocivil.cl' in clean_text.lower():
                 print(f"DEBUG: URL del Registro Civil detectada")
-                # Buscar RUT en parámetros de URL
+                print(f"DEBUG: URL completa: {clean_text}")
+                
+                # Buscar RUT en parámetros de URL con patrones más amplios (incluyendo K)
                 url_rut_patterns = [
-                    r'RUN=(\d{7,8}[-]?\d)',  # RUN=12345678-9
-                    r'run=(\d{7,8}[-]?\d)',   # run=12345678-9
-                    r'RUT=(\d{7,8}[-]?\d)',  # RUT=12345678-9
-                    r'rut=(\d{7,8}[-]?\d)',  # rut=12345678-9
+                    r'RUN=(\d{7,8}[-]?[0-9Kk])',  # RUN=12345678-9 o RUN=12345678-K
+                    r'run=(\d{7,8}[-]?[0-9Kk])',   # run=12345678-9 o run=12345678-K
+                    r'RUT=(\d{7,8}[-]?[0-9Kk])',  # RUT=12345678-9 o RUT=12345678-K
+                    r'rut=(\d{7,8}[-]?[0-9Kk])',  # rut=12345678-9 o rut=12345678-K
+                    r'RUN%3D(\d{7,8}[-]?[0-9Kk])',  # RUN codificado en URL
+                    r'run%3D(\d{7,8}[-]?[0-9Kk])',   # run codificado en URL
+                    r'RUT%3D(\d{7,8}[-]?[0-9Kk])',  # RUT codificado en URL
+                    r'rut%3D(\d{7,8}[-]?[0-9Kk])',  # rut codificado en URL
+                    r'RUN%253D(\d{7,8}[-]?[0-9Kk])',  # RUN doblemente codificado
+                    r'run%253D(\d{7,8}[-]?[0-9Kk])',   # run doblemente codificado
                 ]
                 
+                rut_found = False
                 for pattern in url_rut_patterns:
                     rut_match = re.search(pattern, clean_text, re.IGNORECASE)
                     if rut_match:
                         rut = rut_match.group(1)
                         print(f"DEBUG: RUT encontrado con patrón {pattern}: {rut}")
-                        # Formatear RUT con guión si no lo tiene
-                        if '-' not in rut:
-                            rut = f"{rut[:-1]}-{rut[-1]}"
+                        # Formatear RUT con formato chileno estándar XX.XXX.XXX-X
+                        rut = self.format_rut_chile(rut)
                         parsed_data['rut'] = rut
                         print(f"DEBUG: RUT formateado: {rut}")
+                        rut_found = True
                         break
-                else:
-                    print(f"DEBUG: No se encontró RUT en la URL")
+                
+                if not rut_found:
+                    print(f"DEBUG: No se encontró RUT en la URL con patrones estándar")
+                    # Intentar extraer cualquier secuencia de dígitos que parezca RUT (incluyendo K)
+                    rut_flexible_patterns = [
+                        r'(\d{7,8}[-]?[0-9Kk])',  # Cualquier RUT en la URL
+                        r'(\d{8}[-]?[0-9Kk])',    # RUT de 8 dígitos + verificador
+                        r'(\d{7}[-]?[0-9Kk])',    # RUT de 7 dígitos + verificador
+                    ]
+                    
+                    for pattern in rut_flexible_patterns:
+                        rut_match = re.search(pattern, clean_text)
+                        if rut_match:
+                            rut = rut_match.group(1)
+                            print(f"DEBUG: RUT encontrado con patrón flexible {pattern}: {rut}")
+                            # Formatear RUT con formato chileno estándar XX.XXX.XXX-X
+                            rut = self.format_rut_chile(rut)
+                            parsed_data['rut'] = rut
+                            print(f"DEBUG: RUT formateado flexible: {rut}")
+                            rut_found = True
+                            break
+                
+                if not rut_found:
+                    print(f"DEBUG: No se encontró RUT en la URL con ningún patrón")
                 
                 # Si encontramos RUT en URL, no obtener nombre automáticamente
                 # El nombre se obtendrá solo cuando se presione el botón de registro
                 if parsed_data['rut']:
                     parsed_data['nombre_completo'] = "Presione 'Iniciar Registro' para obtener nombre"
             
-            # Método 2: Buscar RUT con formato estándar (12345678-9) si no es URL
+            # Método 2: Buscar RUT con formato estándar (12345678-9 o 12345678-K) si no es URL
             if not parsed_data['rut']:
                 rut_patterns = [
-                    r'\b(\d{7,8}[-]?\d)\b',  # RUT con o sin guión
-                    r'RUT[:\s]*(\d{7,8}[-]?\d)',  # RUT: 12345678-9
-                    r'RUN[:\s]*(\d{7,8}[-]?\d)',  # RUN: 12345678-9
+                    r'\b(\d{7,8}[-]?[0-9Kk])\b',  # RUT con o sin guión (incluyendo K)
+                    r'RUT[:\s]*(\d{7,8}[-]?[0-9Kk])',  # RUT: 12345678-9 o RUT: 12345678-K
+                    r'RUN[:\s]*(\d{7,8}[-]?[0-9Kk])',  # RUN: 12345678-9 o RUN: 12345678-K
                 ]
                 
                 for pattern in rut_patterns:
                     rut_match = re.search(pattern, clean_text, re.IGNORECASE)
                     if rut_match:
                         rut = rut_match.group(1)
-                        # Formatear RUT con guión si no lo tiene
-                        if '-' not in rut:
-                            rut = f"{rut[:-1]}-{rut[-1]}"
+                        # Formatear RUT con formato chileno estándar XX.XXX.XXX-X
+                        rut = self.format_rut_chile(rut)
                         parsed_data['rut'] = rut
                         break
             
@@ -878,12 +927,14 @@ class QRScannerDialog(QDialog):
                         parsed_data['nombre_completo'] = nombre
                         break
             
-            # Método 4: Buscar RUT en formato más flexible
+            # Método 4: Buscar RUT en formato más flexible (incluyendo K)
             if not parsed_data['rut']:
-                # Buscar cualquier secuencia de 7-8 dígitos seguida de un dígito verificador
-                rut_flexible = re.search(r'\b(\d{7,8})[-]?(\d)\b', clean_text)
+                # Buscar cualquier secuencia de 7-8 dígitos seguida de un dígito verificador (incluyendo K)
+                rut_flexible = re.search(r'\b(\d{7,8})[-]?([0-9Kk])\b', clean_text)
                 if rut_flexible:
-                    rut = f"{rut_flexible.group(1)}-{rut_flexible.group(2)}"
+                    rut = f"{rut_flexible.group(1)}{rut_flexible.group(2)}"
+                    # Formatear RUT con formato chileno estándar XX.XXX.XXX-X
+                    rut = self.format_rut_chile(rut)
                     parsed_data['rut'] = rut
             
             print(f"DEBUG: Resultado final del parsing: {parsed_data}")
@@ -896,6 +947,45 @@ class QRScannerDialog(QDialog):
                 'nombre_completo': '',
                 'raw_data': qr_data
             }
+    
+    def format_rut_chile(self, rut):
+        """Formatea un RUT al formato chileno estándar XX.XXX.XXX-X"""
+        try:
+            # Limpiar el RUT de espacios y caracteres especiales
+            rut_clean = re.sub(r'[^\dKk]', '', str(rut))
+            
+            if not rut_clean:
+                return rut
+            
+            # Separar número y dígito verificador
+            if len(rut_clean) >= 2:
+                # El último carácter es el dígito verificador
+                numero = rut_clean[:-1]
+                dv = rut_clean[-1].upper()  # Convertir a mayúscula para K
+                
+                # Formatear el número con puntos
+                if len(numero) >= 7:
+                    # Formato: XX.XXX.XXX
+                    if len(numero) == 8:
+                        # 8 dígitos: XX.XXX.XXX
+                        numero_formateado = f"{numero[:2]}.{numero[2:5]}.{numero[5:]}"
+                    elif len(numero) == 7:
+                        # 7 dígitos: X.XXX.XXX
+                        numero_formateado = f"{numero[:1]}.{numero[1:4]}.{numero[4:]}"
+                    else:
+                        # Otros casos: usar formato estándar
+                        numero_formateado = numero
+                    
+                    rut_formateado = f"{numero_formateado}-{dv}"
+                    print(f"DEBUG: RUT formateado: {rut} → {rut_formateado}")
+                    return rut_formateado
+            
+            # Si no se puede formatear, devolver tal como está
+            return rut
+            
+        except Exception as e:
+            print(f"Error formateando RUT: {e}")
+            return rut
     
     def get_name_from_registry(self, rut):
         """Intenta obtener el nombre desde API del Registro Civil"""
@@ -952,16 +1042,33 @@ class QRScannerDialog(QDialog):
     
     def show_carnet_info(self, qr_data):
         """Muestra información de QR de carnet"""
+        print(f"DEBUG: === INICIO show_carnet_info ===")
+        print(f"DEBUG: QR data recibido: {qr_data[:200]}...")
+        
         # Parsear datos del carnet
         parsed_data = self.parse_carnet_data(qr_data)
         print(f"DEBUG: Datos parseados: {parsed_data}")
+        
+        # Verificar que el RUT se extrajo correctamente
+        if parsed_data.get('rut'):
+            print(f"DEBUG: ✅ RUT extraído exitosamente: {parsed_data['rut']}")
+        else:
+            print(f"DEBUG: ❌ ERROR: No se pudo extraer RUT del QR")
+            print(f"DEBUG: QR completo para análisis: {qr_data}")
         
         # Almacenar para el botón
         self.current_carnet_data = parsed_data
         print(f"DEBUG: current_carnet_data establecido: {self.current_carnet_data}")
         
+        # Verificar que se almacenó correctamente
+        if self.current_carnet_data and self.current_carnet_data.get('rut'):
+            print(f"DEBUG: ✅ Datos almacenados correctamente para el botón de registro")
+        else:
+            print(f"DEBUG: ❌ ERROR: Los datos no se almacenaron correctamente")
+        
         # Mostrar información en el área principal
         self.show_carnet_info_in_main_area(qr_data, parsed_data)
+        print(f"DEBUG: === FIN show_carnet_info ===")
     
     def show_carnet_info_in_main_area(self, qr_data, parsed_data):
         """Muestra información del carnet en el área principal con botón de registro"""
