@@ -1,11 +1,21 @@
-PySide6
-opencv-python
-pyzbar
-pandas
-openpyxl
-reportlab
-matplotlib
-numpy
-requests
-pillow
-pymongo
+# Interfaz gráfica
+PySide6>=6.6.0
+
+# Procesamiento de imágenes y QR
+opencv-python>=4.8.0
+pyzbar>=0.1.9
+Pillow>=10.0.0
+
+# Análisis de datos y reportes
+pandas>=2.0.0
+numpy>=1.24.0
+openpyxl>=3.1.0
+reportlab>=4.0.0
+matplotlib>=3.7.0
+
+# Base de datos
+pymongo>=4.5.0
+
+# Utilidades
+requests>=2.31.0
+python-dotenv>=1.0.0

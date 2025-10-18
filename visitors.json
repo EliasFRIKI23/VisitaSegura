@@ -1,15 +1,5 @@
 [
   {
-    "id": "VIS20250912202650967810",
-    "rut": "20",
-    "nombre_completo": "pepito aravena",
-    "fecha_ingreso": "2025-09-12 20:26:50",
-    "fecha_salida": "2025-09-13 18:57:51",
-    "acompañante": "elias papita",
-    "sector": "Auditorio",
-    "estado": "Fuera"
-  },
-  {
     "id": "VIS20250912202938277941",
     "rut": "19920145-k",
     "nombre_completo": "Nicolas perez",
@@ -58,15 +48,5 @@
     "acompañante": "asdasdasdasd",
     "sector": "CITT",
     "estado": "Fuera"
-  },
-  {
-    "id": "VIS20251013124721586208",
-    "rut": "1831723871",
-    "nombre_completo": "sdsadas",
-    "fecha_ingreso": "2025-10-13 12:47:21",
-    "fecha_salida": null,
-    "acompañante": "sdadadsa",
-    "sector": "Auditorio",
-    "estado": "Dentro"
   }
 ]

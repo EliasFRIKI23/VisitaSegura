@@ -1,0 +1,48 @@
+version: '3.8'
+
+services:
+  # Base de datos MongoDB
+  mongodb:
+    image: mongo:7.0
+    container_name: visitasegura-mongodb
+    restart: unless-stopped
+    ports:
+      - "27017:27017"
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: admin
+      MONGO_INITDB_ROOT_PASSWORD: password123
+      MONGO_INITDB_DATABASE: VisitaSegura
+    volumes:
+      - mongodb_data:/data/db
+      - ./Database.txt:/docker-entrypoint-initdb.d/init.txt:ro
+    networks:
+      - visitasegura-network
+
+  # Aplicación VisitaSegura
+  visitasegura:
+    build: .
+    container_name: visitasegura-app
+    restart: unless-stopped
+    ports:
+      - "8000:8000"
+    environment:
+      MONGO_URI: mongodb://admin:password123@mongodb:27017/VisitaSegura?authSource=admin
+      PYTHONUNBUFFERED: 1
+      QT_QPA_PLATFORM: offscreen
+    depends_on:
+      - mongodb
+    volumes:
+      - ./report:/app/report
+      - ./data:/app/data
+    networks:
+      - visitasegura-network
+    # Para desarrollo, puedes descomentar la siguiente línea para acceso directo
+    # stdin_open: true
+    # tty: true
+
+volumes:
+  mongodb_data:
+
+networks:
+  visitasegura-network:
+    driver: bridge
