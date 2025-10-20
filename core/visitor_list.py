@@ -7,10 +7,17 @@ from PySide6.QtWidgets import (
 from PySide6.QtCore import Qt, Signal, QTimer
 from PySide6.QtGui import QFont, QAction, QIcon, QColor, QPixmap
 try:
-    from .theme import DUOC_PRIMARY, DUOC_SECONDARY, darken_color as duoc_darken
+    from .theme import (
+        DUOC_PRIMARY, DUOC_SECONDARY, DUOC_SUCCESS, DUOC_DANGER, DUOC_INFO,
+        darken_color as duoc_darken, get_standard_button_style, get_standard_table_style,
+        normalize_rut, format_rut_display, get_current_user
+    )
 except Exception:
     DUOC_PRIMARY = "#003A70"
     DUOC_SECONDARY = "#FFB81C"
+    DUOC_SUCCESS = "#28a745"
+    DUOC_DANGER = "#dc3545"
+    DUOC_INFO = "#17a2b8"
     def duoc_darken(color, factor=0.2):
         color = color.lstrip('#')
         r, g, b = tuple(int(color[i:i+2], 16) for i in (0, 2, 4))
@@ -18,6 +25,52 @@ except Exception:
         g = max(0, int(g * (1 - factor)))
         b = max(0, int(b * (1 - factor)))
         return f"#{r:02x}{g:02x}{b:02x}"
+    def get_standard_button_style(color, text_color=None):
+        return f"""
+            QPushButton {{
+                background-color: {color};
+                color: {'#000000' if color in [DUOC_SECONDARY, "#ffc107"] else '#ffffff'};
+                border: none;
+                border-radius: 6px;
+                padding: 10px 16px;
+                font-size: 14px;
+                font-weight: bold;
+            }}
+            QPushButton:hover {{
+                background-color: {duoc_darken(color, 0.1)};
+            }}
+            QPushButton:disabled {{
+                background-color: #6c757d;
+                color: #adb5bd;
+            }}
+        """
+    def get_standard_table_style():
+        return """
+            QTableWidget {
+                background: white;
+                color: black;
+                gridline-color: #e9ecef;
+                alternate-background-color: #f8f9fa;
+                selection-background-color: #003A70;
+                selection-color: white;
+            }
+            QHeaderView::section {
+                background-color: #2c3e50;
+                color: white;
+                font-weight: bold;
+                border: none;
+                padding: 8px 10px;
+            }
+        """
+    def normalize_rut(rut_input):
+        """Fallback si no se puede importar la función"""
+        return rut_input
+    def format_rut_display(rut):
+        """Fallback si no se puede importar la función"""
+        return rut
+    def get_current_user():
+        """Fallback si no se puede importar la función"""
+        return "Sistema"
 from datetime import datetime
 from .visitor_model import VisitorManager
 from .visitor_form import VisitorFormDialog, QuickVisitorForm
@@ -136,64 +189,17 @@ class VisitorListWidget(QWidget):
         
         self.add_btn = QPushButton("➕ Nuevo Visitante")
         self.add_btn.setToolTip("Agregar un nuevo visitante al sistema")
-        self.add_btn.setStyleSheet("""
-            QPushButton {{
-                background-color: {color};
-                color: white;
-                border: none;
-                padding: 10px 16px;
-                border-radius: 6px;
-                font-weight: bold;
-                font-size: 11px;
-            }}
-            QPushButton:hover {{
-                background-color: {hover};
-            }}
-        """.format(color=DUOC_SECONDARY, hover=duoc_darken(DUOC_SECONDARY)))
+        self.add_btn.setStyleSheet(get_standard_button_style(DUOC_SUCCESS))
         
         self.edit_btn = QPushButton("✏️ Editar")
         self.edit_btn.setEnabled(False)
         self.edit_btn.setToolTip("Editar la información del visitante seleccionado")
-        self.edit_btn.setStyleSheet("""
-            QPushButton {{
-                background-color: {color};
-                color: black;
-                border: none;
-                padding: 10px 16px;
-                border-radius: 6px;
-                font-weight: bold;
-                font-size: 11px;
-            }}
-            QPushButton:hover {{
-                background-color: {hover};
-            }}
-            QPushButton:disabled {{
-                background-color: #6c757d;
-                color: white;
-            }}
-        """.format(color=DUOC_PRIMARY, hover=duoc_darken(DUOC_PRIMARY)))
+        self.edit_btn.setStyleSheet(get_standard_button_style(DUOC_INFO))
         
         self.delete_btn = QPushButton("🗑️ Eliminar")
         self.delete_btn.setEnabled(False)
         self.delete_btn.setToolTip("Eliminar el visitante seleccionado (acción irreversible)")
-        self.delete_btn.setStyleSheet("""
-            QPushButton {{
-                background-color: {color};
-                color: white;
-                border: none;
-                padding: 10px 16px;
-                border-radius: 6px;
-                font-weight: bold;
-                font-size: 11px;
-            }}
-            QPushButton:hover {{
-                background-color: {hover};
-            }}
-            QPushButton:disabled {{
-                background-color: #6c757d;
-                color: white;
-            }}
-        """.format(color=DUOC_PRIMARY, hover=duoc_darken(DUOC_PRIMARY)))
+        self.delete_btn.setStyleSheet(get_standard_button_style(DUOC_DANGER))
         
         main_buttons_layout.addWidget(self.add_btn)
         main_buttons_layout.addWidget(self.edit_btn)
@@ -206,9 +212,9 @@ class VisitorListWidget(QWidget):
         
         # Tabla de visitantes
         self.visitor_table = QTableWidget()
-        self.visitor_table.setColumnCount(7)
+        self.visitor_table.setColumnCount(8)
         self.visitor_table.setHorizontalHeaderLabels([
-            "🆔 ID", "📄 RUT", "👤 Nombre", "🤝 Acompañante", "🏢 Sector", "📍 Estado", "⏰ Hora Ingreso"
+            "🆔 ID", "📄 RUT", "👤 Nombre", "🤝 Acompañante", "🏢 Sector", "📍 Estado", "⏰ Hora Ingreso", "👨‍💼 Registrado por"
         ])
         
         # Configurar tabla
@@ -225,30 +231,7 @@ class VisitorListWidget(QWidget):
         vh.setVisible(False)
         vh.setDefaultSectionSize(36)
 
-        self.visitor_table.setStyleSheet("""
-        QTableWidget {
-            background: white;
-            color: black;
-            gridline-color: #e9ecef;
-            alternate-background-color: #f8f9fa;
-            selection-background-color: %s;
-            selection-color: white;
-        }
-        QHeaderView::section {
-            background-color: #f1f3f5;
-            color: #212529;
-            font-weight: bold;
-            border: none;
-            padding: 8px 10px;
-        }
-        QTableWidget::item {
-            color: black;
-            padding: 6px;
-        }
-        QTableWidget::item:hover {
-            color: white;
-        }
-    """ % DUOC_PRIMARY)
+        self.visitor_table.setStyleSheet(get_standard_table_style())
 
         
         # Ajustar columnas
@@ -284,23 +267,6 @@ class VisitorListWidget(QWidget):
         self.quick_form = QuickVisitorForm()
         right_layout.addWidget(self.quick_form)
         
-        # Botón de registro rápido
-        self.quick_register_btn = QPushButton("🚀 Registrar Rápido")
-        self.quick_register_btn.setStyleSheet("""
-            QPushButton {{
-                background-color: {color};
-                color: white;
-                border: none;
-                padding: 10px;
-                border-radius: 4px;
-                font-weight: bold;
-            }}
-            QPushButton:hover {{
-                background-color: {hover};
-            }}
-        """.format(color=DUOC_PRIMARY, hover=duoc_darken(DUOC_PRIMARY)))
-        right_layout.addWidget(self.quick_register_btn)
-        
         # Estadísticas
         stats_group = QGroupBox("📊 Estadísticas")
         stats_group.setFont(QFont("Arial", 10, QFont.Bold))
@@ -325,19 +291,7 @@ class VisitorListWidget(QWidget):
         # Botón de regreso al menú principal
         back_button = QPushButton("⬅️ Volver al Menú Principal")
         back_button.setFixedSize(200, 40)
-        back_button.setStyleSheet("""
-            QPushButton {
-                background-color: #6c757d;
-                color: white;
-                border: none;
-                border-radius: 8px;
-                font-size: 14px;
-                font-weight: bold;
-            }
-            QPushButton:hover {
-                background-color: #5a6268;
-            }
-        """)
+        back_button.setStyleSheet(get_standard_button_style("#6c757d"))
         back_button.clicked.connect(self.go_to_main)
         main_layout.addWidget(back_button, alignment=Qt.AlignCenter)
     
@@ -349,7 +303,6 @@ class VisitorListWidget(QWidget):
         self.refresh_btn.clicked.connect(self.refresh_list)
         self.filter_combo.currentTextChanged.connect(self.apply_filter)
         self.search_input.textChanged.connect(self.apply_filter)
-        self.quick_register_btn.clicked.connect(self.quick_register)
         
         self.visitor_table.itemSelectionChanged.connect(self.on_selection_changed)
         self.visitor_table.itemDoubleClicked.connect(self.toggle_visitor_status)
@@ -433,34 +386,6 @@ class VisitorListWidget(QWidget):
                     QMessageBox.information(self, "✅ Éxito", "🗑️ Visitante eliminado correctamente del sistema")
                 else:
                     QMessageBox.critical(self, "❌ Error", "🚫 No se pudo eliminar el visitante del sistema")
-    
-    def quick_register(self):
-        """Registro rápido usando el formulario del panel derecho"""
-        form_data = self.quick_form.get_form_data()
-        
-        # Validar datos
-        if not all(form_data.values()):
-            QMessageBox.warning(self, "⚠️ Error", "📝 Todos los campos son obligatorios para el registro")
-            return
-        
-        try:
-            from .visitor_model import Visitor
-            visitor = Visitor(
-                rut=form_data['rut'],
-                nombre_completo=form_data['nombre'],
-                acompañante=form_data['acompañante'],
-                sector=form_data['sector']
-            )
-            
-            if self.visitor_manager.add_visitor(visitor):
-                self.refresh_list()
-                self.quick_form.clear_form()
-                QMessageBox.information(self, "✅ Éxito", "🚀 Visitante registrado correctamente usando registro rápido")
-            else:
-                QMessageBox.warning(self, "⚠️ Error", "🔍 Ya existe un visitante con ese RUT en el sistema")
-                
-        except Exception as e:
-            QMessageBox.critical(self, "❌ Error", f"🚫 Error al registrar visitante: {str(e)}")
     
     def toggle_visitor_status(self, item):
         """Cambia el estado del visitante (doble clic)"""
@@ -585,8 +510,9 @@ class VisitorListWidget(QWidget):
             # ID
             self.visitor_table.setItem(row, 0, QTableWidgetItem(visitor.id))
             
-            # RUT
-            self.visitor_table.setItem(row, 1, QTableWidgetItem(visitor.rut))
+            # RUT - mostrar normalizado
+            rut_display = format_rut_display(visitor.rut) if visitor.rut else "N/A"
+            self.visitor_table.setItem(row, 1, QTableWidgetItem(rut_display))
             
             # Nombre
             self.visitor_table.setItem(row, 2, QTableWidgetItem(visitor.nombre_completo))
@@ -609,6 +535,10 @@ class VisitorListWidget(QWidget):
             fecha_formatted = datetime.strptime(visitor.fecha_ingreso, "%Y-%m-%d %H:%M:%S")
             fecha_str = fecha_formatted.strftime("%d/%m/%Y %H:%M")
             self.visitor_table.setItem(row, 6, QTableWidgetItem(fecha_str))
+            
+            # Usuario registrador
+            usuario_registrador = visitor.usuario_registrador or "Sistema"
+            self.visitor_table.setItem(row, 7, QTableWidgetItem(usuario_registrador))
         
         # Mostrar/ocultar estado vacío
         self.empty_state.setVisible(len(visitors) == 0)

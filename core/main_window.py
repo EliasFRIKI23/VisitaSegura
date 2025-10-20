@@ -23,10 +23,16 @@ except ImportError:
 
 # Tema institucional Duoc UC
 try:
-    from core.theme import DUOC_PRIMARY, DUOC_SECONDARY, darken_color as duoc_darken
+    from core.theme import (
+        DUOC_PRIMARY, DUOC_SECONDARY, DUOC_SUCCESS, DUOC_DANGER, DUOC_INFO,
+        darken_color as duoc_darken, get_standard_button_style
+    )
 except Exception:
     DUOC_PRIMARY = "#003A70"
     DUOC_SECONDARY = "#FFB81C"
+    DUOC_SUCCESS = "#28a745"
+    DUOC_DANGER = "#dc3545"
+    DUOC_INFO = "#17a2b8"
     def duoc_darken(color, factor=0.2):
         color = color.lstrip('#')
         r, g, b = tuple(int(color[i:i+2], 16) for i in (0, 2, 4))
@@ -34,6 +40,25 @@ except Exception:
         g = max(0, int(g * (1 - factor)))
         b = max(0, int(b * (1 - factor)))
         return f"#{r:02x}{g:02x}{b:02x}"
+    def get_standard_button_style(color, text_color=None):
+        return f"""
+            QPushButton {{
+                background-color: {color};
+                color: {'#000000' if color in [DUOC_SECONDARY, "#ffc107"] else '#ffffff'};
+                border: none;
+                border-radius: 6px;
+                padding: 10px 16px;
+                font-size: 14px;
+                font-weight: bold;
+            }}
+            QPushButton:hover {{
+                background-color: {duoc_darken(color, 0.1)};
+            }}
+            QPushButton:disabled {{
+                background-color: #6c757d;
+                color: #adb5bd;
+            }}
+        """
 
 class MainWindow(QMainWindow):
     def __init__(self):
@@ -218,23 +243,7 @@ class MainWindow(QMainWindow):
         self.btn_open_login.setMinimumSize(200, 50)  # Cambié de setFixedSize a setMinimumSize
         self.btn_open_login.setMaximumHeight(50)    # Mantener altura fija
         self.btn_open_login.setSizePolicy(QSizePolicy.Preferred, QSizePolicy.Fixed)  # Expandir horizontalmente
-        self.btn_open_login.setStyleSheet("""
-            QPushButton {
-                background-color: #6c757d;
-                color: white;
-                border: none;
-                border-radius: 8px;
-                font-size: 14px;
-                font-weight: bold;
-                padding: 8px 16px;
-            }
-            QPushButton:hover {
-                background-color: #5a6268;
-            }
-            QPushButton:pressed {
-                background-color: #495057;
-            }
-        """)
+        self.btn_open_login.setStyleSheet(get_standard_button_style("#6c757d"))
         layout.addWidget(self.btn_open_login, alignment=Qt.AlignCenter)
         
         return main_widget
@@ -298,23 +307,10 @@ class MainWindow(QMainWindow):
 
     def get_button_style(self, color, font_size=16):
         """Retorna el estilo CSS para los botones principales"""
-        return f"""
-            QPushButton {{
-                background-color: {color};
-                color: white;
-                border: none;
-                border-radius: 12px;
-                font-size: {font_size}px;
-                font-weight: bold;
-                padding: 12px;
-            }}
-            QPushButton:hover {{
-                background-color: {duoc_darken(color)};
-            }}
-            QPushButton:pressed {{
-                background-color: {duoc_darken(color, 0.3)};
-            }}
-        """
+        # Usar el sistema estandarizado pero con tamaño de fuente personalizado
+        base_style = get_standard_button_style(color)
+        # Reemplazar el font-size en el estilo base
+        return base_style.replace("font-size: 14px;", f"font-size: {font_size}px;")
 
     # Ya usamos duoc_darken desde core.theme
 

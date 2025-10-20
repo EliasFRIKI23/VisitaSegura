@@ -14,10 +14,17 @@ import matplotlib.dates as mdates
 from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
 from matplotlib.figure import Figure
 try:
-    from core.theme import DUOC_PRIMARY, DUOC_SECONDARY, darken_color as duoc_darken, lighten_color as duoc_lighten
+    from core.theme import (
+        DUOC_PRIMARY, DUOC_SECONDARY, DUOC_SUCCESS, DUOC_DANGER, DUOC_INFO,
+        darken_color as duoc_darken, lighten_color as duoc_lighten, get_standard_button_style, get_standard_table_style,
+        format_rut_display, get_current_user
+    )
 except Exception:
     DUOC_PRIMARY = "#003A70"
     DUOC_SECONDARY = "#FFB81C"
+    DUOC_SUCCESS = "#28a745"
+    DUOC_DANGER = "#dc3545"
+    DUOC_INFO = "#17a2b8"
     def duoc_darken(color, factor=0.2):
         color = color.lstrip('#')
         r, g, b = tuple(int(color[i:i+2], 16) for i in (0, 2, 4))
@@ -32,6 +39,49 @@ except Exception:
         g = min(255, int(g + (255 - g) * factor))
         b = min(255, int(b + (255 - b) * factor))
         return f"#{r:02x}{g:02x}{b:02x}"
+    def get_standard_button_style(color, text_color=None):
+        return f"""
+            QPushButton {{
+                background-color: {color};
+                color: {'#000000' if color in [DUOC_SECONDARY, "#ffc107"] else '#ffffff'};
+                border: none;
+                border-radius: 6px;
+                padding: 10px 16px;
+                font-size: 14px;
+                font-weight: bold;
+            }}
+            QPushButton:hover {{
+                background-color: {duoc_darken(color, 0.1)};
+            }}
+            QPushButton:disabled {{
+                background-color: #6c757d;
+                color: #adb5bd;
+            }}
+        """
+    def get_standard_table_style():
+        return """
+            QTableWidget {
+                background: white;
+                color: black;
+                gridline-color: #e9ecef;
+                alternate-background-color: #f8f9fa;
+                selection-background-color: #003A70;
+                selection-color: white;
+            }
+            QHeaderView::section {
+                background-color: #2c3e50;
+                color: white;
+                font-weight: bold;
+                border: none;
+                padding: 8px 10px;
+            }
+        """
+    def format_rut_display(rut):
+        """Fallback si no se puede importar la función"""
+        return rut
+    def get_current_user():
+        """Fallback si no se puede importar la función"""
+        return "Sistema"
 import numpy as np
 
 # Agregar el directorio padre al path para importar módulos
@@ -560,19 +610,7 @@ class ReportesView(QWidget):
         self.btn_refresh = QPushButton("🔄 Actualizar Datos")
         self.btn_refresh.setMinimumSize(self.screen_config['btn_width'], self.screen_config['btn_height'])
         self.btn_refresh.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Preferred)
-        self.btn_refresh.setStyleSheet(f"""
-            QPushButton {{
-                background-color: {DUOC_SECONDARY};
-                color: white;
-                border: none;
-                border-radius: 8px;
-                font-size: {self.screen_config['btn_font_size']}px;
-                font-weight: bold;
-            }}
-            QPushButton:hover {{
-                background-color: {duoc_darken(DUOC_SECONDARY)};
-            }}
-        """)
+        self.btn_refresh.setStyleSheet(get_standard_button_style(DUOC_SECONDARY))
         self.btn_refresh.clicked.connect(self.refresh_visitors_data)
         action_layout.addWidget(self.btn_refresh)
         
@@ -603,19 +641,7 @@ class ReportesView(QWidget):
         self.btn_export = QPushButton("📊 Exportar a Excel")
         self.btn_export.setMinimumSize(self.screen_config['btn_width'], self.screen_config['btn_height'])
         self.btn_export.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Preferred)
-        self.btn_export.setStyleSheet(f"""
-            QPushButton {{
-                background-color: {DUOC_PRIMARY};
-                color: white;
-                border: none;
-                border-radius: 8px;
-                font-size: {self.screen_config['btn_font_size']}px;
-                font-weight: bold;
-            }}
-            QPushButton:hover {{
-                background-color: {duoc_darken(DUOC_PRIMARY)};
-            }}
-        """)
+        self.btn_export.setStyleSheet(get_standard_button_style(DUOC_PRIMARY))
         self.btn_export.clicked.connect(self.export_to_excel)
         action_layout.addWidget(self.btn_export)
         
@@ -624,7 +650,7 @@ class ReportesView(QWidget):
         
         # Tabla de visitantes
         self.visitors_table = QTableWidget()
-        self.visitors_table.setColumnCount(7)  # 7 columnas como se muestra en la imagen
+        self.visitors_table.setColumnCount(8)  # 8 columnas incluyendo usuario registrador
         self.visitors_table.setHorizontalHeaderLabels([
             "Nombre del Visitante",
             "RUT", 
@@ -632,7 +658,8 @@ class ReportesView(QWidget):
             "Fecha y Hora de Salida",
             "Destino/Lugar",
             "Acompañante",
-            "Estado de Visita"
+            "Estado de Visita",
+            "Registrado por"
         ])
         
         # Configurar tabla responsiva con mejor distribución de columnas
@@ -654,88 +681,8 @@ class ReportesView(QWidget):
         # Configurar altura de filas responsiva usando configuración centralizada
         self.visitors_table.verticalHeader().setDefaultSectionSize(self.screen_config['row_height'])
         
-        # Estilo mejorado para la tabla con diseño más limpio
-        self.visitors_table.setStyleSheet(f"""
-            QTableWidget {{
-                gridline-color: #d0d0d0;
-                background-color: #ffffff;
-                alternate-background-color: #f8f9fa;
-                font-size: 12px;
-                border: none;
-                border-radius: 0px;
-                selection-background-color: {DUOC_PRIMARY};
-                font-family: 'Segoe UI', Arial, sans-serif;
-                color: #000000;
-            }}
-            QTableWidget::item {{
-                padding: 12px 10px;
-                border-bottom: 1px solid #e8e8e8;
-                border-right: 1px solid #e8e8e8;
-                font-family: 'Segoe UI', Arial, sans-serif;
-            }}
-            QTableWidget::item:selected {{
-                background-color: {DUOC_PRIMARY};
-                color: white;
-            }}
-            QTableWidget::item:hover {{
-                background-color: #e3f2fd;
-                border: 1px solid #bbdefb;
-            }}
-            QHeaderView::section {{
-                background-color: #2c3e50 !important;
-                color: white;
-                padding: 18px 12px;
-                border: none;
-                border-right: 1px solid rgba(255, 255, 255, 0.15);
-                font-weight: bold;
-                font-size: 13px;
-                text-align: center;
-                min-height: 25px;
-                font-family: 'Segoe UI', Arial, sans-serif;
-            }}
-            QHeaderView::section:first {{
-                border-top-left-radius: 0px;
-            }}
-            QHeaderView::section:last {{
-                background-color: #2c3e50 !important;
-                border-top-right-radius: 0px;
-                border-right: none;
-            }}
-            QTableCornerButton::section {{
-                background-color: #2c3e50 !important;
-                border: none;
-                border-top-left-radius: 0px;
-            }}
-            QHeaderView {{
-                background-color: #2c3e50;
-            }}
-            QHeaderView::section:hover {{
-                background-color: #34495e !important;
-            }}
-            QTableWidget::item {{
-                border-bottom-left-radius: 0px;
-                border-bottom-right-radius: 0px;
-            }}
-            QTableWidget::item:first {{
-                border-bottom-left-radius: 18px;
-            }}
-            QTableWidget::item:last {{
-                border-bottom-right-radius: 18px;
-            }}
-            QScrollBar:vertical {{
-                background-color: #f1f1f1;
-                width: 12px;
-                border-radius: 6px;
-            }}
-            QScrollBar::handle:vertical {{
-                background-color: {DUOC_PRIMARY};
-                border-radius: 6px;
-                min-height: 20px;
-            }}
-            QScrollBar::handle:vertical:hover {{
-                background-color: {duoc_darken(DUOC_PRIMARY)};
-            }}
-        """)
+        # Usar estilo estandarizado para la tabla
+        self.visitors_table.setStyleSheet(get_standard_table_style())
         
         # Configurar la tabla para que use todo el espacio disponible
         self.visitors_table.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
@@ -774,19 +721,7 @@ class ReportesView(QWidget):
         # Botón de regreso
         back_button = QPushButton("⬅️ Volver al Menú Principal")
         back_button.setFixedSize(200, 40)
-        back_button.setStyleSheet("""
-            QPushButton {
-                background-color: #6c757d;
-                color: white;
-                border: none;
-                border-radius: 8px;
-                font-size: 14px;
-                font-weight: bold;
-            }
-            QPushButton:hover {
-                background-color: #5a6268;
-            }
-        """)
+        back_button.setStyleSheet(get_standard_button_style("#6c757d"))
         back_button.clicked.connect(self.go_to_main)
         main_layout.addWidget(back_button, alignment=Qt.AlignCenter)
     
@@ -968,10 +903,8 @@ class ReportesView(QWidget):
             # Llenar la tabla con los datos
             for row, visitor in enumerate(visitors_data):
                 # Crear items con texto centrado y mejor formato
-                # Asegurar que el RUT se muestre completo
-                rut_display = str(visitor['rut']) if visitor['rut'] else "N/A"
-                if len(rut_display) < 8:  # Si el RUT parece truncado, intentar obtener el completo
-                    rut_display = f"{visitor['rut']:0>8}" if visitor['rut'] else "N/A"
+                # Mostrar RUT normalizado
+                rut_display = format_rut_display(visitor['rut']) if visitor['rut'] else "N/A"
                 
                 items = [
                     QTableWidgetItem(str(visitor['nombre'])),
@@ -980,7 +913,8 @@ class ReportesView(QWidget):
                     QTableWidgetItem(str(visitor['fecha_salida'])),
                     QTableWidgetItem(str(visitor['destino'])),
                     QTableWidgetItem(str(visitor['acompañante'])),
-                    QTableWidgetItem(str(visitor['estado_visita']))
+                    QTableWidgetItem(str(visitor['estado_visita'])),
+                    QTableWidgetItem(str(visitor.get('usuario_registrador', 'Sistema')))
                 ]
                 
                 # Configurar alineación y estilo para cada item usando configuración centralizada

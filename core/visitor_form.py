@@ -7,6 +7,23 @@ from PySide6.QtCore import Qt
 from PySide6.QtGui import QFont, QPalette, QColor, QIcon
 from .visitor_model import Visitor, VisitorManager
 
+# Importar funciones de normalización de RUT
+try:
+    from .theme import normalize_rut, format_rut_display, validate_rut_dv, get_current_user
+except Exception:
+    def normalize_rut(rut_input):
+        """Fallback si no se puede importar la función"""
+        return rut_input
+    def format_rut_display(rut):
+        """Fallback si no se puede importar la función"""
+        return rut
+    def validate_rut_dv(numero, dv):
+        """Fallback si no se puede importar la función"""
+        return True
+    def get_current_user():
+        """Fallback si no se puede importar la función"""
+        return "Sistema"
+
 class VisitorFormDialog(QDialog):
     def __init__(self, parent=None, visitor=None):
         super().__init__(parent)
@@ -48,14 +65,14 @@ class VisitorFormDialog(QDialog):
         personal_layout.setSpacing(12)
         personal_layout.setLabelAlignment(Qt.AlignRight)
         
-        # RUT con tooltip
+        # RUT con tooltip y normalización automática
         self.rut_input = QLineEdit()
-        self.rut_input.setPlaceholderText("Ej: 12345678-9")
-        self.rut_input.setToolTip("🔍 Ingrese el RUT del visitante (ej: 12345678-9)")
+        self.rut_input.setPlaceholderText("Ej: 12345678-9 o 123456789")
+        self.rut_input.setToolTip("🔍 Ingrese el RUT del visitante (se formateará automáticamente)")
         
         rut_help = QToolButton()
         rut_help.setText("?")
-        rut_help.setToolTip("El RUT debe tener al menos 8 caracteres y ser único en el sistema")
+        rut_help.setToolTip("El RUT se normaliza automáticamente al formato XX.XXX.XXX-X. Acepta cualquier formato de entrada.")
         rut_help.setMaximumSize(25, 25)
         
         rut_layout = QHBoxLayout()
@@ -166,6 +183,10 @@ class VisitorFormDialog(QDialog):
         """Configura las conexiones de señales"""
         self.cancel_btn.clicked.connect(self.reject)
         self.save_btn.clicked.connect(self.save_visitor)
+        
+        # Conectar normalización automática del RUT
+        self.rut_input.textChanged.connect(self.normalize_rut_input)
+        self.rut_input.editingFinished.connect(self.finalize_rut_format)
     
     def load_visitor_data(self):
         """Carga los datos del visitante en el formulario"""
@@ -179,6 +200,39 @@ class VisitorFormDialog(QDialog):
             if sector_index >= 0:
                 self.sector_combo.setCurrentIndex(sector_index)
     
+    def normalize_rut_input(self):
+        """Normaliza el RUT mientras el usuario escribe"""
+        current_text = self.rut_input.text()
+        if current_text:
+            # Solo normalizar si el texto tiene más de 7 caracteres
+            if len(current_text.replace('.', '').replace('-', '').replace(' ', '')) >= 8:
+                normalized = normalize_rut(current_text)
+                if normalized and normalized != current_text:
+                    # Evitar bucles infinitos desconectando temporalmente la señal
+                    self.rut_input.textChanged.disconnect()
+                    self.rut_input.setText(normalized)
+                    self.rut_input.textChanged.connect(self.normalize_rut_input)
+    
+    def finalize_rut_format(self):
+        """Formatea el RUT cuando el usuario termina de escribir"""
+        current_text = self.rut_input.text().strip()
+        if current_text:
+            normalized = normalize_rut(current_text)
+            if normalized:
+                self.rut_input.setText(normalized)
+            else:
+                # Si no se puede normalizar, mostrar mensaje de error
+                QMessageBox.warning(
+                    self, 
+                    "⚠️ RUT Inválido", 
+                    f"El RUT ingresado '{current_text}' no es válido.\n\n"
+                    "Por favor, ingrese un RUT válido con formato:\n"
+                    "• 12345678-9\n"
+                    "• 123456789\n"
+                    "• 12.345.678-9"
+                )
+                self.rut_input.setFocus()
+    
     def validate_form(self) -> bool:
         """Valida los datos del formulario"""
         errors = []
@@ -187,8 +241,14 @@ class VisitorFormDialog(QDialog):
         rut = self.rut_input.text().strip()
         if not rut:
             errors.append("El RUT es obligatorio")
-        elif len(rut) < 8:
-            errors.append("El RUT debe tener al menos 8 caracteres")
+        else:
+            # Normalizar y validar el RUT
+            normalized_rut = normalize_rut(rut)
+            if not normalized_rut:
+                errors.append("El RUT ingresado no es válido")
+            else:
+                # Actualizar el campo con el RUT normalizado
+                self.rut_input.setText(normalized_rut)
         
         # Validar nombre
         nombre = self.nombre_input.text().strip()
@@ -237,19 +297,24 @@ class VisitorFormDialog(QDialog):
         
         try:
             if self.is_edit_mode and self.visitor:
-                # Modo edición
-                self.visitor.rut = self.rut_input.text().strip()
+                # Modo edición - usar RUT normalizado
+                normalized_rut = normalize_rut(self.rut_input.text().strip())
+                self.visitor.rut = normalized_rut if normalized_rut else self.rut_input.text().strip()
                 self.visitor.nombre_completo = self.nombre_input.text().strip()
                 self.visitor.acompañante = self.acompañante_input.text().strip()
                 self.visitor.sector = self.sector_combo.currentText()
+                # No cambiar el usuario registrador en modo edición
                 self.accept()
             else:
-                # Modo creación
+                # Modo creación - usar RUT normalizado y capturar usuario registrador
+                normalized_rut = normalize_rut(self.rut_input.text().strip())
+                current_user = get_current_user()
                 visitor = Visitor(
-                    rut=self.rut_input.text().strip(),
+                    rut=normalized_rut if normalized_rut else self.rut_input.text().strip(),
                     nombre_completo=self.nombre_input.text().strip(),
                     acompañante=self.acompañante_input.text().strip(),
-                    sector=self.sector_combo.currentText()
+                    sector=self.sector_combo.currentText(),
+                    usuario_registrador=current_user
                 )
                 self.visitor = visitor
                 self.accept()
@@ -289,10 +354,10 @@ class QuickVisitorForm(QWidget):
         form_layout = QFormLayout(form_group)
         form_layout.setSpacing(10)
         
-        # RUT
+        # RUT con normalización automática
         self.rut_input = QLineEdit()
-        self.rut_input.setPlaceholderText("Ej: 12345678-9")
-        self.rut_input.setToolTip("🆔 RUT del visitante")
+        self.rut_input.setPlaceholderText("Ej: 12345678-9 o 123456789")
+        self.rut_input.setToolTip("🆔 RUT del visitante (se formateará automáticamente)")
         form_layout.addRow("🆔 RUT:", self.rut_input)
         
         # Nombre
@@ -333,14 +398,44 @@ class QuickVisitorForm(QWidget):
             }
         """)
         layout.addWidget(self.registrar_btn)
+        
+        # Conectar normalización automática del RUT
+        self.rut_input.textChanged.connect(self.normalize_rut_input)
+        self.rut_input.editingFinished.connect(self.finalize_rut_format)
+    
+    def normalize_rut_input(self):
+        """Normaliza el RUT mientras el usuario escribe"""
+        current_text = self.rut_input.text()
+        if current_text:
+            # Solo normalizar si el texto tiene más de 7 caracteres
+            if len(current_text.replace('.', '').replace('-', '').replace(' ', '')) >= 8:
+                normalized = normalize_rut(current_text)
+                if normalized and normalized != current_text:
+                    # Evitar bucles infinitos desconectando temporalmente la señal
+                    self.rut_input.textChanged.disconnect()
+                    self.rut_input.setText(normalized)
+                    self.rut_input.textChanged.connect(self.normalize_rut_input)
+    
+    def finalize_rut_format(self):
+        """Formatea el RUT cuando el usuario termina de escribir"""
+        current_text = self.rut_input.text().strip()
+        if current_text:
+            normalized = normalize_rut(current_text)
+            if normalized:
+                self.rut_input.setText(normalized)
     
     def get_form_data(self) -> dict:
         """Retorna los datos del formulario"""
+        rut_text = self.rut_input.text().strip()
+        normalized_rut = normalize_rut(rut_text) if rut_text else ""
+        current_user = get_current_user()
+        
         return {
-            'rut': self.rut_input.text().strip(),
+            'rut': normalized_rut if normalized_rut else rut_text,
             'nombre': self.nombre_input.text().strip(),
             'acompañante': self.acompañante_input.text().strip(),
-            'sector': self.sector_combo.currentText()
+            'sector': self.sector_combo.currentText(),
+            'usuario_registrador': current_user
         }
     
     def validate_capacity(self) -> bool:

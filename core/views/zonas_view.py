@@ -6,16 +6,54 @@ import os
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from visitor_model import VisitorManager
 
-# Colores institucionales de DuocUC
-DUOC_PRIMARY = "#003A70"      # Azul institucional
-DUOC_SECONDARY = "#FFB800"    # Amarillo institucional
-DUOC_ACCENT = "#307FE2"       # Azul acento
-DUOC_NEUTRAL = "#6C757D"      # Gris neutro
-DUOC_LIGHT = "#F8F9FA"        # Gris claro
-DUOC_DARK = "#212529"         # Gris oscuro
-DUOC_SUCCESS = "#28a745"      # Verde para capacidad baja
-DUOC_WARNING = "#ffc107"      # Amarillo para advertencia
-DUOC_DANGER = "#dc3545"       # Rojo para capacidad alta
+# Importar colores del tema
+try:
+    from core.theme import (
+        DUOC_PRIMARY, DUOC_SECONDARY, DUOC_SUCCESS, DUOC_DANGER, DUOC_INFO,
+        darken_color as duoc_darken, get_standard_button_style
+    )
+    DUOC_ACCENT = "#307FE2"       # Azul acento
+    DUOC_NEUTRAL = "#6C757D"      # Gris neutro
+    DUOC_LIGHT = "#F8F9FA"        # Gris claro
+    DUOC_DARK = "#212529"         # Gris oscuro
+    DUOC_WARNING = "#ffc107"      # Amarillo para advertencia
+except Exception:
+    DUOC_PRIMARY = "#003A70"      # Azul institucional
+    DUOC_SECONDARY = "#FFB800"    # Amarillo institucional
+    DUOC_SUCCESS = "#28a745"      # Verde para capacidad baja
+    DUOC_DANGER = "#dc3545"       # Rojo para capacidad alta
+    DUOC_INFO = "#17a2b8"
+    DUOC_ACCENT = "#307FE2"       # Azul acento
+    DUOC_NEUTRAL = "#6C757D"      # Gris neutro
+    DUOC_LIGHT = "#F8F9FA"        # Gris claro
+    DUOC_DARK = "#212529"         # Gris oscuro
+    DUOC_WARNING = "#ffc107"      # Amarillo para advertencia
+    def duoc_darken(color, factor=0.2):
+        color = color.lstrip('#')
+        r, g, b = tuple(int(color[i:i+2], 16) for i in (0, 2, 4))
+        r = max(0, int(r * (1 - factor)))
+        g = max(0, int(g * (1 - factor)))
+        b = max(0, int(b * (1 - factor)))
+        return f"#{r:02x}{g:02x}{b:02x}"
+    def get_standard_button_style(color, text_color=None):
+        return f"""
+            QPushButton {{
+                background-color: {color};
+                color: {'#000000' if color in [DUOC_SECONDARY, "#ffc107"] else '#ffffff'};
+                border: none;
+                border-radius: 6px;
+                padding: 10px 16px;
+                font-size: 14px;
+                font-weight: bold;
+            }}
+            QPushButton:hover {{
+                background-color: {duoc_darken(color, 0.1)};
+            }}
+            QPushButton:disabled {{
+                background-color: #6c757d;
+                color: #adb5bd;
+            }}
+        """
 
 class ZonasView(QWidget):
     """Vista para la gestión de zonas"""
@@ -216,24 +254,7 @@ class ZonasView(QWidget):
             btn_font_size = 12
             
         back_button.setFixedSize(btn_width, btn_height)
-        back_button.setStyleSheet(f"""
-            QPushButton {{
-                background-color: {DUOC_PRIMARY};
-                color: white;
-                border: 2px solid {self.darken_color(DUOC_PRIMARY)};
-                border-radius: 12px;
-                font-family: 'Segoe UI', sans-serif;
-                font-size: {btn_font_size}px;
-                font-weight: bold;
-            }}
-            QPushButton:hover {{
-                background-color: {self.darken_color(DUOC_PRIMARY)};
-                border-color: {DUOC_PRIMARY};
-            }}
-            QPushButton:pressed {{
-                background-color: {self.darken_color(DUOC_PRIMARY, 0.3)};
-            }}
-        """)
+        back_button.setStyleSheet(get_standard_button_style(DUOC_PRIMARY))
         back_button.clicked.connect(self.go_to_main)
         main_layout.addWidget(back_button, alignment=Qt.AlignCenter)
         

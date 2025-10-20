@@ -2,6 +2,31 @@ from PySide6.QtWidgets import QWidget, QVBoxLayout, QHBoxLayout, QLabel, QPushBu
 from PySide6.QtCore import Qt
 from PySide6.QtGui import QFont, QPixmap
 
+# Importar colores del tema
+try:
+    from core.theme import get_standard_button_style
+except Exception:
+    def get_standard_button_style(color, text_color=None):
+        return f"""
+            QPushButton {{
+                background-color: {color};
+                color: {'#000000' if color in ["#FFB81C", "#ffc107"] else '#ffffff'};
+                border: none;
+                border-radius: 6px;
+                padding: 10px 16px;
+                font-size: 14px;
+                font-weight: bold;
+            }}
+            QPushButton:hover {{
+                background-color: {color};
+                opacity: 0.9;
+            }}
+            QPushButton:disabled {{
+                background-color: #6c757d;
+                color: #adb5bd;
+            }}
+        """
+
 class VisitasView(QWidget):
     """Vista para el registro de visitas"""
     
@@ -110,22 +135,7 @@ class VisitasView(QWidget):
         
         self.qr_scan_btn = QPushButton("📷 Escanear QR")
         self.qr_scan_btn.setFixedHeight(50)
-        self.qr_scan_btn.setStyleSheet("""
-            QPushButton {
-                background-color: #007bff;
-                color: white;
-                border: none;
-                border-radius: 8px;
-                font-size: 14px;
-                font-weight: bold;
-            }
-            QPushButton:hover {
-                background-color: #0056b3;
-            }
-            QPushButton:pressed {
-                background-color: #004085;
-            }
-        """)
+        self.qr_scan_btn.setStyleSheet(get_standard_button_style("#007bff"))
         self.qr_scan_btn.clicked.connect(self.open_qr_scanner)
         qr_layout.addWidget(self.qr_scan_btn)
         
@@ -166,22 +176,7 @@ class VisitasView(QWidget):
         
         self.manual_register_btn = QPushButton("📝 Registro Manual")
         self.manual_register_btn.setFixedHeight(50)
-        self.manual_register_btn.setStyleSheet("""
-            QPushButton {
-                background-color: #28a745;
-                color: white;
-                border: none;
-                border-radius: 8px;
-                font-size: 14px;
-                font-weight: bold;
-            }
-            QPushButton:hover {
-                background-color: #218838;
-            }
-            QPushButton:pressed {
-                background-color: #1e7e34;
-            }
-        """)
+        self.manual_register_btn.setStyleSheet(get_standard_button_style("#28a745"))
         self.manual_register_btn.clicked.connect(self.open_manual_registration)
         manual_layout.addWidget(self.manual_register_btn)
         
@@ -223,22 +218,7 @@ class VisitasView(QWidget):
         
         self.view_visitors_btn = QPushButton("👥 Ver Visitantes")
         self.view_visitors_btn.setFixedHeight(50)
-        self.view_visitors_btn.setStyleSheet("""
-            QPushButton {
-                background-color: #6f42c1;
-                color: white;
-                border: none;
-                border-radius: 8px;
-                font-size: 14px;
-                font-weight: bold;
-            }
-            QPushButton:hover {
-                background-color: #5a32a3;
-            }
-            QPushButton:pressed {
-                background-color: #4c2a85;
-            }
-        """)
+        self.view_visitors_btn.setStyleSheet(get_standard_button_style("#6f42c1"))
         self.view_visitors_btn.clicked.connect(self.open_visitors_view)
         visitors_layout.addWidget(self.view_visitors_btn)
         
@@ -250,19 +230,7 @@ class VisitasView(QWidget):
         # Botón de regreso
         back_button = QPushButton("⬅️ Volver al Menú Principal")
         back_button.setFixedSize(200, 40)
-        back_button.setStyleSheet("""
-            QPushButton {
-                background-color: #6c757d;
-                color: white;
-                border: none;
-                border-radius: 8px;
-                font-size: 14px;
-                font-weight: bold;
-            }
-            QPushButton:hover {
-                background-color: #5a6268;
-            }
-        """)
+        back_button.setStyleSheet(get_standard_button_style("#6c757d"))
         back_button.clicked.connect(self.go_to_main)
         main_layout.addWidget(back_button, alignment=Qt.AlignCenter)
     

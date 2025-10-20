@@ -13,10 +13,16 @@ from datetime import datetime
 
 # Importar colores del tema
 try:
-    from core.theme import DUOC_PRIMARY, DUOC_SECONDARY, darken_color as duoc_darken
+    from core.theme import (
+        DUOC_PRIMARY, DUOC_SECONDARY, DUOC_SUCCESS, DUOC_DANGER, DUOC_INFO,
+        darken_color as duoc_darken, get_standard_button_style, get_standard_table_style
+    )
 except Exception:
     DUOC_PRIMARY = "#003A70"
     DUOC_SECONDARY = "#FFB81C"
+    DUOC_SUCCESS = "#28a745"
+    DUOC_DANGER = "#dc3545"
+    DUOC_INFO = "#17a2b8"
     def duoc_darken(color, factor=0.2):
         color = color.lstrip('#')
         r, g, b = tuple(int(color[i:i+2], 16) for i in (0, 2, 4))
@@ -24,6 +30,43 @@ except Exception:
         g = max(0, int(g * (1 - factor)))
         b = max(0, int(b * (1 - factor)))
         return f"#{r:02x}{g:02x}{b:02x}"
+    def get_standard_button_style(color, text_color=None):
+        return f"""
+            QPushButton {{
+                background-color: {color};
+                color: {'#000000' if color in [DUOC_SECONDARY, "#ffc107"] else '#ffffff'};
+                border: none;
+                border-radius: 6px;
+                padding: 10px 16px;
+                font-size: 14px;
+                font-weight: bold;
+            }}
+            QPushButton:hover {{
+                background-color: {duoc_darken(color, 0.1)};
+            }}
+            QPushButton:disabled {{
+                background-color: #6c757d;
+                color: #adb5bd;
+            }}
+        """
+    def get_standard_table_style():
+        return """
+            QTableWidget {
+                background: white;
+                color: black;
+                gridline-color: #e9ecef;
+                alternate-background-color: #f8f9fa;
+                selection-background-color: #003A70;
+                selection-color: white;
+            }
+            QHeaderView::section {
+                background-color: #2c3e50;
+                color: white;
+                font-weight: bold;
+                border: none;
+                padding: 8px 10px;
+            }
+        """
 
 class UserFormDialog(QDialog):
     """Diálogo para crear/editar usuarios"""
@@ -276,45 +319,8 @@ class UsuariosView(QWidget):
                 }}
             """)
         else:
-            # Tema claro
-            self.users_table.setStyleSheet(f"""
-                QTableWidget {{
-                    gridline-color: #d0d0d0;
-                    background-color: #ffffff;
-                    alternate-background-color: #f8f9fa;
-                    font-size: 12px;
-                    border: none;
-                    border-radius: 0px;
-                    selection-background-color: {DUOC_PRIMARY};
-                    font-family: 'Segoe UI', Arial, sans-serif;
-                    color: #000000;
-                }}
-                QTableWidget::item {{
-                    padding: 12px 10px;
-                    border-bottom: 1px solid #e8e8e8;
-                    border-right: 1px solid #e8e8e8;
-                    font-family: 'Segoe UI', Arial, sans-serif;
-                }}
-                QTableWidget::item:selected {{
-                    background-color: {DUOC_PRIMARY};
-                    color: white;
-                }}
-                QTableWidget::item:hover {{
-                    background-color: #f0f0f0;
-                }}
-                QHeaderView::section {{
-                    background-color: #f1f3f5;
-                    color: #212529;
-                    font-weight: bold;
-                    border: none;
-                    padding: 12px 10px;
-                    font-family: 'Segoe UI', Arial, sans-serif;
-                    border-bottom: 2px solid {DUOC_PRIMARY};
-                }}
-                QHeaderView::section:hover {{
-                    background-color: #e9ecef;
-                }}
-            """)
+            # Tema claro - usar estilo estandarizado
+            self.users_table.setStyleSheet(get_standard_table_style())
     
     def apply_widget_theme(self):
         """Aplica el tema a otros widgets de la vista"""
@@ -370,21 +376,21 @@ class UsuariosView(QWidget):
         
         self.btn_add = QPushButton("➕ Agregar Usuario")
         self.btn_add.clicked.connect(self.add_user)
-        self.btn_add.setStyleSheet(self.get_button_style("#28a745"))
+        self.btn_add.setStyleSheet(get_standard_button_style(DUOC_SUCCESS))
         
         self.btn_edit = QPushButton("✏️ Editar Usuario")
         self.btn_edit.clicked.connect(self.edit_user)
         self.btn_edit.setEnabled(False)
-        self.btn_edit.setStyleSheet(self.get_button_style("#007bff"))
+        self.btn_edit.setStyleSheet(get_standard_button_style(DUOC_INFO))
         
         self.btn_delete = QPushButton("🗑️ Eliminar Usuario")
         self.btn_delete.clicked.connect(self.delete_user)
         self.btn_delete.setEnabled(False)
-        self.btn_delete.setStyleSheet(self.get_button_style("#dc3545"))
+        self.btn_delete.setStyleSheet(get_standard_button_style(DUOC_DANGER))
         
         self.btn_refresh = QPushButton("🔄 Actualizar")
         self.btn_refresh.clicked.connect(self.load_users)
-        self.btn_refresh.setStyleSheet(self.get_button_style("#6c757d"))
+        self.btn_refresh.setStyleSheet(get_standard_button_style("#6c757d"))
         
         buttons_layout.addWidget(self.btn_add)
         buttons_layout.addWidget(self.btn_edit)
@@ -427,38 +433,6 @@ class UsuariosView(QWidget):
         info_label.setAlignment(Qt.AlignCenter)
         layout.addWidget(info_label)
     
-    def get_button_style(self, color):
-        """Retorna el estilo para los botones"""
-        return f"""
-            QPushButton {{
-                background-color: {color};
-                color: white;
-                border: none;
-                border-radius: 6px;
-                padding: 10px 20px;
-                font-size: 14px;
-                font-weight: bold;
-            }}
-            QPushButton:hover {{
-                background-color: {self.darken_color(color)};
-            }}
-            QPushButton:pressed {{
-                background-color: {self.darken_color(color, 0.3)};
-            }}
-            QPushButton:disabled {{
-                background-color: #6c757d;
-                color: #adb5bd;
-            }}
-        """
-    
-    def darken_color(self, color, factor=0.2):
-        """Oscurece un color"""
-        color = color.lstrip('#')
-        r, g, b = tuple(int(color[i:i+2], 16) for i in (0, 2, 4))
-        r = max(0, int(r * (1 - factor)))
-        g = max(0, int(g * (1 - factor)))
-        b = max(0, int(b * (1 - factor)))
-        return f"#{r:02x}{g:02x}{b:02x}"
     
     def load_users(self):
         """Carga los usuarios en la tabla"""

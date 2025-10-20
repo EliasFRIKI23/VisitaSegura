@@ -6,7 +6,7 @@ from database import get_visitantes_collection, connect_db
 
 class Visitor:
     def __init__(self, rut: str, nombre_completo: str, acompañante: str, 
-                 sector: str, estado: str = "Dentro"):
+                 sector: str, estado: str = "Dentro", usuario_registrador: str = None):
         self.id = self._generate_id()
         self.rut = rut
         self.nombre_completo = nombre_completo
@@ -15,6 +15,7 @@ class Visitor:
         self.acompañante = acompañante
         self.sector = sector
         self.estado = estado  # "Dentro" o "Fuera"
+        self.usuario_registrador = usuario_registrador  # Usuario que registró al visitante
     
     def _generate_id(self) -> str:
         """Genera un ID único basado en timestamp"""
@@ -31,7 +32,8 @@ class Visitor:
             'fecha_salida': self.fecha_salida,
             'acompañante': self.acompañante,
             'sector': self.sector,
-            'estado': self.estado
+            'estado': self.estado,
+            'usuario_registrador': self.usuario_registrador
         }
     
     @classmethod
@@ -42,7 +44,8 @@ class Visitor:
             nombre_completo=data['nombre_completo'],
             acompañante=data['acompañante'],
             sector=data['sector'],
-            estado=data['estado']
+            estado=data['estado'],
+            usuario_registrador=data.get('usuario_registrador', None)  # Campo opcional para compatibilidad
         )
         visitor.id = data['id']
         visitor.fecha_ingreso = data['fecha_ingreso']
@@ -247,7 +250,8 @@ class VisitorManager:
                 'fecha_salida': fecha_salida,
                 'destino': visitor.sector,
                 'acompañante': visitor.acompañante,
-                'estado_visita': estado_visita
+                'estado_visita': estado_visita,
+                'usuario_registrador': visitor.usuario_registrador or "Sistema"
             })
         
         # Ordenar por fecha de entrada (más recientes primero)
