@@ -2,7 +2,14 @@ from datetime import datetime
 from typing import List, Dict, Optional
 import json
 import os
-from database import get_visitantes_collection, connect_db
+
+# Importar MongoDB solo si está disponible
+try:
+    from database import get_visitantes_collection, connect_db
+    MONGO_AVAILABLE = True
+except ImportError:
+    MONGO_AVAILABLE = False
+    print("MongoDB no disponible, usando solo archivo JSON")
 
 class Visitor:
     def __init__(self, rut: str, nombre_completo: str, acompañante: str, 
@@ -65,14 +72,33 @@ class Visitor:
             return
 
 class VisitorManager:
+    # Instancia singleton para mantener consistencia
+    _instance = None
+    _visitors = []
+    _initialized = False
+    
+    def __new__(cls, data_file: str = "visitors.json"):
+        if cls._instance is None:
+            cls._instance = super(VisitorManager, cls).__new__(cls)
+        return cls._instance
+    
     def __init__(self, data_file: str = "visitors.json"):
-        self.data_file = data_file
-        self.visitors: List[Visitor] = []
-        self.collection = None
-        self.load_visitors()
+        if not self._initialized:
+            self.data_file = data_file
+            self.visitors = self._visitors
+            self.collection = None
+            self.load_visitors()
+            self._initialized = True
+        else:
+            # Si ya está inicializado, usar los datos existentes
+            self.data_file = data_file
+            self.visitors = self._visitors
     
     def _get_collection(self):
         """Obtiene la colección de MongoDB"""
+        if not MONGO_AVAILABLE:
+            return None
+            
         if self.collection is None:
             try:
                 connect_db()
@@ -83,7 +109,12 @@ class VisitorManager:
         return self.collection
     
     def load_visitors(self):
-        """Carga los visitantes desde MongoDB"""
+        """Carga los visitantes desde MongoDB o archivo JSON"""
+        if not MONGO_AVAILABLE:
+            print("MongoDB no disponible, cargando desde archivo JSON")
+            self._load_from_json()
+            return
+            
         try:
             collection = self._get_collection()
             if collection is None:
@@ -93,7 +124,7 @@ class VisitorManager:
             
             # Cargar desde MongoDB
             cursor = collection.find({})
-            self.visitors = []
+            self.visitors.clear()  # Limpiar la lista existente
             for doc in cursor:
                 # Convertir ObjectId a string si existe
                 if '_id' in doc:
@@ -114,17 +145,22 @@ class VisitorManager:
             try:
                 with open(self.data_file, 'r', encoding='utf-8') as f:
                     data = json.load(f)
-                    self.visitors = [Visitor.from_dict(visitor_data) for visitor_data in data]
+                    self.visitors.clear()  # Limpiar la lista existente
+                    self.visitors.extend([Visitor.from_dict(visitor_data) for visitor_data in data])
                 print(f"Cargados {len(self.visitors)} visitantes desde archivo JSON")
             except (json.JSONDecodeError, KeyError, FileNotFoundError):
-                self.visitors = []
+                self.visitors.clear()
                 print("No se encontraron visitantes en el archivo JSON")
         else:
-            self.visitors = []
+            self.visitors.clear()
             print("No existe archivo JSON de respaldo")
     
     def save_visitors(self):
-        """Guarda los visitantes en MongoDB"""
+        """Guarda los visitantes en MongoDB o archivo JSON"""
+        if not MONGO_AVAILABLE:
+            print("MongoDB no disponible, guardando en archivo JSON")
+            return self._save_to_json()
+            
         try:
             collection = self._get_collection()
             if collection is None:
@@ -258,3 +294,9 @@ class VisitorManager:
         report_data.sort(key=lambda x: x['fecha_entrada'], reverse=True)
         
         return report_data
+    
+    def force_reload(self):
+        """Fuerza la recarga de datos desde la fuente"""
+        print("Forzando recarga de visitantes...")
+        self.load_visitors()
+        return len(self.visitors)

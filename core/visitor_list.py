@@ -82,9 +82,10 @@ class VisitorListWidget(QWidget):
     # Señales
     visitor_updated = Signal()
     
-    def __init__(self, parent=None):
+    def __init__(self, parent=None, auth_manager=None):
         super().__init__(parent)
         self.visitor_manager = VisitorManager()
+        self.auth_manager = auth_manager  # Guardar referencia al AuthManager
         
         # Configurar tamaño mínimo para mejor visualización de la tabla
         self.setMinimumSize(1200, 600)  # Ancho mínimo de 1200px para acomodar todas las columnas
@@ -273,8 +274,11 @@ class VisitorListWidget(QWidget):
         right_layout.addWidget(right_title)
         
         # Formulario rápido
-        self.quick_form = QuickVisitorForm()
+        self.quick_form = QuickVisitorForm(self, self.auth_manager)
         right_layout.addWidget(self.quick_form)
+        
+        # Conectar el botón de registro rápido
+        self.quick_form.registrar_btn.clicked.connect(self.handle_quick_registration)
         
         # Estadísticas
         stats_group = QGroupBox("📊 Estadísticas")
@@ -331,7 +335,7 @@ class VisitorListWidget(QWidget):
 
     def open_new_with_sector(self, sector: str):
         """Abre el formulario de nuevo visitante con el sector preseleccionado."""
-        dialog = VisitorFormDialog(self)
+        dialog = VisitorFormDialog(self, auth_manager=self.auth_manager)
         try:
             idx = dialog.sector_combo.findText(sector)
             if idx >= 0:
@@ -348,7 +352,7 @@ class VisitorListWidget(QWidget):
 
     def add_visitor(self):
         """Abre el formulario para agregar un nuevo visitante"""
-        dialog = VisitorFormDialog(self)
+        dialog = VisitorFormDialog(self, auth_manager=self.auth_manager)
         if dialog.exec() == QDialog.Accepted:
             visitor = dialog.get_visitor()
             if self.visitor_manager.add_visitor(visitor):
@@ -367,7 +371,7 @@ class VisitorListWidget(QWidget):
         visitor = self.visitor_manager.get_visitor_by_id(visitor_id)
         
         if visitor:
-            dialog = VisitorFormDialog(self, visitor)
+            dialog = VisitorFormDialog(self, visitor, auth_manager=self.auth_manager)
             if dialog.exec() == QDialog.Accepted:
                 self.refresh_list()
                 QMessageBox.information(self, "✅ Éxito", "✏️ Información del visitante actualizada correctamente")
@@ -487,6 +491,8 @@ class VisitorListWidget(QWidget):
     
     def refresh_list(self):
         """Actualiza la lista de visitantes"""
+        # Forzar recarga de datos para asegurar que estén actualizados
+        self.visitor_manager.force_reload()
         visitors = self.visitor_manager.get_all_visitors()
         
         # Aplicar filtros
@@ -554,6 +560,17 @@ class VisitorListWidget(QWidget):
 
         # Actualizar estadísticas
         self.update_stats(visitors)
+    
+    def handle_quick_registration(self):
+        """Maneja el registro rápido desde el formulario lateral"""
+        if self.quick_form.register_visitor():
+            # Actualizar la lista después del registro exitoso
+            self.refresh_list()
+            QMessageBox.information(
+                self, 
+                "✅ Éxito", 
+                "🚀 Visitante registrado correctamente mediante registro rápido"
+            )
     
     def update_stats(self, visitors):
         """Actualiza las estadísticas mostradas"""

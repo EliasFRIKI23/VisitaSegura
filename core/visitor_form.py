@@ -25,11 +25,12 @@ except Exception:
         return "Sistema"
 
 class VisitorFormDialog(QDialog):
-    def __init__(self, parent=None, visitor=None):
+    def __init__(self, parent=None, visitor=None, auth_manager=None):
         super().__init__(parent)
         self.visitor = visitor
         self.is_edit_mode = visitor is not None
         self.visitor_manager = VisitorManager()
+        self.auth_manager = auth_manager  # Guardar referencia al AuthManager
         
         self.setWindowTitle("Editar Visitante" if self.is_edit_mode else "Registrar Nuevo Visitante")
         self.setModal(True)
@@ -308,7 +309,13 @@ class VisitorFormDialog(QDialog):
             else:
                 # Modo creación - usar RUT normalizado y capturar usuario registrador
                 normalized_rut = normalize_rut(self.rut_input.text().strip())
-                current_user = get_current_user()
+                
+                # Usar el AuthManager compartido si está disponible
+                if self.auth_manager and self.auth_manager.is_logged_in():
+                    current_user = self.auth_manager.get_current_username()
+                else:
+                    current_user = get_current_user()  # Fallback a la función global
+                
                 visitor = Visitor(
                     rut=normalized_rut if normalized_rut else self.rut_input.text().strip(),
                     nombre_completo=self.nombre_input.text().strip(),
@@ -328,9 +335,10 @@ class VisitorFormDialog(QDialog):
 
 class QuickVisitorForm(QWidget):
     """Formulario rápido para registro de visitantes desde la lista"""
-    def __init__(self, parent=None):
+    def __init__(self, parent=None, auth_manager=None):
         super().__init__(parent)
         self.visitor_manager = VisitorManager()
+        self.auth_manager = auth_manager  # Guardar referencia al AuthManager
         self.setup_ui()
     
     def setup_ui(self):
@@ -428,7 +436,12 @@ class QuickVisitorForm(QWidget):
         """Retorna los datos del formulario"""
         rut_text = self.rut_input.text().strip()
         normalized_rut = normalize_rut(rut_text) if rut_text else ""
-        current_user = get_current_user()
+        
+        # Usar el AuthManager compartido si está disponible
+        if self.auth_manager and self.auth_manager.is_logged_in():
+            current_user = self.auth_manager.get_current_username()
+        else:
+            current_user = get_current_user()  # Fallback a la función global
         
         return {
             'rut': normalized_rut if normalized_rut else rut_text,
@@ -463,3 +476,85 @@ class QuickVisitorForm(QWidget):
         self.nombre_input.clear()
         self.acompañante_input.clear()
         self.sector_combo.setCurrentIndex(0)
+    
+    def validate_form(self) -> bool:
+        """Valida los datos del formulario rápido"""
+        errors = []
+        
+        # Validar RUT
+        rut = self.rut_input.text().strip()
+        if not rut:
+            errors.append("El RUT es obligatorio")
+        else:
+            # Normalizar y validar el RUT
+            normalized_rut = normalize_rut(rut)
+            if not normalized_rut:
+                errors.append("El RUT ingresado no es válido")
+            else:
+                # Actualizar el campo con el RUT normalizado
+                self.rut_input.setText(normalized_rut)
+        
+        # Validar nombre
+        nombre = self.nombre_input.text().strip()
+        if not nombre:
+            errors.append("El nombre completo es obligatorio")
+        elif len(nombre) < 3:
+            errors.append("El nombre debe tener al menos 3 caracteres")
+        
+        # Validar acompañante
+        acompañante = self.acompañante_input.text().strip()
+        if not acompañante:
+            errors.append("El acompañante es obligatorio")
+        elif len(acompañante) < 3:
+            errors.append("El nombre del acompañante debe tener al menos 3 caracteres")
+        
+        if errors:
+            error_text = "⚠️ <b>Errores de Validación:</b><br><br>" + "<br>".join([f"• {error}" for error in errors])
+            QMessageBox.warning(self, "⚠️ Errores de Validación", error_text)
+            return False
+        
+        return True
+    
+    def register_visitor(self) -> bool:
+        """Registra el visitante con los datos del formulario rápido"""
+        if not self.validate_form():
+            return False
+        
+        # Validar cupo de la zona
+        if not self.validate_capacity():
+            return False
+        
+        try:
+            # Obtener datos del formulario
+            form_data = self.get_form_data()
+            
+            # Crear el visitante
+            from .visitor_model import Visitor
+            visitor = Visitor(
+                rut=form_data['rut'],
+                nombre_completo=form_data['nombre'],
+                acompañante=form_data['acompañante'],
+                sector=form_data['sector'],
+                usuario_registrador=form_data['usuario_registrador']
+            )
+            
+            # Intentar agregar el visitante
+            if self.visitor_manager.add_visitor(visitor):
+                # Limpiar el formulario después del registro exitoso
+                self.clear_form()
+                return True
+            else:
+                QMessageBox.warning(
+                    self, 
+                    "⚠️ Error", 
+                    "🔍 Ya existe un visitante con ese RUT en el sistema"
+                )
+                return False
+                
+        except Exception as e:
+            QMessageBox.critical(
+                self, 
+                "❌ Error", 
+                f"🚫 Error al registrar el visitante:<br><br>{str(e)}"
+            )
+            return False

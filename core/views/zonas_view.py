@@ -442,6 +442,9 @@ class ZonasView(QWidget):
         self.update_zone_counts()
     
     def update_zone_counts(self):
+        # Forzar recarga de datos para asegurar que estén actualizados
+        self.visitor_manager.force_reload()
+        
         zones = ["Financiamiento", "CITT", "Auditorio", "Administración"]
         
         for zone in zones:
