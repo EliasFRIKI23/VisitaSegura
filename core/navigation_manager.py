@@ -41,6 +41,10 @@ class NavigationManager(QObject):
         """Retorna la vista actual"""
         return self.current_view
     
+    def get_view(self, view_name):
+        """Retorna una vista específica por nombre"""
+        return self.views.get(view_name)
+    
     def set_theme(self, dark_mode):
         """Establece el tema y lo propaga a todas las vistas"""
         self.dark_mode = dark_mode

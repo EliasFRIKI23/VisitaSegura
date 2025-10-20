@@ -40,9 +40,11 @@ sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 try:
     from core.visitor_model import VisitorManager
     from core.excel_exporter import ExcelExporter
+    from core.auth_manager import AuthManager
 except ImportError:
     from visitor_model import VisitorManager
     from excel_exporter import ExcelExporter
+    from auth_manager import AuthManager
 
 class ChartWidget(QWidget):
     """Widget personalizado para mostrar gráficos"""
@@ -199,10 +201,11 @@ class ChartWidget(QWidget):
 class ReportesView(QWidget):
     """Vista para reportes y estadísticas"""
     
-    def __init__(self, parent=None):
+    def __init__(self, parent=None, auth_manager=None):
         super().__init__(parent)
         self.visitor_manager = VisitorManager()
         self.excel_exporter = ExcelExporter()
+        self.auth_manager = auth_manager or AuthManager()
         self.range_days = 7  # Rango inicial para el gráfico de visitantes por día
         self.setup_ui()
         
@@ -213,6 +216,18 @@ class ReportesView(QWidget):
         
         # Conectar el evento de cambio de tamaño para ajustar las columnas
         self.resizeEvent = self.on_resize_event
+    
+    def update_auth_manager(self, auth_manager):
+        """Actualiza la instancia del AuthManager"""
+        self.auth_manager = auth_manager
+        self.update_export_button_visibility()
+    
+    def update_export_button_visibility(self):
+        """Actualiza la visibilidad del botón de exportar según los permisos"""
+        if hasattr(self, 'btn_export'):
+            is_admin = self.auth_manager.is_admin()
+            self.btn_export.setVisible(is_admin)
+            self.btn_export.setEnabled(is_admin)
     
     def on_resize_event(self, event):
         """Maneja el evento de cambio de tamaño de la ventana"""
@@ -1287,7 +1302,16 @@ class ReportesView(QWidget):
         print(f"Debug: No se encontró el label para actualizar en la tarjeta")
     
     def export_to_excel(self):
-        """Exporta los datos de visitantes a Excel"""
+        """Exporta los datos de visitantes a Excel (solo administradores)"""
+        # Verificar permisos de administrador
+        if not self.auth_manager.is_admin():
+            QMessageBox.warning(
+                self, 
+                "Acceso Denegado", 
+                "Solo los administradores pueden exportar reportes a Excel."
+            )
+            return
+        
         try:
             # Recargar los datos desde el archivo JSON para obtener la información más actualizada
             self.visitor_manager.load_visitors()

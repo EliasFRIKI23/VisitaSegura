@@ -143,6 +143,8 @@ class AuthManager:
                 update_data['role'] = kwargs['role']
             if 'is_active' in kwargs:
                 update_data['is_active'] = kwargs['is_active']
+            if 'password' in kwargs and kwargs['password']:
+                update_data['password'] = kwargs['password']
             
             if update_data:
                 result = self.users_collection.update_one(

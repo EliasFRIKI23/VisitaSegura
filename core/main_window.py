@@ -11,13 +11,13 @@ from PySide6.QtGui import QAction, QPalette, QColor, QGuiApplication, QFont, QPi
 try:
     from core.login_window import LoginDialog
     from core.visitor_list import VisitorListWidget
-    from core.views import VisitasView, ZonasView, ReportesView
+    from core.views import VisitasView, ZonasView, ReportesView, UsuariosView
     from core.navigation_manager import NavigationManager
     from core.auth_manager import AuthManager
 except ImportError:
     from login_window import LoginDialog
     from visitor_list import VisitorListWidget
-    from views import VisitasView, ZonasView, ReportesView
+    from views import VisitasView, ZonasView, ReportesView, UsuariosView
     from navigation_manager import NavigationManager
     from auth_manager import AuthManager
 
@@ -142,8 +142,12 @@ class MainWindow(QMainWindow):
         self.navigation_manager.register_view("zonas", zonas_view)
         
         # Vista de reportes
-        reportes_view = ReportesView(self)
+        reportes_view = ReportesView(self, self.auth_manager)
         self.navigation_manager.register_view("reportes", reportes_view)
+        
+        # Vista de usuarios (solo para administradores)
+        usuarios_view = UsuariosView(self, self.auth_manager)
+        self.navigation_manager.register_view("usuarios", usuarios_view)
         
         # Establecer la vista principal como inicial
         self.navigation_manager.navigate_to("main")
@@ -283,6 +287,15 @@ class MainWindow(QMainWindow):
         self.btn_reportes.setStyleSheet(self.get_button_style(DUOC_PRIMARY, font_size))
         layout.addWidget(self.btn_reportes, 1, 1)
 
+        # Botón de Usuarios (solo para administradores)
+        self.btn_usuarios = QPushButton("👥 Usuarios")
+        self.btn_usuarios.clicked.connect(self.open_usuarios)
+        self.btn_usuarios.setMinimumSize(btn_width, btn_height)
+        self.btn_usuarios.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
+        self.btn_usuarios.setStyleSheet(self.get_button_style("#6f42c1", font_size))  # Color púrpura para diferenciarlo
+        self.btn_usuarios.setVisible(False)  # Oculto por defecto
+        layout.addWidget(self.btn_usuarios, 2, 0, 1, 2)  # Ocupa ambas columnas
+
     def get_button_style(self, color, font_size=16):
         """Retorna el estilo CSS para los botones principales"""
         return f"""
@@ -333,6 +346,24 @@ class MainWindow(QMainWindow):
         print("Abriendo sección de Reportes")
         self.navigation_manager.navigate_to("reportes")
     
+    def open_usuarios(self):
+        """Abre la sección de usuarios (solo administradores)"""
+        if not self.check_authentication():
+            return
+        
+        # Verificar que sea administrador
+        if not self.auth_manager.is_admin():
+            from PySide6.QtWidgets import QMessageBox
+            QMessageBox.warning(
+                self, 
+                "Acceso Denegado", 
+                "Solo los administradores pueden gestionar usuarios."
+            )
+            return
+        
+        print("Abriendo sección de Usuarios")
+        self.navigation_manager.navigate_to("usuarios")
+    
     def go_to_main(self):
         """Regresa al menú principal"""
         self.navigation_manager.navigate_to("main")
@@ -353,11 +384,23 @@ class MainWindow(QMainWindow):
             self.setWindowTitle("VisitaSegura - Gestión de Zonas")
         elif view_name == "reportes":
             self.setWindowTitle("VisitaSegura - Reportes y Estadísticas")
+        elif view_name == "usuarios":
+            self.setWindowTitle("VisitaSegura - Gestión de Usuarios")
     
     def on_theme_changed(self, dark_mode):
         """Maneja el cambio de tema"""
         self.dark_mode = dark_mode
         self.apply_theme()
+        
+        # Aplicar tema a la vista de usuarios si existe
+        usuarios_view = self.navigation_manager.get_view("usuarios")
+        if usuarios_view:
+            usuarios_view.set_theme(dark_mode)
+        
+        # Aplicar tema a la vista de reportes si existe
+        reportes_view = self.navigation_manager.get_view("reportes")
+        if reportes_view:
+            reportes_view.update_auth_manager(self.auth_manager)
 
     def check_authentication(self):
         """Verifica si el usuario está autenticado"""
@@ -407,10 +450,27 @@ class MainWindow(QMainWindow):
             self.btn_open_login.setText(f"👤 {user['full_name']} (Cerrar Sesión)")
             self.btn_open_login.clicked.disconnect()
             self.btn_open_login.clicked.connect(self.logout)
+            
+            # Mostrar/ocultar botón de usuarios según el rol
+            self.btn_usuarios.setVisible(self.auth_manager.is_admin())
+            
+            # Actualizar el AuthManager en la vista de usuarios
+            usuarios_view = self.navigation_manager.get_view("usuarios")
+            if usuarios_view:
+                usuarios_view.update_auth_manager(self.auth_manager)
+                usuarios_view.set_theme(self.dark_mode)
+            
+            # Actualizar el AuthManager en la vista de reportes
+            reportes_view = self.navigation_manager.get_view("reportes")
+            if reportes_view:
+                reportes_view.update_auth_manager(self.auth_manager)
         else:
             self.btn_open_login.setText("🔐 Administración")
             self.btn_open_login.clicked.disconnect()
             self.btn_open_login.clicked.connect(self.open_login)
+            
+            # Ocultar botón de usuarios cuando no hay sesión
+            self.btn_usuarios.setVisible(False)
         
         # Ajustar el tamaño del botón al contenido
         self.btn_open_login.adjustSize()
