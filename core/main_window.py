@@ -155,7 +155,7 @@ class MainWindow(QMainWindow):
         self.navigation_manager.register_view("main", main_view)
         
         # Vista de visitas
-        visitas_view = VisitasView(self)
+        visitas_view = VisitasView(self, self.auth_manager)
         self.navigation_manager.register_view("visitas", visitas_view)
         
         # Vista de visitantes (sistema completo)

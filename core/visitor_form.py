@@ -9,7 +9,8 @@ from .visitor_model import Visitor, VisitorManager
 
 # Importar funciones de normalización de RUT
 try:
-    from .theme import normalize_rut, format_rut_display, validate_rut_dv, get_current_user
+    from .theme import normalize_rut, format_rut_display, validate_rut_dv
+    from .current_user_manager import get_current_user
 except Exception:
     def normalize_rut(rut_input):
         """Fallback si no se puede importar la función"""
@@ -218,21 +219,59 @@ class VisitorFormDialog(QDialog):
         """Formatea el RUT cuando el usuario termina de escribir"""
         current_text = self.rut_input.text().strip()
         if current_text:
-            normalized = normalize_rut(current_text)
-            if normalized:
-                self.rut_input.setText(normalized)
-            else:
-                # Si no se puede normalizar, mostrar mensaje de error
-                QMessageBox.warning(
-                    self, 
-                    "⚠️ RUT Inválido", 
-                    f"El RUT ingresado '{current_text}' no es válido.\n\n"
-                    "Por favor, ingrese un RUT válido con formato:\n"
-                    "• 12345678-9\n"
-                    "• 123456789\n"
-                    "• 12.345.678-9"
-                )
-                self.rut_input.setFocus()
+            # Usar la función mejorada con información detallada
+            try:
+                from .theme import normalize_rut_with_info
+                normalized, error_msg, correct_dv = normalize_rut_with_info(current_text)
+                
+                if normalized:
+                    self.rut_input.setText(normalized)
+                else:
+                    # Mostrar mensaje de error más informativo
+                    if correct_dv:
+                        # Sugerir el RUT correcto
+                        rut_clean = ''.join(c for c in current_text.upper() if c.isdigit() or c == 'K')
+                        if len(rut_clean) >= 8:
+                            numero = rut_clean[:-1] if len(rut_clean) > 8 else rut_clean[:7]
+                            rut_correcto = f"{numero}-{correct_dv}"
+                            
+                            reply = QMessageBox.question(
+                                self,
+                                "RUT Inválido",
+                                f"{error_msg}\n\n¿Desea usar el RUT correcto: {rut_correcto}?",
+                                QMessageBox.Yes | QMessageBox.No,
+                                QMessageBox.Yes
+                            )
+                            
+                            if reply == QMessageBox.Yes:
+                                self.rut_input.setText(normalize_rut(rut_correcto))
+                                return
+                    
+                    QMessageBox.warning(
+                        self, 
+                        "RUT Inválido", 
+                        f"{error_msg}\n\nPor favor, ingrese un RUT válido con formato:\n"
+                        "• 12345678-5\n"
+                        "• 123456785\n"
+                        "• 12.345.678-5"
+                    )
+                    self.rut_input.setFocus()
+            except ImportError:
+                # Fallback a la función original
+                normalized = normalize_rut(current_text)
+                if normalized:
+                    self.rut_input.setText(normalized)
+                else:
+                    QMessageBox.warning(
+                        self, 
+                        "RUT Inválido", 
+                        f"El RUT ingresado '{current_text}' no es válido.\n\n"
+                        "Por favor, ingrese un RUT válido con formato:\n"
+                        "• 12345678-9\n"
+                        "• 123456789\n"
+                        "• 12.345.678-9"
+                    )
+                    self.rut_input.setFocus()
     
     def validate_form(self) -> bool:
         """Valida los datos del formulario"""
@@ -310,11 +349,8 @@ class VisitorFormDialog(QDialog):
                 # Modo creación - usar RUT normalizado y capturar usuario registrador
                 normalized_rut = normalize_rut(self.rut_input.text().strip())
                 
-                # Usar el AuthManager compartido si está disponible
-                if self.auth_manager and self.auth_manager.is_logged_in():
-                    current_user = self.auth_manager.get_current_username()
-                else:
-                    current_user = get_current_user()  # Fallback a la función global
+                # Obtener usuario actual del sistema centralizado
+                current_user = get_current_user()
                 
                 visitor = Visitor(
                     rut=normalized_rut if normalized_rut else self.rut_input.text().strip(),
@@ -437,11 +473,8 @@ class QuickVisitorForm(QWidget):
         rut_text = self.rut_input.text().strip()
         normalized_rut = normalize_rut(rut_text) if rut_text else ""
         
-        # Usar el AuthManager compartido si está disponible
-        if self.auth_manager and self.auth_manager.is_logged_in():
-            current_user = self.auth_manager.get_current_username()
-        else:
-            current_user = get_current_user()  # Fallback a la función global
+        # Obtener usuario actual del sistema centralizado
+        current_user = get_current_user()
         
         return {
             'rut': normalized_rut if normalized_rut else rut_text,

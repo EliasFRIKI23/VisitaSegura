@@ -3,6 +3,7 @@ from database import get_db
 from datetime import datetime
 import hashlib
 import secrets
+from .current_user_manager import set_current_user, clear_current_user
 
 class AuthManager:
     """Gestor simple de autenticación que consulta directamente la BD"""
@@ -61,6 +62,10 @@ class AuthManager:
                 
                 # Guardar usuario actual
                 self.current_user = user
+                
+                # Establecer usuario en el sistema centralizado
+                set_current_user(username)
+                
                 return True
             
             return False
@@ -71,6 +76,7 @@ class AuthManager:
     def logout(self):
         """Cierra la sesión actual"""
         self.current_user = None
+        clear_current_user()
     
     def is_logged_in(self) -> bool:
         """Verifica si hay un usuario logueado"""

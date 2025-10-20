@@ -113,6 +113,74 @@ def get_standard_button_style(color, text_color=None):
         }}
     """
 
+def normalize_rut_with_info(rut_input):
+    """
+    Normaliza un RUT chileno al formato estándar XX.XXX.XXX-X con información detallada
+    
+    Args:
+        rut_input (str): RUT en cualquier formato (con o sin puntos, guiones, espacios)
+    
+    Returns:
+        tuple: (rut_normalizado, mensaje_error, digito_correcto)
+               - rut_normalizado: RUT en formato XX.XXX.XXX-X o cadena vacía si es inválido
+               - mensaje_error: Mensaje descriptivo del error o None si es válido
+               - digito_correcto: Dígito verificador correcto o None si es válido
+    """
+    if not rut_input:
+        return "", "RUT vacío", None
+    
+    # Limpiar el RUT: solo números y K/k
+    rut_clean = ''.join(c for c in str(rut_input).upper() if c.isdigit() or c == 'K')
+    
+    # Validar longitud mínima (7 dígitos + dígito verificador)
+    if len(rut_clean) < 8:
+        return "", f"RUT muy corto (mínimo 8 caracteres, ingresados: {len(rut_clean)})", None
+    
+    # Separar número y dígito verificador
+    if len(rut_clean) == 8:
+        # Caso: 12345678 (sin dígito verificador)
+        numero = rut_clean[:7]
+        dv = rut_clean[7]
+    else:
+        # Caso: 123456789 o 12345678K
+        numero = rut_clean[:-1]
+        dv = rut_clean[-1]
+    
+    # Validar que el dígito verificador sea válido
+    if not validate_rut_dv(numero, dv):
+        # Calcular el dígito verificador correcto
+        suma = 0
+        multiplicador = 2
+        
+        for digito in reversed(str(int(numero))):
+            suma += int(digito) * multiplicador
+            multiplicador += 1
+            if multiplicador > 7:
+                multiplicador = 2
+        
+        resto = suma % 11
+        dv_calculado = 11 - resto
+        
+        if dv_calculado == 11:
+            dv_calculado = 0
+        elif dv_calculado == 10:
+            dv_calculado = 'K'
+        
+        return "", f"Dígito verificador incorrecto. El correcto es: {dv_calculado}", str(dv_calculado)
+    
+    # Formatear al estilo chileno: XX.XXX.XXX-X
+    if len(numero) <= 3:
+        return f"{numero}-{dv}", None, None
+    elif len(numero) == 7:
+        # RUT de 7 dígitos: XX.XXX.XX-X
+        return f"{numero[:2]}.{numero[2:5]}.{numero[5:]}-{dv}", None, None
+    elif len(numero) == 8:
+        # RUT de 8 dígitos: XX.XXX.XXX-X
+        return f"{numero[:2]}.{numero[2:5]}.{numero[5:]}-{dv}", None, None
+    else:
+        # Para otros casos, usar formato genérico
+        return f"{numero[:-6]}.{numero[-6:-3]}.{numero[-3:]}-{dv}", None, None
+
 def normalize_rut(rut_input):
     """
     Normaliza un RUT chileno al formato estándar XX.XXX.XXX-X

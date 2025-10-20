@@ -227,8 +227,9 @@ class QRScannerThread(QThread):
 class QRScannerDialog(QDialog):
     """Diálogo para escanear códigos QR"""
     
-    def __init__(self, parent=None):
+    def __init__(self, parent=None, auth_manager=None):
         super().__init__(parent)
+        self.auth_manager = auth_manager
         self.setWindowTitle("📱 Escáner de QR - VisitaSegura")
         self.setModal(True)
         self.resize(600, 500)  # Ventana más pequeña
@@ -242,6 +243,26 @@ class QRScannerDialog(QDialog):
         
         # Detectar cámaras disponibles
         self.detect_available_cameras()
+    
+    def get_auth_manager(self):
+        """Obtiene el AuthManager de la ventana principal"""
+        # Si ya tenemos auth_manager, usarlo
+        if self.auth_manager:
+            return self.auth_manager
+        
+        # Buscar la ventana principal que contiene el auth_manager
+        parent = self.parent()
+        while parent is not None:
+            if hasattr(parent, 'auth_manager'):
+                return parent.auth_manager
+            parent = parent.parent()
+        
+        # Si no se encuentra, crear una nueva instancia
+        try:
+            from core.auth_manager import AuthManager
+            return AuthManager()
+        except Exception:
+            return None
         
         self.setup_ui()
         self.setup_connections()
@@ -1122,7 +1143,9 @@ class QRScannerDialog(QDialog):
             print(f"DEBUG: Nombre en parsed_data: {parsed_data.get('nombre_completo', 'NO ENCONTRADO')}")
             
             from core.visitor_form import VisitorFormDialog
-            form_dialog = VisitorFormDialog(self)
+            # Obtener el auth_manager de la ventana principal
+            auth_manager = self.get_auth_manager()
+            form_dialog = VisitorFormDialog(self, auth_manager=auth_manager)
             
             # Esperar un momento para que el formulario se inicialice completamente
             import time
@@ -1203,7 +1226,9 @@ class QRScannerDialog(QDialog):
         """Abre registro manual sin datos de carnet"""
         try:
             from core.visitor_form import VisitorFormDialog
-            form_dialog = VisitorFormDialog(self)
+            # Obtener el auth_manager de la ventana principal
+            auth_manager = self.get_auth_manager()
+            form_dialog = VisitorFormDialog(self, auth_manager=auth_manager)
             
             # Mostrar mensaje informativo
             QMessageBox.information(
@@ -1486,7 +1511,9 @@ class QRScannerDialog(QDialog):
             self.info_frame.setVisible(False)
             
             from core.visitor_form import VisitorFormDialog
-            form_dialog = VisitorFormDialog(self)
+            # Obtener el auth_manager de la ventana principal
+            auth_manager = self.get_auth_manager()
+            form_dialog = VisitorFormDialog(self, auth_manager=auth_manager)
             
             # Pre-rellenar RUT
             if parsed_data['rut']:
@@ -1528,7 +1555,9 @@ class QRScannerDialog(QDialog):
         """Abre registro automático con datos extraídos del carnet"""
         try:
             from core.visitor_form import VisitorFormDialog
-            form_dialog = VisitorFormDialog(self)
+            # Obtener el auth_manager de la ventana principal
+            auth_manager = self.get_auth_manager()
+            form_dialog = VisitorFormDialog(self, auth_manager=auth_manager)
             
             # Pre-rellenar campos con datos extraídos
             if parsed_data['rut']:
@@ -1572,7 +1601,9 @@ class QRScannerDialog(QDialog):
         """Abre registro manual con datos del QR de carnet"""
         try:
             from core.visitor_form import VisitorFormDialog
-            form_dialog = VisitorFormDialog(self)
+            # Obtener el auth_manager de la ventana principal
+            auth_manager = self.get_auth_manager()
+            form_dialog = VisitorFormDialog(self, auth_manager=auth_manager)
             
             # Intentar extraer RUT del QR si es posible
             if 'rut' in qr_data.lower():

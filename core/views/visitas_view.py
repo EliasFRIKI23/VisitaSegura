@@ -30,9 +30,30 @@ except Exception:
 class VisitasView(QWidget):
     """Vista para el registro de visitas"""
     
-    def __init__(self, parent=None):
+    def __init__(self, parent=None, auth_manager=None):
         super().__init__(parent)
+        self.auth_manager = auth_manager
         self.setup_ui()
+    
+    def get_auth_manager(self):
+        """Obtiene el AuthManager de la ventana principal"""
+        # Si ya tenemos auth_manager, usarlo
+        if self.auth_manager:
+            return self.auth_manager
+        
+        # Buscar la ventana principal que contiene el auth_manager
+        parent = self.parent()
+        while parent is not None:
+            if hasattr(parent, 'auth_manager'):
+                return parent.auth_manager
+            parent = parent.parent()
+        
+        # Si no se encuentra, crear una nueva instancia
+        try:
+            from ..auth_manager import AuthManager
+            return AuthManager()
+        except Exception:
+            return None
     
     def setup_ui(self):
         """Configura la interfaz de usuario"""
@@ -238,7 +259,7 @@ class VisitasView(QWidget):
         """Abre el escáner de códigos QR"""
         try:
             from ..qr_scanner import QRScannerDialog
-            scanner_dialog = QRScannerDialog(self)
+            scanner_dialog = QRScannerDialog(self, self.auth_manager)
             scanner_dialog.exec()
         except ImportError as e:
             from PySide6.QtWidgets import QMessageBox
@@ -251,7 +272,9 @@ class VisitasView(QWidget):
         """Abre el formulario de registro manual"""
         try:
             from ..visitor_form import VisitorFormDialog
-            form_dialog = VisitorFormDialog(self)
+            # Obtener el auth_manager de la ventana principal
+            auth_manager = self.get_auth_manager()
+            form_dialog = VisitorFormDialog(self, auth_manager=auth_manager)
             if form_dialog.exec():
                 visitor = form_dialog.get_visitor()
                 if visitor:
