@@ -85,6 +85,10 @@ class VisitorListWidget(QWidget):
     def __init__(self, parent=None):
         super().__init__(parent)
         self.visitor_manager = VisitorManager()
+        
+        # Configurar tamaño mínimo para mejor visualización de la tabla
+        self.setMinimumSize(1200, 600)  # Ancho mínimo de 1200px para acomodar todas las columnas
+        
         self.setup_ui()
         self.setup_connections()
         self.refresh_list()
@@ -214,7 +218,7 @@ class VisitorListWidget(QWidget):
         self.visitor_table = QTableWidget()
         self.visitor_table.setColumnCount(8)
         self.visitor_table.setHorizontalHeaderLabels([
-            "🆔 ID", "📄 RUT", "👤 Nombre", "🤝 Acompañante", "🏢 Sector", "📍 Estado", "⏰ Hora Ingreso", "👨‍💼 Registrado por"
+            "🆔 ID", "📄 RUT", "👤 Nombre", "🤝 Acompañante", "🏢 Sector", "📍 Estado", "⏰ Ingreso", "👨‍💼 Registrado por"
         ])
         
         # Configurar tabla
@@ -234,15 +238,20 @@ class VisitorListWidget(QWidget):
         self.visitor_table.setStyleSheet(get_standard_table_style())
 
         
-        # Ajustar columnas
+        # Ajustar columnas con mejor distribución
         header = self.visitor_table.horizontalHeader()
-        header.setSectionResizeMode(0, QHeaderView.ResizeToContents)  # ID
-        header.setSectionResizeMode(1, QHeaderView.ResizeToContents)  # RUT
-        header.setSectionResizeMode(2, QHeaderView.Stretch)          # Nombre
-        header.setSectionResizeMode(3, QHeaderView.ResizeToContents) # Acompañante
-        header.setSectionResizeMode(4, QHeaderView.ResizeToContents) # Sector
-        header.setSectionResizeMode(5, QHeaderView.ResizeToContents) # Estado
-        header.setSectionResizeMode(6, QHeaderView.ResizeToContents) # Hora
+        header.setSectionResizeMode(0, QHeaderView.ResizeToContents)  # ID (compacto)
+        header.setSectionResizeMode(1, QHeaderView.ResizeToContents)  # RUT (compacto)
+        header.setSectionResizeMode(2, QHeaderView.Stretch)          # Nombre (expandible)
+        header.setSectionResizeMode(3, QHeaderView.ResizeToContents) # Acompañante (compacto)
+        header.setSectionResizeMode(4, QHeaderView.ResizeToContents) # Sector (compacto)
+        header.setSectionResizeMode(5, QHeaderView.ResizeToContents) # Estado (compacto)
+        header.setSectionResizeMode(6, QHeaderView.ResizeToContents) # Hora (compacto)
+        header.setSectionResizeMode(7, QHeaderView.ResizeToContents) # Usuario registrador (compacto)
+        
+        # Establecer tamaños mínimos para mejor legibilidad
+        header.setMinimumSectionSize(80)  # Tamaño mínimo para todas las columnas
+        header.setDefaultSectionSize(120)  # Tamaño por defecto más generoso
         
         left_layout.addWidget(self.visitor_table)
 

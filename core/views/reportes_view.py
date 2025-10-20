@@ -257,6 +257,10 @@ class ReportesView(QWidget):
         self.excel_exporter = ExcelExporter()
         self.auth_manager = auth_manager or AuthManager()
         self.range_days = 7  # Rango inicial para el gráfico de visitantes por día
+        
+        # Configurar tamaño mínimo para mejor visualización de la tabla
+        self.setMinimumSize(1300, 700)  # Ancho mínimo de 1300px para acomodar todas las columnas
+        
         self.setup_ui()
         
         # Timer para actualizar automáticamente cada 10 segundos
@@ -652,31 +656,37 @@ class ReportesView(QWidget):
         self.visitors_table = QTableWidget()
         self.visitors_table.setColumnCount(8)  # 8 columnas incluyendo usuario registrador
         self.visitors_table.setHorizontalHeaderLabels([
-            "Nombre del Visitante",
-            "RUT", 
-            "Fecha y Hora de Entrada",
-            "Fecha y Hora de Salida",
-            "Destino/Lugar",
-            "Acompañante",
-            "Estado de Visita",
-            "Registrado por"
+            "👤 Nombre",
+            "📄 RUT", 
+            "📅 Entrada",
+            "📅 Salida",
+            "🏢 Destino",
+            "🤝 Acompañante",
+            "📍 Estado",
+            "👨‍💼 Registrado por"
         ])
         
         # Configurar tabla responsiva con mejor distribución de columnas
-        self.visitors_table.horizontalHeader().setStretchLastSection(True)
-        self.visitors_table.horizontalHeader().setSectionResizeMode(QHeaderView.Stretch)
         self.visitors_table.setAlternatingRowColors(True)
         self.visitors_table.setSelectionBehavior(QTableWidget.SelectRows)
         # Scrollbars según necesidad
         self.visitors_table.setVerticalScrollBarPolicy(Qt.ScrollBarAsNeeded)
         self.visitors_table.setHorizontalScrollBarPolicy(Qt.ScrollBarAsNeeded)
         
-        # Configurar proporciones de columnas para que se ajusten al espacio disponible
-        # Las columnas se distribuirán proporcionalmente según estos valores
-        column_stretch_factors = [3, 1, 2, 2, 2, 2, 2]  # Factores de estiramiento para 7 columnas
-        for i, factor in enumerate(column_stretch_factors):
-            self.visitors_table.horizontalHeader().setSectionResizeMode(i, QHeaderView.Stretch)
-            self.visitors_table.horizontalHeader().setStretchLastSection(True)
+        # Configurar distribución de columnas para mejor legibilidad
+        header = self.visitors_table.horizontalHeader()
+        header.setSectionResizeMode(0, QHeaderView.Stretch)          # Nombre (expandible)
+        header.setSectionResizeMode(1, QHeaderView.ResizeToContents) # RUT (compacto)
+        header.setSectionResizeMode(2, QHeaderView.ResizeToContents) # Fecha entrada (compacto)
+        header.setSectionResizeMode(3, QHeaderView.ResizeToContents) # Fecha salida (compacto)
+        header.setSectionResizeMode(4, QHeaderView.ResizeToContents) # Destino (compacto)
+        header.setSectionResizeMode(5, QHeaderView.ResizeToContents) # Acompañante (compacto)
+        header.setSectionResizeMode(6, QHeaderView.ResizeToContents) # Estado (compacto)
+        header.setSectionResizeMode(7, QHeaderView.ResizeToContents) # Usuario registrador (compacto)
+        
+        # Establecer tamaños mínimos para mejor legibilidad
+        header.setMinimumSectionSize(100)  # Tamaño mínimo para todas las columnas
+        header.setDefaultSectionSize(140)  # Tamaño por defecto más generoso
         
         # Configurar altura de filas responsiva usando configuración centralizada
         self.visitors_table.verticalHeader().setDefaultSectionSize(self.screen_config['row_height'])

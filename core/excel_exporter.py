@@ -40,14 +40,18 @@ class ExcelExporter:
             # Crear DataFrame con los datos
             df = pd.DataFrame(visitors_data)
             
-            # Asegurar que solo tenemos las 7 columnas esperadas
+            # Asegurar que tenemos todas las columnas necesarias
             expected_columns = [
                 'nombre', 'rut', 'fecha_entrada', 'fecha_salida', 
                 'destino', 'acompañante', 'estado_visita'
             ]
             
+            # Agregar usuario_registrador si no existe (compatibilidad hacia atrás)
+            if 'usuario_registrador' not in df.columns:
+                df['usuario_registrador'] = 'Sistema'
+            
             # Filtrar solo las columnas que necesitamos
-            df = df[expected_columns]
+            df = df[expected_columns + ['usuario_registrador']]
             
             # Renombrar columnas para mejor presentación
             df.columns = [
@@ -57,7 +61,8 @@ class ExcelExporter:
                 'Fecha y Hora de Salida',
                 'Destino/Lugar',
                 'Acompañante',
-                'Estado de Visita'
+                'Estado de Visita',
+                'Registrado por'
             ]
             
             # Crear archivo Excel con formato
@@ -95,7 +100,7 @@ class ExcelExporter:
         )
         
         # Aplicar formato al encabezado (fila 1)
-        for col in range(1, 8):  # 7 columnas
+        for col in range(1, 9):  # 8 columnas (incluyendo usuario registrador)
             cell = worksheet.cell(row=1, column=col)
             cell.font = header_font
             cell.fill = header_fill
@@ -104,13 +109,13 @@ class ExcelExporter:
         
         # Aplicar formato a las celdas de datos
         for row in range(2, num_rows + 2):  # +2 porque empezamos desde la fila 2
-            for col in range(1, 8):
+            for col in range(1, 9):  # 8 columnas
                 cell = worksheet.cell(row=row, column=col)
                 cell.alignment = data_alignment
                 cell.border = border
         
         # Ajustar ancho de columnas
-        column_widths = [25, 15, 20, 20, 20, 20, 15]  # Anchos para cada columna
+        column_widths = [25, 15, 20, 20, 20, 20, 15, 18]  # Anchos para cada columna (incluyendo usuario registrador)
         for i, width in enumerate(column_widths, 1):
             worksheet.column_dimensions[worksheet.cell(row=1, column=i).column_letter].width = width
     
@@ -125,9 +130,16 @@ class ExcelExporter:
             dest = visitor['destino']
             destinations[dest] = destinations.get(dest, 0) + 1
         
+        # Contar visitantes por usuario registrador
+        registradores = {}
+        for visitor in visitors_data:
+            registrador = visitor.get('usuario_registrador', 'Sistema')
+            registradores[registrador] = registradores.get(registrador, 0) + 1
+        
         return {
             'total_visitors': total_visitors,
             'generation_time': current_time,
-            'destinations': destinations
+            'destinations': destinations,
+            'registradores': registradores
         }
 

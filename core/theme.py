@@ -68,15 +68,17 @@ def get_standard_table_style():
         QTableWidget::item:hover {{
             background-color: {DUOC_TABLE_HOVER};
         }}
-        QHeaderView::section {{
-            background-color: {DUOC_TABLE_HEADER_BG};
-            color: {DUOC_TABLE_HEADER_TEXT};
-            font-weight: bold;
-            border: none;
-            padding: 12px 10px;
-            font-family: 'Segoe UI', Arial, sans-serif;
-            border-bottom: 2px solid {DUOC_TABLE_SELECTION};
-        }}
+               QHeaderView::section {{
+                   background-color: {DUOC_TABLE_HEADER_BG};
+                   color: {DUOC_TABLE_HEADER_TEXT};
+                   font-weight: bold;
+                   border: none;
+                   padding: 14px 12px;
+                   font-family: 'Segoe UI', Arial, sans-serif;
+                   font-size: 13px;
+                   border-bottom: 2px solid {DUOC_TABLE_SELECTION};
+                   text-align: center;
+               }}
         QHeaderView::section:hover {{
             background-color: {darken_color(DUOC_TABLE_HEADER_BG, 0.1)};
         }}
