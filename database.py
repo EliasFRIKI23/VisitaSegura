@@ -3,8 +3,8 @@ from pymongo import MongoClient
 import os
 
 
-# Leer URI desde .env o usar local por defecto
-MONGO_URI = os.getenv("MONGO_URI", "mongodb://localhost:27017/")
+# URL de conexión a MongoDB Atlas
+MONGO_URI = "mongodb+srv://feliaravena_db_user:6FitO8nAmbEgPRlj@visitasegura.m4fpfsy.mongodb.net/miapp?retryWrites=true&w=majority&appName=VisitaSegura"
 
 # Crear conexión global
 client = None
@@ -19,7 +19,7 @@ def connect_db():
 
     try:
         client = MongoClient(MONGO_URI)
-        db = client["VisitaSegura"]
+        db = client["miapp"]
 
         # Colecciones
         usuarios_collection = db["Usuarios"]
