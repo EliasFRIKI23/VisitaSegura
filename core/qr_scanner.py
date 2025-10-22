@@ -4,7 +4,7 @@ from pyzbar import pyzbar
 from PySide6.QtWidgets import (
     QDialog, QVBoxLayout, QHBoxLayout, QLabel, QPushButton, 
     QFrame, QMessageBox, QWidget, QSizePolicy, QLineEdit, QComboBox,
-    QScrollArea, QScrollBar
+    QScrollArea, QScrollBar, QRadioButton, QButtonGroup
 )
 from PySide6.QtCore import Qt, QTimer, QThread, Signal
 from PySide6.QtGui import QFont, QPixmap, QImage
@@ -232,7 +232,15 @@ class QRScannerDialog(QDialog):
         self.auth_manager = auth_manager
         self.setWindowTitle("📱 Escáner de QR - VisitaSegura")
         self.setModal(True)
-        self.resize(600, 500)  # Ventana más pequeña
+        
+        # Hacer que la ventana sea maximizable y redimensionable
+        from PySide6.QtCore import Qt
+        # Habilitar todos los botones de ventana (minimizar, maximizar, cerrar)
+        self.setWindowFlags(Qt.Window | Qt.WindowMaximizeButtonHint | 
+                          Qt.WindowMinimizeButtonHint | Qt.WindowCloseButtonHint)
+        
+        # Tamaño inicial grande pero no forzado
+        self.resize(1400, 900)
         
         # Configuración de la cámara
         self.camera_index = 0
@@ -243,6 +251,10 @@ class QRScannerDialog(QDialog):
         
         # Detectar cámaras disponibles
         self.detect_available_cameras()
+        
+        # IMPORTANTE: Inicializar la interfaz
+        self.setup_ui()
+        self.setup_connections()
     
     def get_auth_manager(self):
         """Obtiene el AuthManager de la ventana principal"""
@@ -263,9 +275,6 @@ class QRScannerDialog(QDialog):
             return AuthManager()
         except Exception:
             return None
-        
-        self.setup_ui()
-        self.setup_connections()
     
     def detect_available_cameras(self):
         """Detecta las cámaras disponibles en el sistema"""
@@ -295,88 +304,206 @@ class QRScannerDialog(QDialog):
     
     def setup_ui(self):
         """Configura la interfaz de usuario"""
-        # Crear área de scroll principal
+        # Layout principal del diálogo
+        dialog_layout = QVBoxLayout(self)
+        dialog_layout.setContentsMargins(0, 0, 0, 0)
+        
+        # Crear scroll area para todo el contenido
         scroll_area = QScrollArea()
         scroll_area.setWidgetResizable(True)
         scroll_area.setHorizontalScrollBarPolicy(Qt.ScrollBarAsNeeded)
         scroll_area.setVerticalScrollBarPolicy(Qt.ScrollBarAsNeeded)
+        scroll_area.setFrameShape(QFrame.NoFrame)
         
-        # Widget contenedor para el contenido
-        scroll_widget = QWidget()
-        main_layout = QVBoxLayout(scroll_widget)
-        main_layout.setContentsMargins(15, 15, 15, 15)
-        main_layout.setSpacing(10)
+        # Widget contenedor del contenido
+        content_widget = QWidget()
+        main_layout = QVBoxLayout(content_widget)
+        main_layout.setContentsMargins(20, 20, 20, 20)
+        main_layout.setSpacing(15)
         
-        # Layout principal del diálogo
-        dialog_layout = QVBoxLayout(self)
-        dialog_layout.setContentsMargins(5, 5, 5, 5)
-        dialog_layout.addWidget(scroll_area)
-        
-        # Configurar el widget en el scroll area
-        scroll_area.setWidget(scroll_widget)
-        
-        # Almacenar referencia al scroll area para navegación
-        self.scroll_area = scroll_area
-        
-        # Header
-        header_frame = QFrame()
-        header_frame.setStyleSheet("""
+        # Selector de método de escaneo
+        method_frame = QFrame()
+        method_frame.setStyleSheet("""
             QFrame {
-                background-color: #f8f9fa;
-                border-radius: 10px;
+                background-color: #fff3cd;
+                border: 3px solid #ffc107;
+                border-radius: 12px;
                 padding: 15px;
             }
         """)
-        header_layout = QVBoxLayout(header_frame)
+        method_layout = QHBoxLayout(method_frame)
         
+        method_label = QLabel("⚙️ Método de Escaneo:")
+        method_label.setFont(QFont("Arial", 14, QFont.Bold))
+        method_label.setStyleSheet("color: #856404;")
+        
+        # Botones de radio para seleccionar el método
+        self.method_group = QButtonGroup()
+        self.camera_radio = QRadioButton("📷 Cámara")
+        self.scanner_radio = QRadioButton("🔫 Pistola QR")
+        
+        # Estilo para los radio buttons
+        radio_style = """
+            QRadioButton {
+                color: #495057;
+                font-size: 13px;
+                font-weight: bold;
+                padding: 8px 15px;
+                spacing: 8px;
+            }
+            QRadioButton::indicator {
+                width: 20px;
+                height: 20px;
+            }
+            QRadioButton::indicator:unchecked {
+                background-color: white;
+                border: 2px solid #ced4da;
+                border-radius: 10px;
+            }
+            QRadioButton::indicator:checked {
+                background-color: #007bff;
+                border: 2px solid #0056b3;
+                border-radius: 10px;
+            }
+            QRadioButton::indicator:checked::after {
+                content: '';
+            }
+        """
+        
+        self.camera_radio.setStyleSheet(radio_style)
+        self.scanner_radio.setStyleSheet(radio_style)
+        
+        self.method_group.addButton(self.camera_radio, 0)
+        self.method_group.addButton(self.scanner_radio, 1)
+        
+        # Por defecto seleccionar cámara
+        self.camera_radio.setChecked(True)
+        
+        # Conectar señal de cambio
+        self.camera_radio.toggled.connect(self.on_method_changed)
+        
+        method_layout.addWidget(method_label)
+        method_layout.addWidget(self.camera_radio)
+        method_layout.addWidget(self.scanner_radio)
+        method_layout.addStretch()
+        
+        main_layout.addWidget(method_frame)
+        
+        # Header compacto
+        header_frame = QFrame()
+        header_frame.setStyleSheet("""
+            QFrame {
+                background: qlineargradient(x1:0, y1:0, x2:1, y2:0,
+                    stop:0 #003A70, stop:1 #0056b3);
+                border-radius: 10px;
+                padding: 20px;
+            }
+        """)
+        header_layout = QHBoxLayout(header_frame)
+        
+        # Lado izquierdo con título
+        left_header = QVBoxLayout()
         title = QLabel("📱 Escáner de Códigos QR")
-        title.setFont(QFont("Arial", 18, QFont.Bold))
-        title.setAlignment(Qt.AlignCenter)
-        title.setStyleSheet("color: #2c3e50;")
+        title.setFont(QFont("Arial", 24, QFont.Bold))
+        title.setStyleSheet("color: white;")
         
         subtitle = QLabel("Apunta la cámara hacia un código QR para escanearlo")
-        subtitle.setFont(QFont("Arial", 12))
-        subtitle.setAlignment(Qt.AlignCenter)
-        subtitle.setStyleSheet("color: #6c757d;")
+        subtitle.setFont(QFont("Arial", 14))
+        subtitle.setStyleSheet("color: #e3f2fd;")
         
-        # Guía para carnets
-        guide_label = QLabel("💡 <b>Instrucciones:</b> Mantén una distancia cómoda (20-30cm). El QR debe estar dentro del área verde. Para DroidCam: usa resolución HD, buena iluminación y conexión estable")
-        guide_label.setFont(QFont("Arial", 10))
-        guide_label.setAlignment(Qt.AlignCenter)
-        guide_label.setStyleSheet("color: #17a2b8; background-color: #d1ecf1; padding: 8px; border-radius: 4px;")
+        left_header.addWidget(title)
+        left_header.addWidget(subtitle)
+        header_layout.addLayout(left_header)
         
-        header_layout.addWidget(title)
-        header_layout.addWidget(subtitle)
+        header_layout.addStretch()
+        
+        # Lado derecho con instrucciones
+        guide_label = QLabel("💡 <b>Instrucciones:</b><br>"
+                            "• Mantén distancia menos a 15cm<br>"
+                            "• QR dentro del área verde<br>"
+                            "• Buena iluminación")
+        guide_label.setFont(QFont("Arial", 11))
+        guide_label.setStyleSheet("color: white; background-color: rgba(255,255,255,0.2); "
+                                  "padding: 15px; border-radius: 8px;")
         header_layout.addWidget(guide_label)
+        
         main_layout.addWidget(header_frame)
         
-        # Selector de cámara
+        # === CONTENEDOR PARA MODO CÁMARA ===
+        self.camera_container = QWidget()
+        camera_container_layout = QVBoxLayout(self.camera_container)
+        camera_container_layout.setContentsMargins(0, 0, 0, 0)
+        camera_container_layout.setSpacing(15)
+        
+        # Contenedor principal con dos columnas (para cámara)
+        content_layout = QHBoxLayout()
+        content_layout.setSpacing(20)
+        
+        # Columna izquierda - Video (75% del ancho)
+        left_column = QVBoxLayout()
+        left_column.setSpacing(10)
+        
+        # Selector de cámara en la parte superior del video
         camera_frame = QFrame()
         camera_frame.setStyleSheet("""
             QFrame {
-                background-color: #e9ecef;
+                background-color: #f8f9fa;
                 border-radius: 8px;
-                padding: 10px;
+                padding: 15px;
+                border: 2px solid #dee2e6;
             }
         """)
         camera_layout = QHBoxLayout(camera_frame)
         
         camera_label = QLabel("📷 Cámara:")
-        camera_label.setFont(QFont("Arial", 12, QFont.Bold))
-        camera_label.setStyleSheet("color: #495057;")
+        camera_label.setFont(QFont("Arial", 13, QFont.Bold))
+        camera_label.setStyleSheet("color: #2c3e50;")
         
         self.camera_combo = QComboBox()
-        self.camera_combo.setFont(QFont("Arial", 11))
+        self.camera_combo.setFont(QFont("Arial", 12))
         self.camera_combo.setStyleSheet("""
             QComboBox {
                 background-color: white;
-                border: 1px solid #ced4da;
-                border-radius: 4px;
-                padding: 5px;
-                min-width: 200px;
+                color: #2c3e50;
+                border: 2px solid #ced4da;
+                border-radius: 6px;
+                padding: 8px 12px;
+                min-width: 250px;
+                min-height: 35px;
             }
             QComboBox:hover {
                 border-color: #007bff;
+            }
+            QComboBox:focus {
+                border-color: #0056b3;
+            }
+            QComboBox::drop-down {
+                border: none;
+                padding-right: 10px;
+            }
+            QComboBox::down-arrow {
+                image: none;
+                border-left: 5px solid transparent;
+                border-right: 5px solid transparent;
+                border-top: 6px solid #2c3e50;
+                margin-right: 8px;
+            }
+            QComboBox QAbstractItemView {
+                background-color: white;
+                color: #2c3e50;
+                border: 2px solid #ced4da;
+                border-radius: 6px;
+                padding: 5px;
+                selection-background-color: #007bff;
+                selection-color: white;
+            }
+            QComboBox QAbstractItemView::item {
+                padding: 8px;
+                min-height: 30px;
+            }
+            QComboBox QAbstractItemView::item:hover {
+                background-color: #e3f2fd;
+                color: #0056b3;
             }
         """)
         
@@ -391,151 +518,117 @@ class QRScannerDialog(QDialog):
         
         # Label para mostrar resolución actual
         self.resolution_label = QLabel("Resolución: Desconocida")
-        self.resolution_label.setFont(QFont("Arial", 10))
-        self.resolution_label.setStyleSheet("color: #6c757d;")
+        self.resolution_label.setFont(QFont("Arial", 11))
+        self.resolution_label.setStyleSheet("color: #6c757d; padding: 5px;")
         
         camera_layout.addWidget(camera_label)
         camera_layout.addWidget(self.camera_combo)
         camera_layout.addWidget(self.resolution_label)
         camera_layout.addStretch()
         
-        main_layout.addWidget(camera_frame)
+        left_column.addWidget(camera_frame)
         
-        # Área de video (más pequeña)
+        # Área de video GRANDE (ocupa todo el espacio disponible)
         self.video_frame = QFrame()
         self.video_frame.setStyleSheet("""
             QFrame {
                 background-color: #000000;
-                border: 2px solid #dee2e6;
-                border-radius: 8px;
+                border: 3px solid #003A70;
+                border-radius: 12px;
             }
         """)
-        self.video_frame.setMinimumSize(480, 360)  # Tamaño más pequeño
-        self.video_frame.setMaximumSize(640, 480)  # Tamaño máximo
-        self.video_frame.setSizePolicy(QSizePolicy.Preferred, QSizePolicy.Preferred)
+        self.video_frame.setMinimumSize(800, 600)  # Tamaño mucho más grande
+        self.video_frame.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
         
         video_layout = QVBoxLayout(self.video_frame)
-        video_layout.setContentsMargins(10, 10, 10, 10)
+        video_layout.setContentsMargins(0, 0, 0, 0)
         
         # Label para mostrar el video
-        self.video_label = QLabel("Iniciando cámara...")
+        self.video_label = QLabel("Presione 'Iniciar Cámara' para comenzar")
         self.video_label.setAlignment(Qt.AlignCenter)
         self.video_label.setStyleSheet("""
             QLabel {
-                color: white;
-                font-size: 16px;
+                color: #e3f2fd;
+                font-size: 18px;
+                font-weight: bold;
                 background-color: transparent;
+                padding: 20px;
             }
         """)
         video_layout.addWidget(self.video_label)
         
-        main_layout.addWidget(self.video_frame)
+        left_column.addWidget(self.video_frame, 1)  # El 1 hace que tome todo el espacio disponible
+        
+        # Agregar columna izquierda al layout principal
+        content_layout.addLayout(left_column, 3)  # 75% del ancho
+        
+        # Columna derecha - Información y controles (25% del ancho)
+        right_column = QVBoxLayout()
+        right_column.setSpacing(15)
         
         # Área de información del QR escaneado
         self.info_frame = QFrame()
         self.info_frame.setStyleSheet("""
             QFrame {
-                background-color: #e3f2fd;
-                border: 1px solid #bbdefb;
-                border-radius: 8px;
-                padding: 15px;
+                background-color: #e8f5e9;
+                border: 3px solid #4caf50;
+                border-radius: 12px;
+                padding: 20px;
             }
         """)
         self.info_frame.setVisible(False)
+        self.info_frame.setMinimumHeight(200)
         
-        info_layout = QHBoxLayout(self.info_frame)
+        info_layout = QVBoxLayout(self.info_frame)
+        info_layout.setSpacing(10)
         
-        # Panel izquierdo con información del QR
-        left_panel = QFrame()
-        left_layout = QVBoxLayout(left_panel)
+        info_title = QLabel("📱 QR Detectado")
+        info_title.setFont(QFont("Arial", 16, QFont.Bold))
+        info_title.setAlignment(Qt.AlignCenter)
+        info_title.setStyleSheet("color: #2e7d32; padding-bottom: 10px;")
+        info_layout.addWidget(info_title)
         
         self.qr_info_label = QLabel()
         self.qr_info_label.setFont(QFont("Arial", 12))
         self.qr_info_label.setWordWrap(True)
-        self.qr_info_label.setStyleSheet("color: #1976d2;")
+        self.qr_info_label.setStyleSheet("color: #1b5e20; background-color: white; "
+                                         "padding: 15px; border-radius: 8px;")
+        self.qr_info_label.setAlignment(Qt.AlignTop | Qt.AlignLeft)
+        info_layout.addWidget(self.qr_info_label)
         
-        left_layout.addWidget(self.qr_info_label)
+        right_column.addWidget(self.info_frame)
         
-        # Solo usar el panel izquierdo para información
-        info_layout.addWidget(left_panel)
+        # Panel de control con botones en la columna derecha
+        controls_frame = QFrame()
+        controls_frame.setStyleSheet("""
+            QFrame {
+                background-color: #f8f9fa;
+                border: 2px solid #dee2e6;
+                border-radius: 12px;
+                padding: 20px;
+            }
+        """)
+        controls_layout = QVBoxLayout(controls_frame)
+        controls_layout.setSpacing(12)
         
-        main_layout.addWidget(self.info_frame)
+        control_title = QLabel("🎮 Controles")
+        control_title.setFont(QFont("Arial", 16, QFont.Bold))
+        control_title.setAlignment(Qt.AlignCenter)
+        control_title.setStyleSheet("color: #2c3e50; padding-bottom: 10px;")
+        controls_layout.addWidget(control_title)
         
-        
-        # Botones principales
-        button_layout = QHBoxLayout()
-        
+        # Botón iniciar cámara
         self.start_btn = QPushButton("🎥 Iniciar Cámara")
+        self.start_btn.setMinimumHeight(50)
+        self.start_btn.setFont(QFont("Arial", 13, QFont.Bold))
         self.start_btn.setStyleSheet("""
             QPushButton {
                 background-color: #28a745;
                 color: white;
                 border: none;
-                padding: 8px 16px;
-                border-radius: 5px;
+                padding: 12px;
+                border-radius: 8px;
                 font-weight: bold;
-                font-size: 12px;
-                min-width: 120px;
-            }
-            QPushButton:hover {
-                background-color: #218838;
-            }
-            QPushButton:disabled {
-                background-color: #6c757d;
-            }
-        """)
-        
-        self.stop_btn = QPushButton("⏹️ Detener Cámara")
-        self.stop_btn.setEnabled(False)
-        self.stop_btn.setStyleSheet("""
-            QPushButton {
-                background-color: #dc3545;
-                color: white;
-                border: none;
-                padding: 8px 16px;
-                border-radius: 5px;
-                font-weight: bold;
-                font-size: 12px;
-                min-width: 120px;
-            }
-            QPushButton:hover {
-                background-color: #c82333;
-            }
-            QPushButton:disabled {
-                background-color: #6c757d;
-            }
-        """)
-        
-        self.close_btn = QPushButton("❌ Cerrar")
-        self.close_btn.setStyleSheet("""
-            QPushButton {
-                background-color: #6c757d;
-                color: white;
-                border: none;
-                padding: 8px 16px;
-                border-radius: 5px;
-                font-weight: bold;
-                font-size: 12px;
-                min-width: 80px;
-            }
-            QPushButton:hover {
-                background-color: #5a6268;
-            }
-        """)
-        
-        # Botón de registro (siempre visible)
-        self.register_btn = QPushButton("📝 Iniciar Registro")
-        self.register_btn.setVisible(True)
-        self.register_btn.setStyleSheet("""
-            QPushButton {
-                background-color: #28a745;
-                color: white;
-                border: none;
-                padding: 8px 16px;
-                border-radius: 5px;
-                font-weight: bold;
-                font-size: 12px;
-                min-width: 120px;
             }
             QPushButton:hover {
                 background-color: #218838;
@@ -543,15 +636,244 @@ class QRScannerDialog(QDialog):
             QPushButton:pressed {
                 background-color: #1e7e34;
             }
+            QPushButton:disabled {
+                background-color: #6c757d;
+                color: #adb5bd;
+            }
+        """)
+        controls_layout.addWidget(self.start_btn)
+        
+        # Botón detener cámara
+        self.stop_btn = QPushButton("⏹️ Detener Cámara")
+        self.stop_btn.setEnabled(False)
+        self.stop_btn.setMinimumHeight(50)
+        self.stop_btn.setFont(QFont("Arial", 13, QFont.Bold))
+        self.stop_btn.setStyleSheet("""
+            QPushButton {
+                background-color: #dc3545;
+                color: white;
+                border: none;
+                padding: 12px;
+                border-radius: 8px;
+                font-weight: bold;
+            }
+            QPushButton:hover {
+                background-color: #c82333;
+            }
+            QPushButton:pressed {
+                background-color: #bd2130;
+            }
+            QPushButton:disabled {
+                background-color: #6c757d;
+                color: #adb5bd;
+            }
+        """)
+        controls_layout.addWidget(self.stop_btn)
+        
+        # Separador
+        separator = QFrame()
+        separator.setFrameShape(QFrame.HLine)
+        separator.setStyleSheet("background-color: #dee2e6; max-height: 2px;")
+        controls_layout.addWidget(separator)
+        
+        # Botón de registro
+        self.register_btn = QPushButton("📝 Iniciar Registro")
+        self.register_btn.setVisible(True)
+        self.register_btn.setMinimumHeight(50)
+        self.register_btn.setFont(QFont("Arial", 13, QFont.Bold))
+        self.register_btn.setStyleSheet("""
+            QPushButton {
+                background-color: #007bff;
+                color: white;
+                border: none;
+                padding: 12px;
+                border-radius: 8px;
+                font-weight: bold;
+            }
+            QPushButton:hover {
+                background-color: #0056b3;
+            }
+            QPushButton:pressed {
+                background-color: #004085;
+            }
+        """)
+        controls_layout.addWidget(self.register_btn)
+        
+        # Espacio flexible
+        controls_layout.addStretch()
+        
+        # Separador
+        separator2 = QFrame()
+        separator2.setFrameShape(QFrame.HLine)
+        separator2.setStyleSheet("background-color: #dee2e6; max-height: 2px;")
+        controls_layout.addWidget(separator2)
+        
+        # Botón cerrar
+        self.close_btn = QPushButton("❌ Cerrar")
+        self.close_btn.setMinimumHeight(50)
+        self.close_btn.setFont(QFont("Arial", 13, QFont.Bold))
+        self.close_btn.setStyleSheet("""
+            QPushButton {
+                background-color: #6c757d;
+                color: white;
+                border: none;
+                padding: 12px;
+                border-radius: 8px;
+                font-weight: bold;
+            }
+            QPushButton:hover {
+                background-color: #5a6268;
+            }
+            QPushButton:pressed {
+                background-color: #545b62;
+            }
+        """)
+        controls_layout.addWidget(self.close_btn)
+        
+        right_column.addWidget(controls_frame)
+        
+        # Agregar columna derecha al layout principal
+        content_layout.addLayout(right_column, 1)  # 25% del ancho
+        
+        # Agregar el layout de contenido (dos columnas) al contenedor de cámara
+        camera_container_layout.addLayout(content_layout, 1)
+        
+        # Agregar contenedor de cámara al layout principal
+        main_layout.addWidget(self.camera_container, 1)
+        
+        # === CONTENEDOR PARA MODO PISTOLA QR ===
+        self.scanner_container = QWidget()
+        scanner_container_layout = QVBoxLayout(self.scanner_container)
+        scanner_container_layout.setContentsMargins(0, 0, 0, 0)
+        scanner_container_layout.setSpacing(20)
+        
+        # Área central para pistola QR
+        scanner_main_frame = QFrame()
+        scanner_main_frame.setStyleSheet("""
+            QFrame {
+                background-color: #f8f9fa;
+                border: 3px solid #003A70;
+                border-radius: 12px;
+                padding: 40px;
+            }
+        """)
+        scanner_main_layout = QVBoxLayout(scanner_main_frame)
+        scanner_main_layout.setSpacing(25)
+        scanner_main_layout.setAlignment(Qt.AlignCenter)
+        
+        # Título de instrucciones
+        scanner_title = QLabel("🔫 Modo Pistola QR")
+        scanner_title.setFont(QFont("Arial", 28, QFont.Bold))
+        scanner_title.setAlignment(Qt.AlignCenter)
+        scanner_title.setStyleSheet("color: #003A70; padding: 20px;")
+        scanner_main_layout.addWidget(scanner_title)
+        
+        # Icono grande
+        scanner_icon = QLabel("📡")
+        scanner_icon.setFont(QFont("Arial", 80))
+        scanner_icon.setAlignment(Qt.AlignCenter)
+        scanner_icon.setStyleSheet("padding: 30px;")
+        scanner_main_layout.addWidget(scanner_icon)
+        
+        # Instrucciones
+        instructions = QLabel(
+            "<b>Instrucciones:</b><br><br>"
+            "1. Haga clic en el campo de entrada<br>"
+            "2. Apunte la pistola QR al código<br>"
+            "3. Presione el gatillo<br>"
+            "4. El sistema detectará automáticamente el QR"
+        )
+        instructions.setFont(QFont("Arial", 14))
+        instructions.setAlignment(Qt.AlignCenter)
+        instructions.setStyleSheet("""
+            color: #495057;
+            background-color: #e3f2fd;
+            padding: 25px;
+            border-radius: 10px;
+            border: 2px solid #90caf9;
+        """)
+        scanner_main_layout.addWidget(instructions)
+        
+        # Campo de entrada para pistola QR
+        scanner_input_frame = QFrame()
+        scanner_input_frame.setStyleSheet("""
+            QFrame {
+                background-color: white;
+                border: 3px solid #28a745;
+                border-radius: 10px;
+                padding: 20px;
+            }
+        """)
+        scanner_input_layout = QVBoxLayout(scanner_input_frame)
+        
+        input_label = QLabel("📥 Esperando escaneo...")
+        input_label.setFont(QFont("Arial", 16, QFont.Bold))
+        input_label.setAlignment(Qt.AlignCenter)
+        input_label.setStyleSheet("color: #28a745; padding: 10px;")
+        scanner_input_layout.addWidget(input_label)
+        
+        self.scanner_input = QLineEdit()
+        self.scanner_input.setPlaceholderText("Haga clic aquí y escanee con la pistola QR...")
+        self.scanner_input.setFont(QFont("Arial", 14))
+        self.scanner_input.setMinimumHeight(60)
+        self.scanner_input.setAlignment(Qt.AlignCenter)
+        self.scanner_input.setStyleSheet("""
+            QLineEdit {
+                background-color: #f8f9fa;
+                color: #2c3e50;
+                border: 2px solid #ced4da;
+                border-radius: 8px;
+                padding: 15px;
+                font-size: 16px;
+            }
+            QLineEdit:focus {
+                border-color: #28a745;
+                background-color: white;
+            }
         """)
         
-        button_layout.addWidget(self.start_btn)
-        button_layout.addWidget(self.stop_btn)
-        button_layout.addWidget(self.register_btn)
-        button_layout.addStretch()
-        button_layout.addWidget(self.close_btn)
+        # Conectar evento de Enter para procesar el QR
+        self.scanner_input.returnPressed.connect(self.process_scanner_input)
         
-        main_layout.addLayout(button_layout)
+        scanner_input_layout.addWidget(self.scanner_input)
+        
+        # Botón manual de procesar (opcional)
+        process_btn = QPushButton("✅ Procesar QR Manualmente")
+        process_btn.setFont(QFont("Arial", 13, QFont.Bold))
+        process_btn.setMinimumHeight(50)
+        process_btn.setStyleSheet("""
+            QPushButton {
+                background-color: #007bff;
+                color: white;
+                border: none;
+                padding: 12px;
+                border-radius: 8px;
+                font-weight: bold;
+            }
+            QPushButton:hover {
+                background-color: #0056b3;
+            }
+            QPushButton:pressed {
+                background-color: #004085;
+            }
+        """)
+        process_btn.clicked.connect(self.process_scanner_input)
+        scanner_input_layout.addWidget(process_btn)
+        
+        scanner_main_layout.addWidget(scanner_input_frame)
+        
+        # Espacio flexible
+        scanner_main_layout.addStretch()
+        
+        scanner_container_layout.addWidget(scanner_main_frame)
+        
+        # Agregar contenedor de pistola al layout principal (inicialmente oculto)
+        main_layout.addWidget(self.scanner_container, 1)
+        self.scanner_container.setVisible(False)
+        
+        # Configurar scroll area
+        scroll_area.setWidget(content_widget)
+        dialog_layout.addWidget(scroll_area)
     
     def setup_connections(self):
         """Configura las conexiones de señales"""
@@ -560,6 +882,71 @@ class QRScannerDialog(QDialog):
         self.close_btn.clicked.connect(self.close)
         self.register_btn.clicked.connect(self.on_register_clicked)
     
+    def on_method_changed(self, checked):
+        """Maneja el cambio entre modo cámara y pistola QR"""
+        if self.camera_radio.isChecked():
+            # Modo cámara
+            self.camera_container.setVisible(True)
+            self.scanner_container.setVisible(False)
+        else:
+            # Modo pistola QR
+            self.camera_container.setVisible(False)
+            self.scanner_container.setVisible(True)
+            # Detener la cámara si está activa
+            if self.scanner_thread:
+                self.stop_camera()
+            # Poner foco en el campo de entrada
+            self.scanner_input.setFocus()
+            self.scanner_input.clear()
+    
+    def process_scanner_input(self):
+        """Procesa el input de la pistola QR"""
+        qr_data = self.scanner_input.text().strip()
+        
+        if not qr_data:
+            QMessageBox.warning(
+                self,
+                "⚠️ Campo Vacío",
+                "Por favor, escanee un código QR con la pistola."
+            )
+            return
+        
+        # Limpiar el campo para el próximo escaneo
+        self.scanner_input.clear()
+        
+        # Mostrar feedback visual
+        self.scanner_input.setStyleSheet("""
+            QLineEdit {
+                background-color: #d4edda;
+                color: #155724;
+                border: 2px solid #28a745;
+                border-radius: 8px;
+                padding: 15px;
+                font-size: 16px;
+            }
+        """)
+        
+        # Restaurar estilo después de 500ms
+        QTimer.singleShot(500, lambda: self.scanner_input.setStyleSheet("""
+            QLineEdit {
+                background-color: #f8f9fa;
+                color: #2c3e50;
+                border: 2px solid #ced4da;
+                border-radius: 8px;
+                padding: 15px;
+                font-size: 16px;
+            }
+            QLineEdit:focus {
+                border-color: #28a745;
+                background-color: white;
+            }
+        """))
+        
+        # Procesar el QR usando la misma lógica que la cámara
+        self.on_qr_detected(qr_data)
+        
+        # Volver a poner foco en el campo
+        QTimer.singleShot(100, lambda: self.scanner_input.setFocus())
     
     def on_camera_changed(self, index):
         """Maneja el cambio de cámara seleccionada"""
@@ -605,8 +992,9 @@ class QRScannerDialog(QDialog):
             self.start_btn.setEnabled(False)
             self.stop_btn.setEnabled(True)
             
-            # Actualizar resolución en la interfaz
-            self.update_resolution_display()
+            # Actualizar resolución después de un breve delay (500ms)
+            # para dar tiempo a que el hilo inicialice la cámara
+            QTimer.singleShot(500, self.update_resolution_display)
             
             self.video_label.setText(f"🎥 Cámara iniciada: {selected_camera['name']}\nApunta hacia un código QR...")
             

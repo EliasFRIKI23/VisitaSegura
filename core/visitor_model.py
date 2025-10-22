@@ -300,3 +300,31 @@ class VisitorManager:
         print("Forzando recarga de visitantes...")
         self.load_visitors()
         return len(self.visitors)
+    
+    def delete_all_visitors(self) -> bool:
+        """Elimina todos los visitantes de la base de datos"""
+        try:
+            if not MONGO_AVAILABLE:
+                # Borrar del archivo JSON
+                self.visitors.clear()
+                return self._save_to_json()
+            
+            collection = self._get_collection()
+            if collection is None:
+                # Si no hay conexión a MongoDB, borrar del JSON
+                self.visitors.clear()
+                return self._save_to_json()
+            
+            # Borrar de MongoDB
+            collection.delete_many({})
+            self.visitors.clear()
+            
+            # También limpiar el archivo JSON de respaldo
+            self._save_to_json()
+            
+            print("Todos los visitantes han sido eliminados")
+            return True
+            
+        except Exception as e:
+            print(f"Error al eliminar todos los visitantes: {e}")
+            return False

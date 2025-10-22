@@ -51,3 +51,4 @@ def debug_current_user():
         print(f"[DEBUG] Es None?: {_current_user is None}")
         print(f"[DEBUG] Es vacio?: {_current_user == ''}")
         print(f"[DEBUG] Es falsy?: {not _current_user}")
+

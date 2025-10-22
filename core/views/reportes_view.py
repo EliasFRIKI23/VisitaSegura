@@ -1288,10 +1288,10 @@ class ReportesView(QWidget):
                 import pandas as pd
                 df = pd.DataFrame(visitors_data)
                 
-                # Asegurar que solo tenemos las 7 columnas esperadas
+                # Asegurar que tenemos todas las columnas necesarias incluyendo usuario_registrador
                 expected_columns = [
                     'nombre', 'rut', 'fecha_entrada', 'fecha_salida', 
-                    'destino', 'acompañante', 'estado_visita'
+                    'destino', 'acompañante', 'estado_visita', 'usuario_registrador'
                 ]
                 
                 # Filtrar solo las columnas que necesitamos
@@ -1299,13 +1299,14 @@ class ReportesView(QWidget):
                 
                 # Renombrar columnas para mejor presentación
                 df.columns = [
-                    'Nombre del Visitante',
-                    'RUT',
+                    'Nombre Completo',
+                    'RUN',
                     'Fecha y Hora de Entrada',
                     'Fecha y Hora de Salida',
-                    'Destino/Lugar',
+                    'Destino',
                     'Acompañante',
-                    'Estado de Visita'
+                    'Estado de Visita',
+                    'Registrado por'
                 ]
                 
                 # Crear archivo Excel con formato
@@ -1325,6 +1326,45 @@ class ReportesView(QWidget):
                     "Exportación Exitosa", 
                     f"El reporte se ha guardado exitosamente en:\n{filename}"
                 )
+                
+                # Preguntar si desea borrar los datos exportados
+                reply = QMessageBox.question(
+                    self,
+                    "Borrar Datos Exportados",
+                    "¿Desea borrar los datos exportados de la base de datos?\n\n"
+                    "⚠️ ADVERTENCIA: Esta acción NO se puede deshacer.\n"
+                    "Todos los registros de visitantes serán eliminados permanentemente.",
+                    QMessageBox.Yes | QMessageBox.No,
+                    QMessageBox.No
+                )
+                
+                if reply == QMessageBox.Yes:
+                    # Confirmar nuevamente para evitar borrados accidentales
+                    confirm = QMessageBox.warning(
+                        self,
+                        "Confirmar Eliminación",
+                        "¿Está COMPLETAMENTE SEGURO de que desea borrar TODOS los datos?\n\n"
+                        "Esta es su última oportunidad para cancelar.",
+                        QMessageBox.Yes | QMessageBox.No,
+                        QMessageBox.No
+                    )
+                    
+                    if confirm == QMessageBox.Yes:
+                        # Borrar todos los visitantes
+                        if self.visitor_manager.delete_all_visitors():
+                            QMessageBox.information(
+                                self,
+                                "Datos Eliminados",
+                                "✅ Todos los datos de visitantes han sido eliminados exitosamente de la base de datos."
+                            )
+                            # Actualizar la interfaz
+                            self.refresh_visitors_data()
+                        else:
+                            QMessageBox.critical(
+                                self,
+                                "Error",
+                                "❌ Hubo un error al eliminar los datos. Por favor, intente nuevamente."
+                            )
                 
         except Exception as e:
             QMessageBox.critical(self, "Error", f"Error al exportar a Excel: {str(e)}")
@@ -1352,7 +1392,7 @@ class ReportesView(QWidget):
             
             # Limpiar cualquier formato previo que pueda causar íconos
             for row in range(1, num_rows + 2):
-                for col in range(1, 8):
+                for col in range(1, 9):  # 8 columnas incluyendo usuario registrador
                     cell = worksheet.cell(row=row, column=col)
                     # Limpiar comentarios y validaciones que puedan causar íconos
                     if cell.comment:
@@ -1361,7 +1401,7 @@ class ReportesView(QWidget):
                         cell.data_validation = None
             
             # Aplicar formato al encabezado (fila 1)
-            for col in range(1, 8):  # 7 columnas
+            for col in range(1, 9):  # 8 columnas incluyendo usuario registrador
                 cell = worksheet.cell(row=1, column=col)
                 cell.font = header_font
                 cell.fill = header_fill
@@ -1370,13 +1410,13 @@ class ReportesView(QWidget):
             
             # Aplicar formato a las celdas de datos
             for row in range(2, num_rows + 2):  # +2 porque empezamos desde la fila 2
-                for col in range(1, 8):
+                for col in range(1, 9):  # 8 columnas incluyendo usuario registrador
                     cell = worksheet.cell(row=row, column=col)
                     cell.alignment = data_alignment
                     cell.border = border
             
             # Ajustar ancho de columnas
-            column_widths = [25, 15, 20, 20, 20, 20, 15]  # Anchos para cada columna
+            column_widths = [25, 15, 20, 20, 20, 20, 15, 18]  # Anchos para cada columna (incluyendo usuario registrador)
             for i, width in enumerate(column_widths, 1):
                 worksheet.column_dimensions[worksheet.cell(row=1, column=i).column_letter].width = width
                 
