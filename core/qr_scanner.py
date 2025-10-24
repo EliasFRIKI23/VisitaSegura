@@ -249,6 +249,12 @@ class QRScannerDialog(QDialog):
         self.current_resolution = "Desconocida"
         self.current_carnet_data = None  # Almacenar datos del carnet actual
         
+        # Timer para auto-procesamiento de pistola QR
+        self.scanner_input_timer = QTimer()
+        self.scanner_input_timer.setSingleShot(True)
+        self.scanner_input_timer.timeout.connect(self.auto_process_scanner_input)
+        self.scanner_auto_process_delay = 300  # 300ms de delay después del último carácter
+        
         # Detectar cámaras disponibles
         self.detect_available_cameras()
         
@@ -832,8 +838,11 @@ class QRScannerDialog(QDialog):
             }
         """)
         
-        # Conectar evento de Enter para procesar el QR
+        # Conectar evento de Enter para procesar el QR (para pistolas que envían Enter)
         self.scanner_input.returnPressed.connect(self.process_scanner_input)
+        
+        # Conectar evento de cambio de texto para auto-procesamiento (para pistolas sin Enter)
+        self.scanner_input.textChanged.connect(self.on_scanner_text_changed)
         
         scanner_input_layout.addWidget(self.scanner_input)
         
@@ -888,6 +897,8 @@ class QRScannerDialog(QDialog):
             # Modo cámara
             self.camera_container.setVisible(True)
             self.scanner_container.setVisible(False)
+            # Detener el timer de auto-procesamiento
+            self.scanner_input_timer.stop()
         else:
             # Modo pistola QR
             self.camera_container.setVisible(False)
@@ -898,6 +909,27 @@ class QRScannerDialog(QDialog):
             # Poner foco en el campo de entrada
             self.scanner_input.setFocus()
             self.scanner_input.clear()
+    
+    def on_scanner_text_changed(self, text):
+        """Maneja cambios en el campo de texto de la pistola QR"""
+        # Si hay texto, reiniciar el timer de auto-procesamiento
+        if text.strip():
+            # Detener el timer anterior si existe
+            self.scanner_input_timer.stop()
+            # Iniciar nuevo timer (se procesará automáticamente después de 300ms sin cambios)
+            self.scanner_input_timer.start(self.scanner_auto_process_delay)
+            print(f"DEBUG: Pistola QR - Texto detectado ({len(text)} caracteres), esperando más entrada...")
+    
+    def auto_process_scanner_input(self):
+        """Procesa automáticamente el input de la pistola QR después del delay"""
+        qr_data = self.scanner_input.text().strip()
+        
+        # Solo procesar si hay datos y tienen longitud razonable para un QR
+        if qr_data and len(qr_data) >= 10:  # QR típicamente tiene al menos 10 caracteres
+            print(f"DEBUG: Pistola QR - Auto-procesamiento activado")
+            self.process_scanner_input()
+        else:
+            print(f"DEBUG: Pistola QR - Datos insuficientes para auto-procesar ({len(qr_data)} caracteres)")
     
     def process_scanner_input(self):
         """Procesa el input de la pistola QR"""
@@ -911,20 +943,49 @@ class QRScannerDialog(QDialog):
             )
             return
         
+        # Log para debugging
+        print(f"DEBUG: Pistola QR - Datos recibidos: {qr_data[:100]}...")
+        print(f"DEBUG: Pistola QR - Longitud: {len(qr_data)} caracteres")
+        
         # Limpiar el campo para el próximo escaneo
         self.scanner_input.clear()
         
-        # Mostrar feedback visual
+        # Mostrar feedback visual verde (éxito)
         self.scanner_input.setStyleSheet("""
             QLineEdit {
                 background-color: #d4edda;
                 color: #155724;
-                border: 2px solid #28a745;
+                border: 3px solid #28a745;
                 border-radius: 8px;
                 padding: 15px;
                 font-size: 16px;
             }
         """)
+        
+        # Mostrar notificación temporal
+        from PySide6.QtWidgets import QLabel
+        notification = QLabel("✅ QR Escaneado Exitosamente", self)
+        notification.setStyleSheet("""
+            QLabel {
+                background-color: #28a745;
+                color: white;
+                padding: 15px 25px;
+                border-radius: 8px;
+                font-size: 14px;
+                font-weight: bold;
+            }
+        """)
+        notification.setAlignment(Qt.AlignCenter)
+        notification.setGeometry(
+            int(self.width() / 2 - 150),
+            int(self.height() - 100),
+            300,
+            50
+        )
+        notification.show()
+        
+        # Ocultar notificación después de 2 segundos
+        QTimer.singleShot(2000, notification.deleteLater)
         
         # Restaurar estilo después de 500ms
         QTimer.singleShot(500, lambda: self.scanner_input.setStyleSheet("""
@@ -943,9 +1004,11 @@ class QRScannerDialog(QDialog):
         """))
         
         # Procesar el QR usando la misma lógica que la cámara
+        print(f"DEBUG: Pistola QR - Procesando QR...")
         self.on_qr_detected(qr_data)
+        print(f"DEBUG: Pistola QR - QR procesado exitosamente")
         
-        # Volver a poner foco en el campo
+        # Volver a poner foco en el campo después de un breve delay
         QTimer.singleShot(100, lambda: self.scanner_input.setFocus())
     
     def on_camera_changed(self, index):
@@ -2057,5 +2120,8 @@ class QRScannerDialog(QDialog):
     def closeEvent(self, event):
         """Maneja el cierre de la ventana"""
         self.stop_camera()
+        # Detener el timer de auto-procesamiento
+        if hasattr(self, 'scanner_input_timer'):
+            self.scanner_input_timer.stop()
         event.accept()
 
