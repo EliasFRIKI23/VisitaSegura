@@ -11,6 +11,109 @@ from PySide6.QtGui import QFont, QPixmap, QImage
 import json
 import re
 
+
+def validate_rut_dv(numero, dv):
+    """
+    Valida el dígito verificador de un RUT chileno
+    
+    Args:
+        numero (str): Número del RUT (sin dígito verificador)
+        dv (str): Dígito verificador
+    
+    Returns:
+        bool: True si el dígito verificador es válido
+    """
+    try:
+        # Convertir número a entero
+        numero_int = int(numero)
+        
+        # Calcular dígito verificador usando algoritmo chileno
+        suma = 0
+        multiplicador = 2
+        
+        # Recorrer el número de derecha a izquierda
+        for digito in reversed(str(numero_int)):
+            suma += int(digito) * multiplicador
+            multiplicador += 1
+            if multiplicador > 7:
+                multiplicador = 2
+        
+        # Calcular resto y dígito verificador esperado
+        resto = suma % 11
+        dv_calculado = 11 - resto
+        
+        # Casos especiales
+        if dv_calculado == 11:
+            dv_calculado = 0
+        elif dv_calculado == 10:
+            dv_calculado = 'K'
+        
+        # Comparar con el dígito verificador proporcionado
+        return str(dv_calculado) == str(dv).upper()
+    
+    except (ValueError, TypeError):
+        return False
+
+
+def format_rut_without_validation(rut_input):
+    """
+    Formatea un RUT al formato chileno estándar XX.XXX.XXX-X sin validar el dígito verificador.
+    Útil cuando no sabemos si el dígito verificador es correcto pero queremos formatear.
+    Maneja la ambigüedad de RUTs de 8 caracteres sin guión.
+    
+    Args:
+        rut_input (str): RUT en cualquier formato (con o sin puntos, guiones, espacios)
+    
+    Returns:
+        str: RUT formateado en formato XX.XXX.XXX-X o cadena vacía si no es válido
+    """
+    if not rut_input:
+        return ""
+    
+    # Limpiar el RUT: solo números y K/k
+    rut_clean = ''.join(c for c in str(rut_input).upper() if c.isdigit() or c == 'K')
+    
+    # Validar longitud mínima y máxima (7-8 dígitos + dígito verificador)
+    if len(rut_clean) < 8 or len(rut_clean) > 9:
+        return ""
+    
+    # Separar número y dígito verificador
+    if len(rut_clean) == 8:
+        # AMBIGÜEDAD: 8 caracteres puede ser:
+        # - Caso 1: 7 dígitos + 1 dv: 12345678 (usar como 1.234.567-8)
+        # - Caso 2: 8 dígitos sin dv (no válido, todos los RUT tienen dv)
+        # Intentar validar si es 7+1 o si el dv es inválido
+        numero_7 = rut_clean[:7]
+        dv_7 = rut_clean[7]
+        
+        # Si el dv es válido para 7 dígitos, usar esa interpretación
+        if validate_rut_dv(numero_7, dv_7):
+            numero = numero_7
+            dv = dv_7
+        else:
+            # Si el dv no es válido, probablemente el RUT está incompleto
+            # Por defecto, usar 7 dígitos + 1 dv (formatear aunque sea incorrecto)
+            numero = numero_7
+            dv = dv_7
+    else:
+        # Caso: 123456789 o 12345678K (9 caracteres - 8 dígitos + 1 verificador)
+        numero = rut_clean[:-1]
+        dv = rut_clean[-1]
+    
+    # Formatear al estilo chileno: XX.XXX.XXX-X
+    if len(numero) == 7:
+        # RUT de 7 dígitos: X.XXX.XXX-X
+        numero_formateado = f"{numero[:1]}.{numero[1:4]}.{numero[4:]}"
+        return f"{numero_formateado}-{dv}"
+    elif len(numero) == 8:
+        # RUT de 8 dígitos: XX.XXX.XXX-X
+        numero_formateado = f"{numero[:2]}.{numero[2:5]}.{numero[5:]}"
+        return f"{numero_formateado}-{dv}"
+    else:
+        # Casos inesperados
+        return f"{numero}-{dv}"
+
+
 class QRScannerThread(QThread):
     """Hilo para el escaneo de QR en segundo plano"""
     qr_detected = Signal(str)  # Señal cuando se detecta un QR
@@ -1317,7 +1420,7 @@ class QRScannerDialog(QDialog):
                         rut = rut_match.group(1)
                         print(f"DEBUG: RUT encontrado con patrón {pattern}: {rut}")
                         # Formatear RUT con formato chileno estándar XX.XXX.XXX-X
-                        rut = self.format_rut_chile(rut)
+                        rut = format_rut_without_validation(rut)
                         parsed_data['rut'] = rut
                         print(f"DEBUG: RUT formateado: {rut}")
                         rut_found = True
@@ -1338,7 +1441,7 @@ class QRScannerDialog(QDialog):
                             rut = rut_match.group(1)
                             print(f"DEBUG: RUT encontrado con patrón flexible {pattern}: {rut}")
                             # Formatear RUT con formato chileno estándar XX.XXX.XXX-X
-                            rut = self.format_rut_chile(rut)
+                            rut = format_rut_without_validation(rut)
                             parsed_data['rut'] = rut
                             print(f"DEBUG: RUT formateado flexible: {rut}")
                             rut_found = True
@@ -1365,7 +1468,7 @@ class QRScannerDialog(QDialog):
                     if rut_match:
                         rut = rut_match.group(1)
                         # Formatear RUT con formato chileno estándar XX.XXX.XXX-X
-                        rut = self.format_rut_chile(rut)
+                        rut = format_rut_without_validation(rut)
                         parsed_data['rut'] = rut
                         break
             
@@ -1406,7 +1509,7 @@ class QRScannerDialog(QDialog):
                 if rut_flexible:
                     rut = f"{rut_flexible.group(1)}{rut_flexible.group(2)}"
                     # Formatear RUT con formato chileno estándar XX.XXX.XXX-X
-                    rut = self.format_rut_chile(rut)
+                    rut = format_rut_without_validation(rut)
                     parsed_data['rut'] = rut
             
             print(f"DEBUG: Resultado final del parsing: {parsed_data}")
@@ -1419,45 +1522,6 @@ class QRScannerDialog(QDialog):
                 'nombre_completo': '',
                 'raw_data': qr_data
             }
-    
-    def format_rut_chile(self, rut):
-        """Formatea un RUT al formato chileno estándar XX.XXX.XXX-X"""
-        try:
-            # Limpiar el RUT de espacios y caracteres especiales
-            rut_clean = re.sub(r'[^\dKk]', '', str(rut))
-            
-            if not rut_clean:
-                return rut
-            
-            # Separar número y dígito verificador
-            if len(rut_clean) >= 2:
-                # El último carácter es el dígito verificador
-                numero = rut_clean[:-1]
-                dv = rut_clean[-1].upper()  # Convertir a mayúscula para K
-                
-                # Formatear el número con puntos
-                if len(numero) >= 7:
-                    # Formato: XX.XXX.XXX
-                    if len(numero) == 8:
-                        # 8 dígitos: XX.XXX.XXX
-                        numero_formateado = f"{numero[:2]}.{numero[2:5]}.{numero[5:]}"
-                    elif len(numero) == 7:
-                        # 7 dígitos: X.XXX.XXX
-                        numero_formateado = f"{numero[:1]}.{numero[1:4]}.{numero[4:]}"
-                    else:
-                        # Otros casos: usar formato estándar
-                        numero_formateado = numero
-                    
-                    rut_formateado = f"{numero_formateado}-{dv}"
-                    print(f"DEBUG: RUT formateado: {rut} → {rut_formateado}")
-                    return rut_formateado
-            
-            # Si no se puede formatear, devolver tal como está
-            return rut
-            
-        except Exception as e:
-            print(f"Error formateando RUT: {e}")
-            return rut
     
     def get_name_from_registry(self, rut):
         """Intenta obtener el nombre desde API del Registro Civil"""
