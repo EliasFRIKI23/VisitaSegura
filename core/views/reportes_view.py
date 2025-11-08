@@ -88,11 +88,11 @@ import numpy as np
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 try:
-    from core.visitor_model import VisitorManager
+    from core.visitors import VisitorManager
     from core.excel_exporter import ExcelExporter
     from core.auth_manager import AuthManager
 except ImportError:
-    from visitor_model import VisitorManager
+    from visitors import VisitorManager
     from excel_exporter import ExcelExporter
     from auth_manager import AuthManager
 

@@ -72,7 +72,7 @@ except Exception:
         """Fallback si no se puede importar la función"""
         return "Sistema"
 from datetime import datetime
-from .visitor_model import VisitorManager
+from .visitors import VisitorManager
 from .visitor_form import VisitorFormDialog, QuickVisitorForm
 from .help_dialog import HelpDialog
 

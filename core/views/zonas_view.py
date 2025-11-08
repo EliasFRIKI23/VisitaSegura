@@ -4,7 +4,7 @@ from PySide6.QtGui import QFont, QPixmap, QGuiApplication
 import sys
 import os
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-from visitor_model import VisitorManager
+from core.visitors import VisitorManager
 
 # Importar colores del tema
 try:

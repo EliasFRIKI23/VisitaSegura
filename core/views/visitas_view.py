@@ -258,7 +258,7 @@ class VisitasView(QWidget):
     def open_qr_scanner(self):
         """Abre el escáner de códigos QR"""
         try:
-            from ..qr_scanner import QRScannerDialog
+            from ..qr import QRScannerDialog
             scanner_dialog = QRScannerDialog(self, self.auth_manager)
             scanner_dialog.exec()
         except ImportError as e:
@@ -278,7 +278,7 @@ class VisitasView(QWidget):
             if form_dialog.exec():
                 visitor = form_dialog.get_visitor()
                 if visitor:
-                    from ..visitor_model import VisitorManager
+                    from ..visitors import VisitorManager
                     manager = VisitorManager()
                     if manager.add_visitor(visitor):
                         from PySide6.QtWidgets import QMessageBox

@@ -5,7 +5,7 @@ from PySide6.QtWidgets import (
 )
 from PySide6.QtCore import Qt
 from PySide6.QtGui import QFont, QPalette, QColor, QIcon
-from .visitor_model import Visitor, VisitorManager
+from .visitors import Visitor, VisitorManager
 
 # Importar funciones de normalización de RUT
 try:
@@ -562,7 +562,7 @@ class QuickVisitorForm(QWidget):
             form_data = self.get_form_data()
             
             # Crear el visitante
-            from .visitor_model import Visitor
+            from .visitors import Visitor
             visitor = Visitor(
                 rut=form_data['rut'],
                 nombre_completo=form_data['nombre'],
