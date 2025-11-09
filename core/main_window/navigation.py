@@ -129,12 +129,18 @@ class NavigationMixin:
         self.navigation_manager.register_view("main", main_view)
 
         visitas_view = VisitasView(self, self.auth_manager)
+        if hasattr(visitas_view, "set_theme"):
+            visitas_view.set_theme(self.dark_mode)
         self.navigation_manager.register_view("visitas", visitas_view)
 
         visitor_view = VisitorListWidget(self, self.auth_manager)
+        if hasattr(visitor_view, "set_theme"):
+            visitor_view.set_theme(self.dark_mode)
         self.navigation_manager.register_view("visitantes", visitor_view)
 
         zonas_view = ZonasView(self)
+        if hasattr(zonas_view, "set_theme"):
+            zonas_view.set_theme(self.dark_mode)
         self.navigation_manager.register_view("zonas", zonas_view)
 
         reportes_view = ReportesView(self, self.auth_manager)

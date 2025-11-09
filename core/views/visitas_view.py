@@ -1,260 +1,267 @@
-from PySide6.QtWidgets import QWidget, QVBoxLayout, QHBoxLayout, QLabel, QPushButton, QFrame, QGridLayout, QGroupBox
+from PySide6.QtWidgets import (
+    QWidget,
+    QVBoxLayout,
+    QHBoxLayout,
+    QLabel,
+    QPushButton,
+    QFrame,
+    QGridLayout,
+)
 from PySide6.QtCore import Qt
-from PySide6.QtGui import QFont, QPixmap
+from PySide6.QtGui import QFont
 
-# Importar colores del tema
-try:
-    from core.theme import get_standard_button_style
-except Exception:
-    def get_standard_button_style(color, text_color=None):
-        return f"""
-            QPushButton {{
-                background-color: {color};
-                color: {'#000000' if color in ["#FFB81C", "#ffc107"] else '#ffffff'};
-                border: none;
-                border-radius: 6px;
-                padding: 10px 16px;
-                font-size: 14px;
-                font-weight: bold;
-            }}
-            QPushButton:hover {{
-                background-color: {color};
-                opacity: 0.9;
-            }}
-            QPushButton:disabled {{
-                background-color: #6c757d;
-                color: #adb5bd;
-            }}
-        """
 
 class VisitasView(QWidget):
     """Vista para el registro de visitas"""
-    
+
     def __init__(self, parent=None, auth_manager=None):
         super().__init__(parent)
         self.auth_manager = auth_manager
+        self.dark_mode = False
+        self.option_cards = []
+        self.buttons = []
         self.setup_ui()
-    
+
     def get_auth_manager(self):
         """Obtiene el AuthManager de la ventana principal"""
-        # Si ya tenemos auth_manager, usarlo
         if self.auth_manager:
             return self.auth_manager
-        
-        # Buscar la ventana principal que contiene el auth_manager
+
         parent = self.parent()
         while parent is not None:
-            if hasattr(parent, 'auth_manager'):
+            if hasattr(parent, "auth_manager"):
                 return parent.auth_manager
             parent = parent.parent()
-        
-        # Si no se encuentra, crear una nueva instancia
+
         try:
             from ..auth_manager import AuthManager
+
             return AuthManager()
         except Exception:
             return None
-    
+
     def setup_ui(self):
-        """Configura la interfaz de usuario"""
-        main_layout = QVBoxLayout(self)
-        main_layout.setContentsMargins(20, 20, 20, 20)
-        main_layout.setSpacing(20)
-        
-        # Header con título y logo
-        header_layout = QHBoxLayout()
-        
-        # Título
-        title_layout = QVBoxLayout()
-        title = QLabel("📋 Registro de Visitas")
-        title.setFont(QFont("Arial", 18, QFont.Bold))
-        title.setAlignment(Qt.AlignLeft)
-        
-        subtitle = QLabel("Sistema de registro y gestión de visitas con escaneo QR")
-        subtitle.setFont(QFont("Arial", 12))
-        subtitle.setAlignment(Qt.AlignLeft)
-        
-        title_layout.addWidget(title)
-        title_layout.addWidget(subtitle)
-        header_layout.addLayout(title_layout)
-        
-        header_layout.addStretch()
-        
-        # Logo Duoc
-        logo_label = QLabel()
-        logo_pixmap = QPixmap("Logo Duoc .png")
-        if not logo_pixmap.isNull():
-            scaled_pixmap = logo_pixmap.scaled(120, 60, Qt.KeepAspectRatio, Qt.SmoothTransformation)
-            logo_label.setPixmap(scaled_pixmap)
+        layout = QVBoxLayout(self)
+        layout.setContentsMargins(0, 0, 0, 0)
+        layout.setSpacing(0)
+
+        self.main_container = QWidget()
+        container_layout = QVBoxLayout(self.main_container)
+        container_layout.setContentsMargins(32, 32, 32, 24)
+        container_layout.setSpacing(24)
+        layout.addWidget(self.main_container)
+
+        self.header_card = QFrame()
+        header_layout = QVBoxLayout(self.header_card)
+        header_layout.setContentsMargins(28, 28, 28, 28)
+        header_layout.setSpacing(10)
+
+        self.title_label = QLabel("Registro de visitas")
+        self.title_label.setFont(QFont("Segoe UI", 24, QFont.Bold))
+        header_layout.addWidget(self.title_label)
+
+        self.subtitle_label = QLabel(
+            "Selecciona cómo quieres registrar a un visitante o consulta los registros actuales."
+        )
+        self.subtitle_label.setWordWrap(True)
+        header_layout.addWidget(self.subtitle_label)
+
+        self.header_badge = QLabel("Accesos rápidos a las herramientas de registro")
+        self.header_badge.setAlignment(Qt.AlignLeft)
+        self.header_badge.setStyleSheet(
+            "padding: 6px 14px; border-radius: 14px; font-size: 12px; font-weight: 600;"
+        )
+        header_layout.addWidget(self.header_badge)
+
+        container_layout.addWidget(self.header_card)
+
+        self.grid_card = QFrame()
+        grid_layout = QGridLayout(self.grid_card)
+        grid_layout.setContentsMargins(28, 28, 28, 28)
+        grid_layout.setHorizontalSpacing(18)
+        grid_layout.setVerticalSpacing(18)
+
+        options = [
+            {
+                "title": "Escanear código QR",
+                "emoji": "📱",
+                "description": "Escanea credenciales digitales para registrar visitantes en segundos.",
+                "button": "📷 Escanear QR",
+                "handler": self.open_qr_scanner,
+                "accent": "#0ea5e9",
+            },
+            {
+                "title": "Registro manual",
+                "emoji": "✏️",
+                "description": "Carga datos manualmente cuando no hay QR disponible o se requiere validación especial.",
+                "button": "📝 Registro manual",
+                "handler": self.open_manual_registration,
+                "accent": "#22c55e",
+            },
+            {
+                "title": "Ver visitantes actuales",
+                "emoji": "👥",
+                "description": "Consulta quién está dentro del campus y gestiona sus entradas o salidas.",
+                "button": "👥 Ver visitantes",
+                "handler": self.open_visitors_view,
+                "accent": "#6366f1",
+            },
+        ]
+
+        for index, option in enumerate(options):
+            card = self.create_option_card(option)
+            row, col = divmod(index, 2)
+            grid_layout.addWidget(card, row, col)
+
+        container_layout.addWidget(self.grid_card)
+
+        self.back_button = QPushButton("⬅️ Volver al menú principal")
+        self.back_button.setMinimumHeight(46)
+        self.back_button.setCursor(Qt.PointingHandCursor)
+        self.back_button.clicked.connect(self.go_to_main)
+        container_layout.addWidget(self.back_button, alignment=Qt.AlignCenter)
+
+        self.apply_theme()
+
+    def set_theme(self, dark_mode: bool):
+        self.dark_mode = dark_mode
+        self.apply_theme()
+
+    def apply_theme(self):
+        if self.dark_mode:
+            main_bg = "#0b1220"
+            card_bg = "#111827"
+            border_color = "rgba(148, 163, 184, 0.18)"
+            text_color = "#e2e8f0"
+            muted_color = "#94a3b8"
+            badge_bg = "rgba(56, 189, 248, 0.18)"
+            badge_color = "#38bdf8"
+            back_border = "rgba(148, 163, 184, 0.4)"
+            back_hover = "rgba(148, 163, 184, 0.18)"
         else:
-            logo_label.setText("🏢 Duoc UC")
-            logo_font = QFont("Arial", 12, QFont.Bold)
-            logo_label.setFont(logo_font)
-        
-        logo_label.setAlignment(Qt.AlignRight)
-        header_layout.addWidget(logo_label)
-        
-        main_layout.addLayout(header_layout)
-        
-        # Contenido principal con opciones de registro
-        content_frame = QFrame()
-        content_frame.setFrameStyle(QFrame.StyledPanel)
-        content_frame.setStyleSheet("""
-            QFrame {
-                background-color: #f8f9fa;
-                border: 1px solid #dee2e6;
-                border-radius: 10px;
-            }
-        """)
-        content_layout = QVBoxLayout(content_frame)
-        content_layout.setContentsMargins(30, 30, 30, 30)
-        content_layout.setSpacing(25)
-        
-        # Título de opciones
-        options_title = QLabel("🎯 Opciones de Registro")
-        options_title.setFont(QFont("Arial", 16, QFont.Bold))
-        options_title.setAlignment(Qt.AlignCenter)
-        options_title.setStyleSheet("color: #2c3e50; margin-bottom: 20px;")
-        content_layout.addWidget(options_title)
-        
-        # Grid de opciones
-        options_grid = QGridLayout()
-        options_grid.setSpacing(20)
-        
-        # Opción 1: Escaneo QR
-        qr_group = QGroupBox("📱 Escaneo de Código QR")
-        qr_group.setFont(QFont("Arial", 12, QFont.Bold))
-        qr_group.setStyleSheet("""
-            QGroupBox {
-                background-color: white;
-                border: 2px solid #007bff;
-                border-radius: 8px;
-                padding: 15px;
-                margin: 5px;
-            }
-            QGroupBox::title {
-                subcontrol-origin: margin;
-                left: 10px;
-                padding: 0 5px 0 5px;
-                color: #007bff;
-            }
-        """)
-        qr_layout = QVBoxLayout(qr_group)
-        
-        qr_description = QLabel("""
-        <p style="font-size: 14px; color: #495057; margin: 10px 0;">
-        Escanea el código QR del visitante usando la cámara del dispositivo.
-        </p>
-        <p style="font-size: 12px; color: #6c757d; margin: 5px 0;">
-        • Rápido y eficiente<br>
-        • Datos pre-cargados<br>
-        • Menos errores de tipeo
-        </p>
-        """)
-        qr_description.setWordWrap(True)
-        qr_layout.addWidget(qr_description)
-        
-        self.qr_scan_btn = QPushButton("📷 Escanear QR")
-        self.qr_scan_btn.setFixedHeight(50)
-        self.qr_scan_btn.setStyleSheet(get_standard_button_style("#007bff"))
-        self.qr_scan_btn.clicked.connect(self.open_qr_scanner)
-        qr_layout.addWidget(self.qr_scan_btn)
-        
-        options_grid.addWidget(qr_group, 0, 0)
-        
-        # Opción 2: Registro Manual
-        manual_group = QGroupBox("✏️ Registro Manual")
-        manual_group.setFont(QFont("Arial", 12, QFont.Bold))
-        manual_group.setStyleSheet("""
-            QGroupBox {
-                background-color: white;
-                border: 2px solid #28a745;
-                border-radius: 8px;
-                padding: 15px;
-                margin: 5px;
-            }
-            QGroupBox::title {
-                subcontrol-origin: margin;
-                left: 10px;
-                padding: 0 5px 0 5px;
-                color: #28a745;
-            }
-        """)
-        manual_layout = QVBoxLayout(manual_group)
-        
-        manual_description = QLabel("""
-        <p style="font-size: 14px; color: #495057; margin: 10px 0;">
-        Registra visitantes ingresando los datos manualmente.
-        </p>
-        <p style="font-size: 12px; color: #6c757d; margin: 5px 0;">
-        • Control total de los datos<br>
-        • Validación en tiempo real<br>
-        • Ideal para casos especiales
-        </p>
-        """)
-        manual_description.setWordWrap(True)
-        manual_layout.addWidget(manual_description)
-        
-        self.manual_register_btn = QPushButton("📝 Registro Manual")
-        self.manual_register_btn.setFixedHeight(50)
-        self.manual_register_btn.setStyleSheet(get_standard_button_style("#28a745"))
-        self.manual_register_btn.clicked.connect(self.open_manual_registration)
-        manual_layout.addWidget(self.manual_register_btn)
-        
-        options_grid.addWidget(manual_group, 0, 1)
-        
-        
-        # Opción 4: Ver Visitantes Actuales
-        visitors_group = QGroupBox("👥 Ver Visitantes")
-        visitors_group.setFont(QFont("Arial", 12, QFont.Bold))
-        visitors_group.setStyleSheet("""
-            QGroupBox {
-                background-color: white;
-                border: 2px solid #6f42c1;
-                border-radius: 8px;
-                padding: 15px;
-                margin: 5px;
-            }
-            QGroupBox::title {
-                subcontrol-origin: margin;
-                left: 10px;
-                padding: 0 5px 0 5px;
-                color: #6f42c1;
-            }
-        """)
-        visitors_layout = QVBoxLayout(visitors_group)
-        
-        visitors_description = QLabel("""
-        <p style="font-size: 14px; color: #495057; margin: 10px 0;">
-        Consulta los visitantes actualmente en el establecimiento.
-        </p>
-        <p style="font-size: 12px; color: #6c757d; margin: 5px 0;">
-        • Lista en tiempo real<br>
-        • Gestión de salidas<br>
-        • Historial completo
-        </p>
-        """)
-        visitors_description.setWordWrap(True)
-        visitors_layout.addWidget(visitors_description)
-        
-        self.view_visitors_btn = QPushButton("👥 Ver Visitantes")
-        self.view_visitors_btn.setFixedHeight(50)
-        self.view_visitors_btn.setStyleSheet(get_standard_button_style("#6f42c1"))
-        self.view_visitors_btn.clicked.connect(self.open_visitors_view)
-        visitors_layout.addWidget(self.view_visitors_btn)
-        
-        options_grid.addWidget(visitors_group, 1, 0)
-        
-        content_layout.addLayout(options_grid)
-        main_layout.addWidget(content_frame)
-        
-        # Botón de regreso
-        back_button = QPushButton("⬅️ Volver al Menú Principal")
-        back_button.setFixedSize(200, 40)
-        back_button.setStyleSheet(get_standard_button_style("#6c757d"))
-        back_button.clicked.connect(self.go_to_main)
-        main_layout.addWidget(back_button, alignment=Qt.AlignCenter)
-    
+            main_bg = "#f3f4f6"
+            card_bg = "#ffffff"
+            border_color = "rgba(148, 163, 184, 0.2)"
+            text_color = "#0f172a"
+            muted_color = "#64748b"
+            badge_bg = "rgba(14, 165, 233, 0.14)"
+            badge_color = "#0284c7"
+            back_border = "rgba(15, 23, 42, 0.25)"
+            back_hover = "rgba(15, 23, 42, 0.08)"
+
+        self.main_container.setStyleSheet(f"background-color: {main_bg};")
+        self.header_card.setStyleSheet(
+            f"QFrame {{ background-color: {card_bg}; border-radius: 24px; border: 1px solid {border_color}; }}"
+        )
+        self.grid_card.setStyleSheet(
+            f"QFrame {{ background-color: {card_bg}; border-radius: 24px; border: 1px solid {border_color}; }}"
+        )
+        self.title_label.setStyleSheet(f"color: {text_color}; font-weight: 700;")
+        self.subtitle_label.setStyleSheet(f"color: {muted_color}; font-size: 13px;")
+        self.header_badge.setStyleSheet(
+            f"padding: 6px 14px; border-radius: 14px; font-size: 12px; font-weight: 600;"
+            f"background-color: {badge_bg}; color: {badge_color};"
+        )
+
+        for info in self.option_cards:
+            frame = info["frame"]
+            title = info["title"]
+            description = info["description"]
+            button = info["button"]
+            accent = info["accent"]
+
+            frame.setStyleSheet(
+                f"QFrame {{ background-color: {card_bg}; border-radius: 20px; border: 1px solid {border_color}; }}"
+            )
+            title.setStyleSheet(f"color: {accent}; font-weight: 700;")
+            description.setStyleSheet(f"color: {muted_color};")
+            button.setStyleSheet(self._accent_button_style(accent))
+
+        self.back_button.setStyleSheet(
+            f"""
+            QPushButton {{
+                background-color: transparent;
+                color: {text_color};
+                border: 1px solid {back_border};
+                border-radius: 14px;
+                padding: 0 26px;
+                font-weight: 600;
+            }}
+            QPushButton:hover {{
+                background-color: {back_hover};
+            }}
+            """
+        )
+
+    def _accent_button_style(self, accent: str) -> str:
+        darker = self.darken_color(accent, 0.15)
+        return (
+            f"""
+            QPushButton {{
+                background-color: {accent};
+                color: #ffffff;
+                border: none;
+                border-radius: 14px;
+                padding: 0 22px;
+                font-weight: 600;
+            }}
+            QPushButton:hover {{
+                background-color: {darker};
+            }}
+            """
+        )
+
+    @staticmethod
+    def lighten_color(color: str, factor: float = 0.1) -> str:
+        color = color.lstrip("#")
+        r, g, b = tuple(int(color[i : i + 2], 16) for i in (0, 2, 4))
+        r = min(255, int(r + (255 - r) * factor))
+        g = min(255, int(g + (255 - g) * factor))
+        b = min(255, int(b + (255 - b) * factor))
+        return f"#{r:02x}{g:02x}{b:02x}"
+
+    @staticmethod
+    def darken_color(color: str, factor: float = 0.2) -> str:
+        color = color.lstrip("#")
+        r, g, b = tuple(int(color[i : i + 2], 16) for i in (0, 2, 4))
+        r = max(0, int(r * (1 - factor)))
+        g = max(0, int(g * (1 - factor)))
+        b = max(0, int(b * (1 - factor)))
+        return f"#{r:02x}{g:02x}{b:02x}"
+
+    def create_option_card(self, option: dict) -> QFrame:
+        card = QFrame()
+        card_layout = QVBoxLayout(card)
+        card_layout.setContentsMargins(22, 22, 22, 22)
+        card_layout.setSpacing(16)
+
+        title = QLabel(f"{option['emoji']} {option['title']}")
+        title.setFont(QFont("Segoe UI", 16, QFont.Bold))
+        title.setAlignment(Qt.AlignLeft)
+        card_layout.addWidget(title)
+
+        description = QLabel(option["description"])
+        description.setWordWrap(True)
+        description.setAlignment(Qt.AlignLeft)
+        card_layout.addWidget(description)
+
+        button = QPushButton(option["button"])
+        button.setMinimumHeight(46)
+        button.setCursor(Qt.PointingHandCursor)
+        button.clicked.connect(option["handler"])
+        card_layout.addWidget(button)
+
+        self.option_cards.append({
+            "frame": card,
+            "title": title,
+            "description": description,
+            "button": button,
+            "accent": option["accent"],
+        })
+        self.buttons.append(button)
+
+        return card
+
     def open_qr_scanner(self):
         """Abre el escáner de códigos QR"""
         try:
@@ -267,7 +274,7 @@ class VisitasView(QWidget):
         except Exception as e:
             from PySide6.QtWidgets import QMessageBox
             QMessageBox.critical(self, "Error", f"Error al abrir el escáner QR:\n{str(e)}")
-    
+
     def open_manual_registration(self):
         """Abre el formulario de registro manual"""
         try:
@@ -283,15 +290,15 @@ class VisitasView(QWidget):
                     if manager.add_visitor(visitor):
                         from PySide6.QtWidgets import QMessageBox
                         QMessageBox.information(
-                            self, 
-                            "✅ Éxito", 
+                            self,
+                            "✅ Éxito",
                             f"Visitante {visitor.nombre_completo} registrado correctamente"
                         )
                     else:
                         from PySide6.QtWidgets import QMessageBox
                         QMessageBox.warning(
-                            self, 
-                            "⚠️ Advertencia", 
+                            self,
+                            "⚠️ Advertencia",
                             "El visitante ya existe en el sistema"
                         )
         except ImportError as e:
@@ -300,7 +307,7 @@ class VisitasView(QWidget):
         except Exception as e:
             from PySide6.QtWidgets import QMessageBox
             QMessageBox.critical(self, "Error", f"Error al abrir el formulario:\n{str(e)}")
-    
+
     def open_visitors_view(self):
         """Abre la vista de visitantes actuales"""
         # Buscar la ventana principal que contiene el navigation_manager
@@ -313,7 +320,7 @@ class VisitasView(QWidget):
                 parent.open_visitantes()
                 return
             parent = parent.parent()
-    
+
     def go_to_main(self):
         """Regresa al menú principal"""
         # Buscar la ventana principal que contiene el navigation_manager

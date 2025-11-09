@@ -48,6 +48,22 @@ class ThemeMixin:
         if usuarios_view:
             usuarios_view.set_theme(dark_mode)
 
+        visitor_view = self.navigation_manager.get_view("visitantes")
+        if visitor_view and hasattr(visitor_view, "set_theme"):
+            visitor_view.set_theme(dark_mode)
+
+        visitas_view = self.navigation_manager.get_view("visitas")
+        if visitas_view and hasattr(visitas_view, "set_theme"):
+            visitas_view.set_theme(dark_mode)
+
+        zonas_view = self.navigation_manager.get_view("zonas")
+        if zonas_view and hasattr(zonas_view, "set_theme"):
+            zonas_view.set_theme(dark_mode)
+
+        qr_dialog = getattr(self, "qr_dialog", None)
+        if qr_dialog and hasattr(qr_dialog, "set_theme"):
+            qr_dialog.set_theme(dark_mode)
+
         reportes_view = self.navigation_manager.get_view("reportes")
         if reportes_view:
             reportes_view.update_auth_manager(self.auth_manager)

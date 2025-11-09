@@ -212,10 +212,12 @@ class CameraScannerSection(QWidget):
         self.available_cameras: List[dict] = []
         self.scanner_thread: Optional[CameraScannerThread] = None
         self.current_resolution = "Desconocida"
+        self.dark_mode = getattr(parent, "dark_mode", False)
 
         self._detect_available_cameras()
         self._build_ui()
         self._setup_connections()
+        self.apply_theme()
 
     # ------------------------------------------------------------------
     # Construcción de UI
@@ -241,88 +243,27 @@ class CameraScannerSection(QWidget):
         layout = QVBoxLayout()
         layout.setSpacing(10)
 
-        camera_frame = QFrame()
-        camera_frame.setStyleSheet(
-            """
-            QFrame {
-                background-color: #f8f9fa;
-                border-radius: 8px;
-                padding: 15px;
-                border: 2px solid #dee2e6;
-            }
-            """
-        )
-        cam_layout = QHBoxLayout(camera_frame)
+        self.camera_frame = QFrame()
+        cam_layout = QHBoxLayout(self.camera_frame)
 
-        camera_label = QLabel("📷 Cámara:")
-        camera_label.setFont(QFont("Arial", 13, QFont.Bold))
-        camera_label.setStyleSheet("color: #2c3e50;")
+        self.camera_label = QLabel("📷 Cámara:")
+        self.camera_label.setFont(QFont("Arial", 13, QFont.Bold))
 
         self.camera_combo = QComboBox()
         self.camera_combo.setFont(QFont("Arial", 12))
-        self.camera_combo.setStyleSheet(
-            """
-            QComboBox {
-                background-color: white;
-                color: #2c3e50;
-                border: 2px solid #ced4da;
-                border-radius: 6px;
-                padding: 8px 12px;
-                min-width: 250px;
-                min-height: 35px;
-            }
-            QComboBox:hover { border-color: #007bff; }
-            QComboBox:focus { border-color: #0056b3; }
-            QComboBox::drop-down { border: none; padding-right: 10px; }
-            QComboBox::down-arrow {
-                image: none;
-                border-left: 5px solid transparent;
-                border-right: 5px solid transparent;
-                border-top: 6px solid #2c3e50;
-                margin-right: 8px;
-            }
-            QComboBox QAbstractItemView {
-                background-color: white;
-                color: #2c3e50;
-                border: 2px solid #ced4da;
-                border-radius: 6px;
-                padding: 5px;
-                selection-background-color: #007bff;
-                selection-color: white;
-            }
-            QComboBox QAbstractItemView::item {
-                padding: 8px;
-                min-height: 30px;
-            }
-            QComboBox QAbstractItemView::item:hover {
-                background-color: #e3f2fd;
-                color: #0056b3;
-            }
-            """
-        )
         self._populate_camera_combo()
 
         self.resolution_label = QLabel("Resolución: Desconocida")
         self.resolution_label.setFont(QFont("Arial", 11))
-        self.resolution_label.setStyleSheet("color: #6c757d; padding: 5px;")
 
-        cam_layout.addWidget(camera_label)
+        cam_layout.addWidget(self.camera_label)
         cam_layout.addWidget(self.camera_combo)
         cam_layout.addWidget(self.resolution_label)
         cam_layout.addStretch()
 
-        layout.addWidget(camera_frame)
+        layout.addWidget(self.camera_frame)
 
         self.video_frame = QFrame()
-        self.video_frame.setStyleSheet(
-            """
-            QFrame {
-                background-color: #000000;
-                border: 3px solid #003A70;
-                border-radius: 12px;
-            }
-            """
-        )
         self.video_frame.setMinimumSize(800, 600)
         self.video_frame.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
 
@@ -331,17 +272,6 @@ class CameraScannerSection(QWidget):
 
         self.video_label = QLabel("Presione 'Iniciar Cámara' para comenzar")
         self.video_label.setAlignment(Qt.AlignCenter)
-        self.video_label.setStyleSheet(
-            """
-            QLabel {
-                color: #e3f2fd;
-                font-size: 18px;
-                font-weight: bold;
-                background-color: transparent;
-                padding: 20px;
-            }
-            """
-        )
 
         video_layout.addWidget(self.video_label)
         layout.addWidget(self.video_frame, 1)
@@ -363,35 +293,21 @@ class CameraScannerSection(QWidget):
 
     def _create_info_frame(self) -> QFrame:
         frame = QFrame()
-        frame.setStyleSheet(
-            """
-            QFrame {
-                background-color: #e8f5e9;
-                border: 3px solid #4caf50;
-                border-radius: 12px;
-                padding: 20px;
-            }
-            """
-        )
         frame.setMinimumHeight(200)
 
         layout = QVBoxLayout(frame)
         layout.setSpacing(10)
 
-        title = QLabel("📱 QR Detectado")
-        title.setFont(QFont("Arial", 16, QFont.Bold))
-        title.setAlignment(Qt.AlignCenter)
-        title.setStyleSheet("color: #2e7d32; padding-bottom: 10px;")
+        self.info_title = QLabel("📱 QR Detectado")
+        self.info_title.setFont(QFont("Arial", 16, QFont.Bold))
+        self.info_title.setAlignment(Qt.AlignCenter)
 
         self.qr_info_label = QLabel()
         self.qr_info_label.setFont(QFont("Arial", 12))
         self.qr_info_label.setWordWrap(True)
-        self.qr_info_label.setStyleSheet(
-            "color: #1b5e20; background-color: white; padding: 15px; border-radius: 8px;"
-        )
         self.qr_info_label.setAlignment(Qt.AlignTop | Qt.AlignLeft)
 
-        layout.addWidget(title)
+        layout.addWidget(self.info_title)
         layout.addWidget(self.qr_info_label)
 
         self._info_actions_widget = QWidget()
@@ -404,121 +320,44 @@ class CameraScannerSection(QWidget):
 
     def _create_controls_frame(self) -> QFrame:
         frame = QFrame()
-        frame.setStyleSheet(
-            """
-            QFrame {
-                background-color: #f8f9fa;
-                border: 2px solid #dee2e6;
-                border-radius: 12px;
-                padding: 20px;
-            }
-            """
-        )
-
+        self.controls_frame = frame
         layout = QVBoxLayout(frame)
         layout.setSpacing(12)
 
-        title = QLabel("🎮 Controles")
-        title.setFont(QFont("Arial", 16, QFont.Bold))
-        title.setAlignment(Qt.AlignCenter)
-        title.setStyleSheet("color: #2c3e50; padding-bottom: 10px;")
-        layout.addWidget(title)
+        self.controls_title = QLabel("🎮 Controles")
+        self.controls_title.setFont(QFont("Arial", 16, QFont.Bold))
+        self.controls_title.setAlignment(Qt.AlignCenter)
+        layout.addWidget(self.controls_title)
 
         self.start_btn = QPushButton("🎥 Iniciar Cámara")
         self.start_btn.setMinimumHeight(50)
         self.start_btn.setFont(QFont("Arial", 13, QFont.Bold))
-        self.start_btn.setStyleSheet(
-            """
-            QPushButton {
-                background-color: #28a745;
-                color: white;
-                border: none;
-                padding: 12px;
-                border-radius: 8px;
-                font-weight: bold;
-            }
-            QPushButton:hover { background-color: #218838; }
-            QPushButton:pressed { background-color: #1e7e34; }
-            QPushButton:disabled {
-                background-color: #6c757d;
-                color: #adb5bd;
-            }
-            """
-        )
         layout.addWidget(self.start_btn)
 
         self.stop_btn = QPushButton("⏹️ Detener Cámara")
         self.stop_btn.setEnabled(False)
         self.stop_btn.setMinimumHeight(50)
         self.stop_btn.setFont(QFont("Arial", 13, QFont.Bold))
-        self.stop_btn.setStyleSheet(
-            """
-            QPushButton {
-                background-color: #dc3545;
-                color: white;
-                border: none;
-                padding: 12px;
-                border-radius: 8px;
-                font-weight: bold;
-            }
-            QPushButton:hover { background-color: #c82333; }
-            QPushButton:pressed { background-color: #bd2130; }
-            QPushButton:disabled {
-                background-color: #6c757d;
-                color: #adb5bd;
-            }
-            """
-        )
         layout.addWidget(self.stop_btn)
 
-        separator = QFrame()
-        separator.setFrameShape(QFrame.HLine)
-        separator.setStyleSheet("background-color: #dee2e6; max-height: 2px;")
-        layout.addWidget(separator)
+        self.controls_separator_top = QFrame()
+        self.controls_separator_top.setFrameShape(QFrame.HLine)
+        layout.addWidget(self.controls_separator_top)
 
         self.register_btn = QPushButton("📝 Iniciar Registro")
         self.register_btn.setMinimumHeight(50)
         self.register_btn.setFont(QFont("Arial", 13, QFont.Bold))
-        self.register_btn.setStyleSheet(
-            """
-            QPushButton {
-                background-color: #007bff;
-                color: white;
-                border: none;
-                padding: 12px;
-                border-radius: 8px;
-                font-weight: bold;
-            }
-            QPushButton:hover { background-color: #0056b3; }
-            QPushButton:pressed { background-color: #004085; }
-            """
-        )
         layout.addWidget(self.register_btn)
 
         layout.addStretch()
 
-        separator2 = QFrame()
-        separator2.setFrameShape(QFrame.HLine)
-        separator2.setStyleSheet("background-color: #dee2e6; max-height: 2px;")
-        layout.addWidget(separator2)
+        self.controls_separator_bottom = QFrame()
+        self.controls_separator_bottom.setFrameShape(QFrame.HLine)
+        layout.addWidget(self.controls_separator_bottom)
 
         self.close_btn = QPushButton("❌ Cerrar")
         self.close_btn.setMinimumHeight(50)
         self.close_btn.setFont(QFont("Arial", 13, QFont.Bold))
-        self.close_btn.setStyleSheet(
-            """
-            QPushButton {
-                background-color: #6c757d;
-                color: white;
-                border: none;
-                padding: 12px;
-                border-radius: 8px;
-                font-weight: bold;
-            }
-            QPushButton:hover { background-color: #5a6268; }
-            QPushButton:pressed { background-color: #545b62; }
-            """
-        )
         layout.addWidget(self.close_btn)
 
         return frame
@@ -782,5 +621,148 @@ class CameraScannerSection(QWidget):
 
     def cleanup(self) -> None:
         self.stop_camera()
+
+    def set_theme(self, dark_mode: bool):
+        self.dark_mode = dark_mode
+        self.apply_theme()
+
+    def apply_theme(self):
+        if self.dark_mode:
+            card_bg = "#111827"
+            main_bg = "#0b1220"
+            border_color = "rgba(148, 163, 184, 0.2)"
+            text_color = "#e2e8f0"
+            muted_color = "#94a3b8"
+            primary_accent = "#38bdf8"
+            success_accent = "#22c55e"
+            danger_accent = "#f87171"
+            info_bg = "rgba(34, 197, 94, 0.12)"
+            info_text = "#bbf7d0"
+            camera_combo_bg = "#0f172a"
+            camera_combo_fg = "#e2e8f0"
+        else:
+            card_bg = "#ffffff"
+            main_bg = "#f3f4f6"
+            border_color = "rgba(148, 163, 184, 0.2)"
+            text_color = "#0f172a"
+            muted_color = "#64748b"
+            primary_accent = "#0ea5e9"
+            success_accent = "#22c55e"
+            danger_accent = "#dc2626"
+            info_bg = "rgba(34, 197, 94, 0.12)"
+            info_text = "#166534"
+            camera_combo_bg = "#ffffff"
+            camera_combo_fg = "#1f2937"
+
+        self.setStyleSheet(f"QWidget {{ background-color: {main_bg}; }}")
+        self.camera_frame.setStyleSheet(
+            f"QFrame {{ background-color: {card_bg}; border-radius: 14px; border: 1px solid {border_color}; padding: 15px; }}"
+        )
+        self.camera_label.setStyleSheet(f"color: {text_color};")
+        combo_style = (
+            f"""
+            QComboBox {{
+                background-color: {camera_combo_bg};
+                color: {camera_combo_fg};
+                border: 1px solid {border_color};
+                border-radius: 10px;
+                padding: 8px 12px;
+                min-width: 220px;
+            }}
+            QComboBox::drop-down {{ border: none; width: 28px; }}
+            QComboBox::down-arrow {{
+                image: none;
+                border-left: 5px solid transparent;
+                border-right: 5px solid transparent;
+                border-top: 6px solid {camera_combo_fg};
+                margin-right: 10px;
+            }}
+            QComboBox QAbstractItemView {{
+                background-color: {card_bg};
+                color: {camera_combo_fg};
+                border: 1px solid {border_color};
+                border-radius: 10px;
+                padding: 6px;
+                selection-background-color: {primary_accent};
+                selection-color: #0f172a;
+            }}
+            """
+        )
+        self.camera_combo.setStyleSheet(combo_style)
+        self.resolution_label.setStyleSheet(f"color: {muted_color}; padding: 5px;")
+
+        self.video_frame.setStyleSheet(
+            f"QFrame {{ background-color: #000000; border: 2px solid {border_color}; border-radius: 16px; }}"
+        )
+        self.video_label.setStyleSheet(
+            f"QLabel {{ color: {primary_accent}; font-size: 18px; font-weight: 600; padding: 20px; }}"
+        )
+
+        self.info_frame.setStyleSheet(
+            f"QFrame {{ background-color: {card_bg}; border: 1px solid {border_color}; border-radius: 16px; padding: 20px; }}"
+        )
+        self.info_title.setStyleSheet(f"color: {text_color}; font-weight: 700;")
+        self.qr_info_label.setStyleSheet(
+            f"color: {info_text}; background-color: {info_bg}; padding: 16px; border-radius: 12px;"
+        )
+
+        self.controls_frame.setStyleSheet(
+            f"QFrame {{ background-color: {card_bg}; border: 1px solid {border_color}; border-radius: 16px; padding: 20px; }}"
+        )
+        self.controls_separator_top.setStyleSheet(f"background-color: {border_color}; max-height: 1px;")
+        self.controls_separator_bottom.setStyleSheet(f"background-color: {border_color}; max-height: 1px;")
+
+        self.controls_title.setStyleSheet(f"color: {text_color}; font-weight: 700;")
+        self.start_btn.setStyleSheet(
+            self._button_style(success_accent, text_color="#0f172a" if self.dark_mode else "#ffffff")
+        )
+        self.stop_btn.setStyleSheet(
+            self._button_style(danger_accent, text_color="#0f172a" if self.dark_mode else "#ffffff")
+        )
+        self.register_btn.setStyleSheet(
+            self._button_style(primary_accent, text_color="#0f172a")
+        )
+        self.close_btn.setStyleSheet(
+            self._button_style(muted_color, text_color="#0f172a")
+        )
+
+    @staticmethod
+    def _button_style(bg_color: str, text_color: str = "#ffffff") -> str:
+        darker = CameraScannerSection.darken_color(bg_color, 0.15)
+        return (
+            f"""
+            QPushButton {{
+                background-color: {bg_color};
+                color: {text_color};
+                border: none;
+                border-radius: 14px;
+                padding: 12px;
+                font-weight: 600;
+            }}
+            QPushButton:hover {{ background-color: {darker}; }}
+            QPushButton:disabled {{
+                background-color: rgba(148, 163, 184, 0.35);
+                color: rgba(148, 163, 184, 0.8);
+            }}
+            """
+        )
+
+    @staticmethod
+    def lighten_color(color: str, factor: float = 0.1) -> str:
+        color = color.lstrip("#")
+        r, g, b = tuple(int(color[i : i + 2], 16) for i in (0, 2, 4))
+        r = min(255, int(r + (255 - r) * factor))
+        g = min(255, int(g + (255 - g) * factor))
+        b = min(255, int(b + (255 - b) * factor))
+        return f"#{r:02x}{g:02x}{b:02x}"
+
+    @staticmethod
+    def darken_color(color: str, factor: float = 0.2) -> str:
+        color = color.lstrip("#")
+        r, g, b = tuple(int(color[i : i + 2], 16) for i in (0, 2, 4))
+        r = max(0, int(r * (1 - factor)))
+        g = max(0, int(g * (1 - factor)))
+        b = max(0, int(b * (1 - factor)))
+        return f"#{r:02x}{g:02x}{b:02x}"
 
 

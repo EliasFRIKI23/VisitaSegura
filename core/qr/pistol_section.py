@@ -26,9 +26,11 @@ class PistolScannerSection(QWidget):
 
         self.scanner_auto_process_delay = 300
         self._notification_label: QLabel | None = None
+        self.dark_mode = getattr(parent, "dark_mode", False)
 
         self._build_ui()
         self._setup_connections()
+        self.apply_theme()
 
         self.scanner_input_timer = QTimer(self)
         self.scanner_input_timer.setSingleShot(True)
@@ -43,72 +45,40 @@ class PistolScannerSection(QWidget):
         layout.setContentsMargins(0, 0, 0, 0)
         layout.setSpacing(20)
 
-        main_frame = QFrame()
-        main_frame.setStyleSheet(
-            """
-            QFrame {
-                background-color: #f8f9fa;
-                border: 3px solid #003A70;
-                border-radius: 12px;
-                padding: 40px;
-            }
-            """
-        )
-        main_layout = QVBoxLayout(main_frame)
+        self.main_frame = QFrame()
+        main_layout = QVBoxLayout(self.main_frame)
         main_layout.setSpacing(25)
         main_layout.setAlignment(Qt.AlignCenter)
 
-        title = QLabel("🔫 Modo Pistola QR")
-        title.setFont(QFont("Arial", 28, QFont.Bold))
-        title.setAlignment(Qt.AlignCenter)
-        title.setStyleSheet("color: #003A70; padding: 20px;")
-        main_layout.addWidget(title)
+        self.title_label = QLabel("🔫 Modo Pistola QR")
+        self.title_label.setFont(QFont("Arial", 28, QFont.Bold))
+        self.title_label.setAlignment(Qt.AlignCenter)
+        main_layout.addWidget(self.title_label)
 
-        icon = QLabel("📡")
-        icon.setFont(QFont("Arial", 80))
-        icon.setAlignment(Qt.AlignCenter)
-        icon.setStyleSheet("padding: 30px;")
-        main_layout.addWidget(icon)
+        self.icon_label = QLabel("📡")
+        self.icon_label.setFont(QFont("Arial", 80))
+        self.icon_label.setAlignment(Qt.AlignCenter)
+        main_layout.addWidget(self.icon_label)
 
-        instructions = QLabel(
+        self.instructions_label = QLabel(
             "<b>Instrucciones:</b><br><br>"
             "1. Haga clic en el campo de entrada<br>"
             "2. Apunte la pistola QR al código<br>"
             "3. Presione el gatillo<br>"
             "4. El sistema detectará automáticamente el QR"
         )
-        instructions.setFont(QFont("Arial", 14))
-        instructions.setAlignment(Qt.AlignCenter)
-        instructions.setStyleSheet(
-            """
-            color: #495057;
-            background-color: #e3f2fd;
-            padding: 25px;
-            border-radius: 10px;
-            border: 2px solid #90caf9;
-            """
-        )
-        main_layout.addWidget(instructions)
+        self.instructions_label.setFont(QFont("Arial", 14))
+        self.instructions_label.setAlignment(Qt.AlignCenter)
+        main_layout.addWidget(self.instructions_label)
 
-        input_frame = QFrame()
-        input_frame.setStyleSheet(
-            """
-            QFrame {
-                background-color: white;
-                border: 3px solid #28a745;
-                border-radius: 10px;
-                padding: 20px;
-            }
-            """
-        )
-        input_layout = QVBoxLayout(input_frame)
+        self.input_frame = QFrame()
+        input_layout = QVBoxLayout(self.input_frame)
         input_layout.setSpacing(15)
 
-        input_label = QLabel("📥 Esperando escaneo...")
-        input_label.setFont(QFont("Arial", 16, QFont.Bold))
-        input_label.setAlignment(Qt.AlignCenter)
-        input_label.setStyleSheet("color: #28a745; padding: 10px;")
-        input_layout.addWidget(input_label)
+        self.input_label = QLabel("📥 Esperando escaneo...")
+        self.input_label.setFont(QFont("Arial", 16, QFont.Bold))
+        self.input_label.setAlignment(Qt.AlignCenter)
+        input_layout.addWidget(self.input_label)
 
         self.scanner_input = QLineEdit()
         self.scanner_input.setPlaceholderText(
@@ -117,47 +87,17 @@ class PistolScannerSection(QWidget):
         self.scanner_input.setFont(QFont("Arial", 14))
         self.scanner_input.setMinimumHeight(60)
         self.scanner_input.setAlignment(Qt.AlignCenter)
-        self.scanner_input.setStyleSheet(
-            """
-            QLineEdit {
-                background-color: #f8f9fa;
-                color: #2c3e50;
-                border: 2px solid #ced4da;
-                border-radius: 8px;
-                padding: 15px;
-                font-size: 16px;
-            }
-            QLineEdit:focus {
-                border-color: #28a745;
-                background-color: white;
-            }
-            """
-        )
         input_layout.addWidget(self.scanner_input)
 
         self.process_btn = QPushButton("✅ Procesar QR Manualmente")
         self.process_btn.setFont(QFont("Arial", 13, QFont.Bold))
         self.process_btn.setMinimumHeight(50)
-        self.process_btn.setStyleSheet(
-            """
-            QPushButton {
-                background-color: #007bff;
-                color: white;
-                border: none;
-                padding: 12px;
-                border-radius: 8px;
-                font-weight: bold;
-            }
-            QPushButton:hover { background-color: #0056b3; }
-            QPushButton:pressed { background-color: #004085; }
-            """
-        )
         input_layout.addWidget(self.process_btn)
 
-        main_layout.addWidget(input_frame)
+        main_layout.addWidget(self.input_frame)
         main_layout.addStretch()
 
-        layout.addWidget(main_frame)
+        layout.addWidget(self.main_frame)
 
     # ------------------------------------------------------------------
     # Conexión de señales
@@ -276,5 +216,82 @@ class PistolScannerSection(QWidget):
         if self._notification_label:
             self._notification_label.deleteLater()
             self._notification_label = None
+
+    def set_theme(self, dark_mode: bool):
+        self.dark_mode = dark_mode
+        self.apply_theme()
+
+    def apply_theme(self):
+        if self.dark_mode:
+            card_bg = "#111827"
+            main_bg = "#0b1220"
+            border_color = "rgba(148, 163, 184, 0.2)"
+            text_color = "#e2e8f0"
+            muted_color = "#94a3b8"
+            accent = "#38bdf8"
+            info_bg = "rgba(56, 189, 248, 0.12)"
+            input_bg = "#0f172a"
+            input_border = "rgba(148, 163, 184, 0.35)"
+            button_bg = "#38bdf8"
+        else:
+            card_bg = "#ffffff"
+            main_bg = "#f3f4f6"
+            border_color = "rgba(148, 163, 184, 0.2)"
+            text_color = "#0f172a"
+            muted_color = "#64748b"
+            accent = "#0ea5e9"
+            info_bg = "rgba(14, 165, 233, 0.14)"
+            input_bg = "#ffffff"
+            input_border = "rgba(148, 163, 184, 0.3)"
+            button_bg = "#0f172a"
+
+        self.setStyleSheet(f"QWidget {{ background-color: {main_bg}; }}")
+        self.main_frame.setStyleSheet(
+            f"QFrame {{ background-color: {card_bg}; border-radius: 24px; border: 1px solid {border_color}; padding: 40px; }}"
+        )
+        self.title_label.setStyleSheet(f"color: {accent}; padding: 20px;")
+        self.icon_label.setStyleSheet("padding: 30px;")
+        self.instructions_label.setStyleSheet(
+            f"color: {muted_color}; background-color: {info_bg}; padding: 25px; border-radius: 16px;"
+        )
+        self.input_frame.setStyleSheet(
+            f"QFrame {{ background-color: {card_bg}; border: 1px solid {border_color}; border-radius: 18px; padding: 24px; }}"
+        )
+        self.input_label.setStyleSheet(f"color: {accent}; padding: 10px;")
+        self.scanner_input.setStyleSheet(
+            f"""
+            QLineEdit {{
+                background-color: {input_bg};
+                color: {text_color};
+                border: 1px solid {input_border};
+                border-radius: 12px;
+                padding: 15px;
+                font-size: 16px;
+            }}
+            QLineEdit:focus {{ border: 1px solid {accent}; }}
+            """
+        )
+        self.process_btn.setStyleSheet(
+            f"""
+            QPushButton {{
+                background-color: {button_bg};
+                color: #ffffff;
+                border: none;
+                border-radius: 14px;
+                padding: 12px;
+                font-weight: 600;
+            }}
+            QPushButton:hover {{ background-color: {self._darken_color(button_bg, 0.15)}; }}
+            """
+        )
+
+    @staticmethod
+    def _darken_color(color: str, factor: float = 0.2) -> str:
+        color = color.lstrip("#")
+        r, g, b = tuple(int(color[i : i + 2], 16) for i in (0, 2, 4))
+        r = max(0, int(r * (1 - factor)))
+        g = max(0, int(g * (1 - factor)))
+        b = max(0, int(b * (1 - factor)))
+        return f"#{r:02x}{g:02x}{b:02x}"
 
 

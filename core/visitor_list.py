@@ -94,6 +94,7 @@ class VisitorListWidget(QWidget):
         super().__init__(parent)
         self.visitor_manager = VisitorManager()
         self.auth_manager = auth_manager  # Guardar referencia al AuthManager
+        self.dark_mode = False
         
         # Configurar tamaño mínimo para mejor visualización de la tabla
         self.setMinimumSize(1200, 600)  # Ancho mínimo de 1200px para acomodar todas las columnas
@@ -109,201 +110,588 @@ class VisitorListWidget(QWidget):
     
     def setup_ui(self):
         """Configura la interfaz de usuario"""
-        main_layout = QVBoxLayout(self)
-        main_layout.setSpacing(10)
-        main_layout.setContentsMargins(10, 10, 10, 10)
-        
-        # Título y controles superiores
-        header_layout = QHBoxLayout()
-        
-        # Título con icono
-        title_icon = QLabel("👥")
-        title_icon.setFont(QFont("Arial", 20))
-        title = QLabel("Gestión de Visitantes")
-        title.setFont(QFont("Arial", 16, QFont.Bold))
-        header_layout.addWidget(title_icon)
-        header_layout.addWidget(title)
-        
-        header_layout.addStretch()
-        
-        # Logo Duoc
-        logo_label = QLabel()
-        logo_pixmap = QPixmap("Logo Duoc .png")
-        if not logo_pixmap.isNull():
-            scaled_pixmap = logo_pixmap.scaled(120, 60, Qt.KeepAspectRatio, Qt.SmoothTransformation)
-            logo_label.setPixmap(scaled_pixmap)
-        else:
-            logo_label.setText("🏢 Duoc UC")
-            logo_font = QFont("Arial", 12, QFont.Bold)
-            logo_label.setFont(logo_font)
-        
-        logo_label.setAlignment(Qt.AlignRight)
-        header_layout.addWidget(logo_label)
-        
-        # Botón de ayuda
+        outer_layout = QVBoxLayout(self)
+        outer_layout.setContentsMargins(0, 0, 0, 0)
+        outer_layout.setSpacing(0)
+
+        self.main_container = QFrame()
+        self.main_container.setObjectName("visitorsMainContainer")
+        container_layout = QVBoxLayout(self.main_container)
+        container_layout.setContentsMargins(32, 32, 32, 24)
+        container_layout.setSpacing(24)
+        outer_layout.addWidget(self.main_container)
+
+        # Encabezado principal
+        self.header_card = QFrame()
+        self.header_card.setObjectName("visitorsHeaderCard")
+        header_layout = QHBoxLayout(self.header_card)
+        header_layout.setContentsMargins(28, 28, 28, 28)
+        header_layout.setSpacing(18)
+
+        header_text_layout = QVBoxLayout()
+        header_text_layout.setSpacing(8)
+
+        self.title_label = QLabel("Gestión de Visitantes")
+        title_font = QFont()
+        title_font.setPointSize(22)
+        title_font.setBold(True)
+        self.title_label.setFont(title_font)
+        header_text_layout.addWidget(self.title_label)
+
+        self.subtitle_label = QLabel(
+            "Supervisa el flujo de visitantes en tiempo real, aplica filtros rápidos y gestiona registros en segundos."
+        )
+        self.subtitle_label.setWordWrap(True)
+        self.subtitle_label.setStyleSheet("color: #64748b; font-size: 13px;")
+        header_text_layout.addWidget(self.subtitle_label)
+
+        self.header_badge = QLabel("Actualización automática cada 30 segundos")
+        self.header_badge.setAlignment(Qt.AlignLeft)
+        self.header_badge.setStyleSheet(
+            "padding: 6px 14px; border-radius: 14px; font-size: 12px;"
+            "background-color: rgba(14, 165, 233, 0.12); color: #0284c7; font-weight: 600;"
+        )
+        header_text_layout.addWidget(self.header_badge)
+
+        header_layout.addLayout(header_text_layout, stretch=1)
+
         self.help_btn = QToolButton()
         self.help_btn.setText("?")
-        self.help_btn.setToolTip("📖 Ayuda: Doble clic para cambiar estado | Clic derecho para menú | Filtros por estado y sector")
-        self.help_btn.setMaximumSize(30, 30)
-        self.help_btn.setStyleSheet("""
+        self.help_btn.setCursor(Qt.PointingHandCursor)
+        self.help_btn.setToolTip(
+            "📖 Ayuda: Doble clic para cambiar estado | Clic derecho para menú | Filtros por estado y sector"
+        )
+        self.help_btn.setFixedSize(40, 40)
+        self.help_btn.setStyleSheet(
+            """
             QToolButton {
-                background-color: #17a2b8;
-                color: white;
+                background-color: #0ea5e9;
+                color: #0f172a;
                 border: none;
-                border-radius: 15px;
-                font-weight: bold;
-                font-size: 14px;
+                border-radius: 20px;
+                font-weight: 700;
+                font-size: 16px;
             }
             QToolButton:hover {
-                background-color: #138496;
+                background-color: #38bdf8;
             }
-        """)
-        header_layout.addWidget(self.help_btn)
-        
-        # Barra de búsqueda y filtros
+            """
+        )
+        header_layout.addWidget(self.help_btn, alignment=Qt.AlignTop)
+
+        container_layout.addWidget(self.header_card)
+
+        # Controles superiores
+        self.controls_card = QFrame()
+        self.controls_card.setObjectName("visitorsControlsCard")
+        controls_layout = QHBoxLayout(self.controls_card)
+        controls_layout.setContentsMargins(24, 20, 24, 20)
+        controls_layout.setSpacing(16)
+
         self.search_input = QLineEdit()
         self.search_input.setPlaceholderText("Buscar por RUT, nombre, acompañante o sector…")
         self.search_input.setClearButtonEnabled(True)
-        self.search_input.setMaximumWidth(300)
-        self.search_input.setToolTip("Escriba para filtrar la lista en tiempo real")
-        header_layout.addWidget(self.search_input)
+        self.search_input.setFixedHeight(44)
+        self.search_input.setStyleSheet(
+            """
+            QLineEdit {
+                background-color: #ffffff;
+                border: 1px solid rgba(148, 163, 184, 0.4);
+                border-radius: 14px;
+                padding: 0 16px;
+                font-size: 13px;
+            }
+            QLineEdit:focus {
+                border-color: #0ea5e9;
+            }
+            """
+        )
+        controls_layout.addWidget(self.search_input, stretch=2)
 
-        filter_label = QLabel("Filtro:")
-        filter_label.setFont(QFont("Arial", 10, QFont.Bold))
+        self.filter_label = QLabel("Filtro:")
+        controls_layout.addWidget(self.filter_label)
+
         self.filter_combo = QComboBox()
-        self.filter_combo.addItems(["Todos", "Dentro", "Fuera", "Financiamiento", "CITT", "Auditorio", "Administración"])
-        self.filter_combo.setMaximumWidth(170)
-        self.filter_combo.setToolTip("Filtrar por estado o sector")
-        header_layout.addWidget(filter_label)
-        header_layout.addWidget(self.filter_combo)
-        
-        # Botón de actualizar
+        self.filter_combo.addItems([
+            "Todos", "Dentro", "Fuera", "Financiamiento", "CITT", "Auditorio", "Administración"
+        ])
+        self.filter_combo.setFixedHeight(44)
+        self.filter_combo.setStyleSheet(
+            """
+            QComboBox {
+                background-color: #ffffff;
+                border: 1px solid rgba(148, 163, 184, 0.4);
+                border-radius: 14px;
+                padding: 0 14px;
+                font-size: 13px;
+                min-width: 200px;
+            }
+            QComboBox::drop-down {
+                border: none;
+            }
+            QComboBox QAbstractItemView {
+                background-color: #ffffff;
+                border-radius: 12px;
+                border: 1px solid rgba(148, 163, 184, 0.3);
+                padding: 4px;
+            }
+            """
+        )
+        controls_layout.addWidget(self.filter_combo)
+
+        controls_layout.addStretch()
+
         self.refresh_btn = QPushButton("🔄 Actualizar")
-        self.refresh_btn.setMaximumWidth(120)
+        self.refresh_btn.setCursor(Qt.PointingHandCursor)
+        self.refresh_btn.setMinimumHeight(44)
         self.refresh_btn.setToolTip("Actualizar la lista de visitantes")
-        header_layout.addWidget(self.refresh_btn)
-        
-        main_layout.addLayout(header_layout)
-        
-        # Splitter para dividir la pantalla
-        splitter = QSplitter(Qt.Horizontal)
-        
-        # Panel izquierdo - Lista de visitantes
-        left_panel = QWidget()
+        self.refresh_btn.setStyleSheet(
+            """
+            QPushButton {
+                background-color: #0f172a;
+                color: #f8fafc;
+                border-radius: 14px;
+                padding: 0 24px;
+                font-weight: 600;
+            }
+            QPushButton:hover {
+                background-color: #1e293b;
+            }
+            """
+        )
+        controls_layout.addWidget(self.refresh_btn)
+
+        container_layout.addWidget(self.controls_card)
+
+        # Contenido principal con splitter
+        self.content_splitter = QSplitter(Qt.Horizontal)
+        self.content_splitter.setObjectName("visitorsSplitter")
+        container_layout.addWidget(self.content_splitter, 1)
+
+        # Panel izquierdo (tabla y acciones)
+        left_panel = QFrame()
+        left_panel.setObjectName("visitorsLeftPanel")
         left_layout = QVBoxLayout(left_panel)
-        
-        # Controles de la lista
-        list_controls = QHBoxLayout()
-        
-        # Grupo de botones principales
-        main_buttons_group = QGroupBox("🛠️ Acciones Principales")
-        main_buttons_group.setFont(QFont("Arial", 9, QFont.Bold))
-        main_buttons_layout = QHBoxLayout(main_buttons_group)
-        
-        self.add_btn = QPushButton("➕ Nuevo Visitante")
-        self.add_btn.setToolTip("Agregar un nuevo visitante al sistema")
-        self.add_btn.setStyleSheet(get_standard_button_style(DUOC_SUCCESS))
-        
+        left_layout.setContentsMargins(0, 0, 0, 0)
+        left_layout.setSpacing(18)
+
+        self.actions_card = QFrame()
+        self.actions_card.setObjectName("visitorsActionsCard")
+        actions_layout = QHBoxLayout(self.actions_card)
+        actions_layout.setContentsMargins(24, 24, 24, 24)
+        actions_layout.setSpacing(16)
+
+        self.add_btn = QPushButton("➕ Nuevo visitante")
+        self.add_btn.setCursor(Qt.PointingHandCursor)
+        self.add_btn.setMinimumHeight(46)
+        self.add_btn.setToolTip("Registrar un nuevo visitante en el sistema")
+        self.add_btn.setStyleSheet(
+            """
+            QPushButton {
+                background-color: #22c55e;
+                color: #0f172a;
+                border-radius: 14px;
+                padding: 12px 22px;
+                font-weight: 600;
+            }
+            QPushButton:hover {
+                background-color: #4ade80;
+            }
+            """
+        )
+        actions_layout.addWidget(self.add_btn)
+
         self.edit_btn = QPushButton("✏️ Editar")
         self.edit_btn.setEnabled(False)
+        self.edit_btn.setCursor(Qt.PointingHandCursor)
+        self.edit_btn.setMinimumHeight(46)
         self.edit_btn.setToolTip("Editar la información del visitante seleccionado")
-        self.edit_btn.setStyleSheet(get_standard_button_style(DUOC_INFO))
-        
+        self.edit_btn.setStyleSheet(
+            """
+            QPushButton {
+                background-color: #0ea5e9;
+                color: #0f172a;
+                border-radius: 14px;
+                padding: 12px 22px;
+                font-weight: 600;
+            }
+            QPushButton:hover {
+                background-color: #38bdf8;
+            }
+            QPushButton:disabled {
+                background-color: rgba(148, 163, 184, 0.25);
+                color: rgba(148, 163, 184, 0.9);
+            }
+            """
+        )
+        actions_layout.addWidget(self.edit_btn)
+
         self.delete_btn = QPushButton("🗑️ Eliminar")
         self.delete_btn.setEnabled(False)
+        self.delete_btn.setCursor(Qt.PointingHandCursor)
+        self.delete_btn.setMinimumHeight(46)
         self.delete_btn.setToolTip("Eliminar el visitante seleccionado (acción irreversible)")
-        self.delete_btn.setStyleSheet(get_standard_button_style(DUOC_DANGER))
-        
-        main_buttons_layout.addWidget(self.add_btn)
-        main_buttons_layout.addWidget(self.edit_btn)
-        main_buttons_layout.addWidget(self.delete_btn)
-        
-        list_controls.addWidget(main_buttons_group)
-        list_controls.addStretch()
-        
-        left_layout.addLayout(list_controls)
-        
-        # Tabla de visitantes
+        self.delete_btn.setStyleSheet(
+            """
+            QPushButton {
+                background-color: #ef4444;
+                color: #f8fafc;
+                border-radius: 14px;
+                padding: 12px 22px;
+                font-weight: 600;
+            }
+            QPushButton:hover {
+                background-color: #f87171;
+            }
+            QPushButton:disabled {
+                background-color: rgba(148, 163, 184, 0.25);
+                color: rgba(148, 163, 184, 0.9);
+            }
+            """
+        )
+        actions_layout.addWidget(self.delete_btn)
+
+        actions_layout.addStretch()
+        left_layout.addWidget(self.actions_card)
+
         self.visitor_table = QTableWidget()
         self.visitor_table.setColumnCount(8)
         self.visitor_table.setHorizontalHeaderLabels([
             "🆔 ID", "📄 RUT", "👤 Nombre", "🤝 Acompañante", "🏢 Sector", "📍 Estado", "⏰ Ingreso", "👨‍💼 Registrado por"
         ])
-        
-        # Configurar tabla
+
         configure_modern_table(self.visitor_table)
         apply_modern_table_theme(self.visitor_table)
+        self.visitor_table.setContextMenuPolicy(Qt.CustomContextMenu)
 
-        
-        # Ajustar columnas con mejor distribución
         header = self.visitor_table.horizontalHeader()
-        header.setSectionResizeMode(0, QHeaderView.ResizeToContents)  # ID (compacto)
-        header.setSectionResizeMode(1, QHeaderView.ResizeToContents)  # RUT (compacto)
-        header.setSectionResizeMode(2, QHeaderView.Stretch)          # Nombre (expandible)
-        header.setSectionResizeMode(3, QHeaderView.ResizeToContents) # Acompañante (compacto)
-        header.setSectionResizeMode(4, QHeaderView.ResizeToContents) # Sector (compacto)
-        header.setSectionResizeMode(5, QHeaderView.ResizeToContents) # Estado (compacto)
-        header.setSectionResizeMode(6, QHeaderView.ResizeToContents) # Hora (compacto)
-        header.setSectionResizeMode(7, QHeaderView.ResizeToContents) # Usuario registrador (compacto)
-        
-        # Establecer tamaños mínimos para mejor legibilidad
-        header.setMinimumSectionSize(80)  # Tamaño mínimo para todas las columnas
-        header.setDefaultSectionSize(120)  # Tamaño por defecto más generoso
-        
+        header.setSectionResizeMode(0, QHeaderView.ResizeToContents)
+        header.setSectionResizeMode(1, QHeaderView.ResizeToContents)
+        header.setSectionResizeMode(2, QHeaderView.Stretch)
+        header.setSectionResizeMode(3, QHeaderView.ResizeToContents)
+        header.setSectionResizeMode(4, QHeaderView.ResizeToContents)
+        header.setSectionResizeMode(5, QHeaderView.ResizeToContents)
+        header.setSectionResizeMode(6, QHeaderView.ResizeToContents)
+        header.setSectionResizeMode(7, QHeaderView.ResizeToContents)
+        header.setMinimumSectionSize(80)
+        header.setDefaultSectionSize(120)
+
         left_layout.addWidget(self.visitor_table)
 
-        # Estado vacío amigable
-        self.empty_state = QLabel("\nNo hay visitantes para mostrar.\n\nUse \"Nuevo Visitante\" para registrar o modifique los filtros/búsqueda.")
+        self.empty_state = QLabel(
+            "\nNo hay visitantes para mostrar.\n\nUsa \"Nuevo visitante\" o ajusta filtros/búsqueda."
+        )
         self.empty_state.setAlignment(Qt.AlignCenter)
-        self.empty_state.setStyleSheet("color: #6c757d; border: 1px dashed #dee2e6; border-radius: 8px; padding: 16px;")
+        self.empty_state.setStyleSheet(
+            "color: #64748b; border: 1px dashed rgba(148, 163, 184, 0.45);"
+            "border-radius: 18px; padding: 20px; background-color: rgba(148, 163, 184, 0.08);"
+        )
         self.empty_state.setVisible(False)
         left_layout.addWidget(self.empty_state)
-        
-        # Panel derecho - Formulario rápido
-        right_panel = QWidget()
-        right_layout = QVBoxLayout(right_panel)
-        
-        # Título del panel derecho
-        right_title = QLabel("Registro Rápido")
-        right_title.setFont(QFont("Arial", 12, QFont.Bold))
-        right_title.setAlignment(Qt.AlignCenter)
-        right_layout.addWidget(right_title)
-        
-        # Formulario rápido
+
+        self.content_splitter.addWidget(left_panel)
+
+        # Panel derecho (formulario rápido y estadísticas)
+        self.sidebar_card = QFrame()
+        self.sidebar_card.setObjectName("visitorsSidebarCard")
+        sidebar_layout = QVBoxLayout(self.sidebar_card)
+        sidebar_layout.setContentsMargins(24, 24, 24, 24)
+        sidebar_layout.setSpacing(20)
+
+        self.sidebar_title = QLabel("Registro rápido")
+        self.sidebar_title.setAlignment(Qt.AlignLeft)
+        sidebar_layout.addWidget(self.sidebar_title)
+
+        self.quick_section = QFrame()
+        self.quick_section.setObjectName("visitorsQuickSection")
+        quick_section_layout = QVBoxLayout(self.quick_section)
+        quick_section_layout.setContentsMargins(0, 0, 0, 0)
+        quick_section_layout.setSpacing(0)
+
         self.quick_form = QuickVisitorForm(self, self.auth_manager)
-        right_layout.addWidget(self.quick_form)
-        
-        # Conectar el botón de registro rápido
-        self.quick_form.registrar_btn.clicked.connect(self.handle_quick_registration)
-        
-        # Estadísticas
-        stats_group = QGroupBox("📊 Estadísticas")
-        stats_group.setFont(QFont("Arial", 10, QFont.Bold))
-        stats_layout = QVBoxLayout(stats_group)
-        
+        quick_section_layout.addWidget(self.quick_form)
+
+        self.stats_card = QFrame()
+        self.stats_card.setObjectName("visitorsStatsCard")
+        stats_layout = QVBoxLayout(self.stats_card)
+        stats_layout.setContentsMargins(20, 20, 20, 20)
+        stats_layout.setSpacing(12)
+
+        self.stats_title = QLabel("📊 Resumen en vivo")
+        self.stats_title.setAlignment(Qt.AlignCenter)
+        stats_layout.addWidget(self.stats_title)
+
         self.stats_label = QLabel()
         self.stats_label.setAlignment(Qt.AlignCenter)
-        self.stats_label.setFont(QFont("Arial", 10))
         self.stats_label.setToolTip("Estadísticas actualizadas en tiempo real")
         stats_layout.addWidget(self.stats_label)
-        
-        right_layout.addWidget(stats_group)
-        right_layout.addStretch()
-        
-        # Configurar splitter
-        splitter.addWidget(left_panel)
-        splitter.addWidget(right_panel)
-        splitter.setSizes([700, 300])
-        
-        main_layout.addWidget(splitter)
-        
-        # Botón de regreso al menú principal
-        back_button = QPushButton("⬅️ Volver al Menú Principal")
-        back_button.setFixedSize(200, 40)
-        back_button.setStyleSheet(get_standard_button_style("#6c757d"))
-        back_button.clicked.connect(self.go_to_main)
-        main_layout.addWidget(back_button, alignment=Qt.AlignCenter)
-    
+
+        sidebar_layout.addWidget(self.quick_section)
+        sidebar_layout.addStretch()
+
+        self.stats_card = None
+        self.stats_title = None
+        self.stats_label = None
+
+        self.content_splitter.addWidget(self.sidebar_card)
+        self.content_splitter.setSizes([820, 320])
+
+        # Botón de regreso
+        self.back_button = QPushButton("⬅️ Volver al menú principal")
+        self.back_button.setCursor(Qt.PointingHandCursor)
+        self.back_button.setMinimumHeight(46)
+        self.back_button.clicked.connect(self.go_to_main)
+        container_layout.addWidget(self.back_button, alignment=Qt.AlignCenter)
+
+        self.apply_theme()
+
+    def set_theme(self, dark_mode: bool):
+        """Actualiza el tema visual del módulo"""
+        self.dark_mode = dark_mode
+        self.apply_theme()
+
+    def apply_theme(self):
+        if self.dark_mode:
+            main_bg = "#0b1220"
+            card_bg = "#111827"
+            sidebar_bg = "#111827"
+            border_color = "rgba(148, 163, 184, 0.18)"
+            text_color = "#e2e8f0"
+            muted_color = "#94a3b8"
+            badge_bg = "rgba(56, 189, 248, 0.18)"
+            badge_color = "#38bdf8"
+            input_bg = "#0f172a"
+            input_border = "rgba(148, 163, 184, 0.4)"
+            input_text = "#f1f5f9"
+            button_border = "rgba(148, 163, 184, 0.35)"
+            empty_bg = "rgba(148, 163, 184, 0.12)"
+            empty_border = "rgba(148, 163, 184, 0.25)"
+            refresh_bg = "#38bdf8"
+            refresh_fg = "#0f172a"
+            refresh_hover = "#0ea5e9"
+            back_border = "rgba(148, 163, 184, 0.4)"
+            back_hover = "rgba(148, 163, 184, 0.18)"
+            help_bg = "#38bdf8"
+            help_fg = "#0f172a"
+        else:
+            main_bg = "#f3f4f6"
+            card_bg = "#ffffff"
+            sidebar_bg = "#ffffff"
+            border_color = "rgba(148, 163, 184, 0.2)"
+            text_color = "#0f172a"
+            muted_color = "#64748b"
+            badge_bg = "rgba(14, 165, 233, 0.12)"
+            badge_color = "#0284c7"
+            input_bg = "#ffffff"
+            input_border = "rgba(148, 163, 184, 0.35)"
+            input_text = "#1f2937"
+            button_border = "rgba(148, 163, 184, 0.25)"
+            empty_bg = "rgba(148, 163, 184, 0.08)"
+            empty_border = "rgba(148, 163, 184, 0.35)"
+            refresh_bg = "#0f172a"
+            refresh_fg = "#f8fafc"
+            refresh_hover = "#1e293b"
+            back_border = "rgba(15, 23, 42, 0.25)"
+            back_hover = "rgba(15, 23, 42, 0.08)"
+            help_bg = "#0ea5e9"
+            help_fg = "#0f172a"
+
+        self.main_container.setStyleSheet(
+            f"""
+            QFrame#visitorsMainContainer {{
+                background-color: {main_bg};
+            }}
+            QFrame#visitorsHeaderCard,
+            QFrame#visitorsControlsCard,
+            QFrame#visitorsActionsCard,
+            QFrame#visitorsSidebarCard,
+            QFrame#visitorsStatsCard {{
+                background-color: {card_bg};
+                border-radius: 24px;
+                border: 1px solid {border_color};
+            }}
+            QFrame#visitorsQuickSection {{
+                border: none;
+            }}
+            QFrame#visitorsActionsCard {{
+                border-radius: 20px;
+            }}
+            QFrame#visitorsSidebarCard {{
+                border-radius: 24px;
+            }}
+            QSplitter#visitorsSplitter::handle {{
+                background-color: transparent;
+            }}
+            """
+        )
+
+        self.title_label.setStyleSheet(f"color: {text_color};")
+        self.subtitle_label.setStyleSheet(f"color: {muted_color}; font-size: 13px;")
+        self.header_badge.setStyleSheet(
+            f"padding: 6px 14px; border-radius: 14px; font-size: 12px;"
+            f"background-color: {badge_bg}; color: {badge_color}; font-weight: 600;"
+        )
+
+        self.help_btn.setStyleSheet(
+            f"""
+            QToolButton {{
+                background-color: {help_bg};
+                color: {help_fg};
+                border: none;
+                border-radius: 20px;
+                font-weight: 700;
+                font-size: 16px;
+            }}
+            QToolButton:hover {{
+                background-color: {refresh_bg};
+            }}
+            """
+        )
+
+        self.search_input.setStyleSheet(
+            f"""
+            QLineEdit {{
+                background-color: {input_bg};
+                border: 1px solid {input_border};
+                border-radius: 14px;
+                padding: 0 16px;
+                font-size: 13px;
+                color: {input_text};
+            }}
+            QLineEdit:focus {{
+                border-color: #38bdf8;
+            }}
+            """
+        )
+
+        filter_style = (
+            f"""
+            QComboBox {{
+                background-color: {input_bg};
+                border: 1px solid {input_border};
+                border-radius: 14px;
+                padding: 0 14px;
+                font-size: 13px;
+                min-width: 200px;
+                color: {input_text};
+            }}
+            QComboBox::drop-down {{
+                border: none;
+            }}
+            QComboBox QAbstractItemView {{
+                background-color: {card_bg};
+                border-radius: 12px;
+                border: 1px solid {border_color};
+                padding: 4px;
+                color: {text_color};
+            }}
+            """
+        )
+        self.filter_combo.setStyleSheet(filter_style)
+        self.filter_label.setStyleSheet(f"font-weight: 600; color: {muted_color};")
+
+        self.refresh_btn.setStyleSheet(
+            f"""
+            QPushButton {{
+                background-color: {refresh_bg};
+                color: {refresh_fg};
+                border-radius: 14px;
+                padding: 0 24px;
+                font-weight: 600;
+            }}
+            QPushButton:hover {{
+                background-color: {refresh_hover};
+            }}
+            """
+        )
+
+        self.add_btn.setStyleSheet(
+            """
+            QPushButton {
+                background-color: #22c55e;
+                color: #0f172a;
+                border-radius: 14px;
+                padding: 12px 22px;
+                font-weight: 600;
+            }
+            QPushButton:hover {
+                background-color: #4ade80;
+            }
+            """
+        )
+        self.edit_btn.setStyleSheet(
+            """
+            QPushButton {
+                background-color: #0ea5e9;
+                color: #0f172a;
+                border-radius: 14px;
+                padding: 12px 22px;
+                font-weight: 600;
+            }
+            QPushButton:hover {
+                background-color: #38bdf8;
+            }
+            QPushButton:disabled {
+                background-color: rgba(148, 163, 184, 0.25);
+                color: rgba(148, 163, 184, 0.9);
+            }
+            """
+        )
+        self.delete_btn.setStyleSheet(
+            """
+            QPushButton {
+                background-color: #ef4444;
+                color: #f8fafc;
+                border-radius: 14px;
+                padding: 12px 22px;
+                font-weight: 600;
+            }
+            QPushButton:hover {
+                background-color: #f87171;
+            }
+            QPushButton:disabled {
+                background-color: rgba(148, 163, 184, 0.25);
+                color: rgba(148, 163, 184, 0.9);
+            }
+            """
+        )
+
+        self.sidebar_title.setStyleSheet(f"font-size: 16px; font-weight: 700; color: {text_color};")
+        if self.stats_title:
+            self.stats_title.setStyleSheet(f"font-weight: 600; color: {text_color};")
+        if self.stats_card:
+            self.stats_card.setStyleSheet(
+                f"background-color: {sidebar_bg}; border-radius: 20px; border: 1px solid {border_color};"
+            )
+        if self.stats_label:
+            self.stats_label.setStyleSheet(f"color: {text_color}; font-size: 13px;")
+
+        self.empty_state.setStyleSheet(
+            f"color: {muted_color}; border: 1px dashed {empty_border};"
+            f"border-radius: 18px; padding: 20px; background-color: {empty_bg};"
+        )
+
+        self.back_button.setStyleSheet(
+            f"""
+            QPushButton {{
+                background-color: transparent;
+                color: {text_color};
+                border: 1px solid {back_border};
+                border-radius: 14px;
+                padding: 0 26px;
+                font-weight: 600;
+            }}
+            QPushButton:hover {{
+                background-color: {back_hover};
+            }}
+            """
+        )
+
+        if hasattr(self.quick_form, "apply_theme"):
+            self.quick_form.apply_theme(self.dark_mode)
+
+        apply_modern_table_theme(self.visitor_table, self.dark_mode)
+
     def setup_connections(self):
         """Configura las conexiones de señales"""
         self.add_btn.clicked.connect(self.add_visitor)
@@ -555,7 +943,8 @@ class VisitorListWidget(QWidget):
         self.empty_state.setVisible(len(visitors) == 0)
 
         # Actualizar estadísticas
-        self.update_stats(visitors)
+        if self.stats_label:
+            self.update_stats(visitors)
     
     def handle_quick_registration(self):
         """Maneja el registro rápido desde el formulario lateral"""
@@ -570,14 +959,16 @@ class VisitorListWidget(QWidget):
     
     def update_stats(self, visitors):
         """Actualiza las estadísticas mostradas"""
+        if not self.stats_label:
+            return
+
         total = len(visitors)
         dentro = len([v for v in visitors if v.estado == "Dentro"])
         fuera = total - dentro
-        
-        # Iconos dinámicos según el estado
+
         dentro_icon = "🟢" if dentro > 0 else "⚪"
         fuera_icon = "🔴" if fuera > 0 else "⚪"
-        
+
         stats_text = f"""
         <div style="text-align: center;">
         <b>📊 Resumen de Visitantes</b><br><br>

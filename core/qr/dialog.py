@@ -16,6 +16,7 @@ from PySide6.QtWidgets import (
     QScrollArea,
     QVBoxLayout,
     QWidget,
+    QFrame,
 )
 
 from .camera_section import CameraScannerSection
@@ -32,6 +33,7 @@ class QRScannerDialog(QDialog):
         super().__init__(parent)
         self.auth_manager = auth_manager
         self.current_carnet_data: Optional[Dict[str, str]] = None
+        self.dark_mode = getattr(parent, "dark_mode", False)
 
         self.setWindowTitle("📱 Escáner de QR - VisitaSegura")
         self.setModal(True)
@@ -45,6 +47,74 @@ class QRScannerDialog(QDialog):
 
         self._build_ui()
         self._setup_connections()
+        self.apply_theme()
+
+    def set_theme(self, dark_mode: bool):
+        self.dark_mode = dark_mode
+        self.apply_theme()
+
+    def apply_theme(self):
+        if self.dark_mode:
+            main_bg = "#0b1220"
+            card_bg = "#111827"
+            border_color = "rgba(148, 163, 184, 0.18)"
+            text_color = "#e2e8f0"
+            muted_color = "#94a3b8"
+            badge_bg = "rgba(56, 189, 248, 0.18)"
+            badge_color = "#38bdf8"
+            guide_bg = "rgba(14, 165, 233, 0.12)"
+        else:
+            main_bg = "#f3f4f6"
+            card_bg = "#ffffff"
+            border_color = "rgba(148, 163, 184, 0.2)"
+            text_color = "#0f172a"
+            muted_color = "#64748b"
+            badge_bg = "rgba(14, 165, 233, 0.14)"
+            badge_color = "#0284c7"
+            guide_bg = "rgba(14, 165, 233, 0.1)"
+
+        self.main_container.setStyleSheet(f"background-color: {main_bg};")
+        self.method_card.setStyleSheet(
+            f"QFrame {{ background-color: {card_bg}; border-radius: 24px; border: 1px solid {border_color}; }}"
+        )
+        self.header_card.setStyleSheet(
+            f"QFrame {{ background-color: {card_bg}; border-radius: 24px; border: 1px solid {border_color}; }}"
+        )
+
+        self.title_label.setStyleSheet(f"color: {text_color};")
+        self.subtitle_label.setStyleSheet(f"color: {muted_color}; font-size: 13px;")
+        self.guide_label.setStyleSheet(
+            f"background-color: {guide_bg}; color: {text_color}; padding: 16px; border-radius: 18px;"
+        )
+        self.method_label.setStyleSheet(f"color: {text_color};")
+
+        radio_style = (
+            f"""
+            QRadioButton {{
+                color: {text_color};
+                font-size: 13px;
+                font-weight: 600;
+                padding: 6px 12px;
+            }}
+            QRadioButton::indicator {{ width: 20px; height: 20px; }}
+            QRadioButton::indicator:unchecked {{
+                background-color: {card_bg};
+                border: 2px solid {border_color};
+                border-radius: 10px;
+            }}
+            QRadioButton::indicator:checked {{
+                background-color: {badge_color};
+                border: 2px solid {badge_color};
+                border-radius: 10px;
+            }}
+            """
+        )
+        self.camera_radio.setStyleSheet(radio_style)
+        self.scanner_radio.setStyleSheet(radio_style)
+
+        self.setStyleSheet(f"QDialog {{ background-color: {main_bg}; }}")
+        self.camera_section.set_theme(self.dark_mode)
+        self.pistol_section.set_theme(self.dark_mode)
 
     # ------------------------------------------------------------------
     # Construcción de la interfaz
@@ -56,17 +126,69 @@ class QRScannerDialog(QDialog):
 
         scroll_area = QScrollArea()
         scroll_area.setWidgetResizable(True)
-        scroll_area.setHorizontalScrollBarPolicy(Qt.ScrollBarAsNeeded)
+        scroll_area.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
         scroll_area.setVerticalScrollBarPolicy(Qt.ScrollBarAsNeeded)
         scroll_area.setFrameShape(QScrollArea.NoFrame)
 
-        content_widget = QWidget()
-        self.content_layout = QVBoxLayout(content_widget)
-        self.content_layout.setContentsMargins(20, 20, 20, 20)
-        self.content_layout.setSpacing(15)
+        self.main_container = QWidget()
+        self.content_layout = QVBoxLayout(self.main_container)
+        self.content_layout.setContentsMargins(32, 32, 32, 24)
+        self.content_layout.setSpacing(24)
 
-        self._build_method_selector()
-        self._build_header()
+        self.method_card = QFrame()
+        self.method_card.setObjectName("qrMethodCard")
+        method_layout = QHBoxLayout(self.method_card)
+        method_layout.setContentsMargins(24, 24, 24, 24)
+        method_layout.setSpacing(16)
+
+        self.method_label = QLabel("Selecciona el método de escaneo")
+        self.method_label.setFont(QFont("Segoe UI", 14, QFont.Bold))
+
+        self.method_group = QButtonGroup(self)
+        self.camera_radio = QRadioButton("📷 Cámara")
+        self.scanner_radio = QRadioButton("🔫 Pistola QR")
+
+        for radio in (self.camera_radio, self.scanner_radio):
+            radio.setCursor(Qt.PointingHandCursor)
+
+        self.method_group.addButton(self.camera_radio, 0)
+        self.method_group.addButton(self.scanner_radio, 1)
+        self.camera_radio.setChecked(True)
+
+        method_layout.addWidget(self.method_label)
+        method_layout.addStretch()
+        method_layout.addWidget(self.camera_radio)
+        method_layout.addWidget(self.scanner_radio)
+
+        self.header_card = QFrame()
+        self.header_card.setObjectName("qrHeaderCard")
+        header_layout = QHBoxLayout(self.header_card)
+        header_layout.setContentsMargins(28, 28, 28, 28)
+        header_layout.setSpacing(16)
+
+        header_text = QVBoxLayout()
+        self.title_label = QLabel("Escáner de códigos QR")
+        self.title_label.setFont(QFont("Segoe UI", 24, QFont.Bold))
+        header_text.addWidget(self.title_label)
+
+        self.subtitle_label = QLabel("Apunta la cámara o utiliza la pistola de códigos QR para registrar visitantes.")
+        self.subtitle_label.setWordWrap(True)
+        header_text.addWidget(self.subtitle_label)
+
+        header_layout.addLayout(header_text)
+        header_layout.addStretch()
+
+        self.guide_label = QLabel(
+            "💡 Consejos rápidos:\n"
+            "• Mantén el QR dentro del recuadro\n"
+            "• Comprueba buena iluminación\n"
+            "• Para pistola, enfoca el campo de texto"
+        )
+        self.guide_label.setAlignment(Qt.AlignLeft)
+        header_layout.addWidget(self.guide_label)
+
+        self.content_layout.addWidget(self.method_card)
+        self.content_layout.addWidget(self.header_card)
 
         self.camera_section = CameraScannerSection(self)
         self.camera_section.set_register_button_visible(False)
@@ -77,111 +199,8 @@ class QRScannerDialog(QDialog):
         self.content_layout.addWidget(self.camera_section, 1)
         self.content_layout.addWidget(self.pistol_section, 1)
 
-        scroll_area.setWidget(content_widget)
+        scroll_area.setWidget(self.main_container)
         self.dialog_layout.addWidget(scroll_area)
-
-    def _build_method_selector(self) -> None:
-        method_frame = QWidget()
-        method_frame.setStyleSheet(
-            """
-            QWidget {
-                background-color: #fff3cd;
-                border: 3px solid #ffc107;
-                border-radius: 12px;
-                padding: 15px;
-            }
-            """
-        )
-        layout = QHBoxLayout(method_frame)
-
-        method_label = QLabel("⚙️ Método de Escaneo:")
-        method_label.setFont(QFont("Arial", 14, QFont.Bold))
-        method_label.setStyleSheet("color: #856404;")
-
-        self.method_group = QButtonGroup(self)
-        self.camera_radio = QRadioButton("📷 Cámara")
-        self.scanner_radio = QRadioButton("🔫 Pistola QR")
-
-        radio_style = """
-            QRadioButton {
-                color: #495057;
-                font-size: 13px;
-                font-weight: bold;
-                padding: 8px 15px;
-                spacing: 8px;
-            }
-            QRadioButton::indicator {
-                width: 20px;
-                height: 20px;
-            }
-            QRadioButton::indicator:unchecked {
-                background-color: white;
-                border: 2px solid #ced4da;
-                border-radius: 10px;
-            }
-            QRadioButton::indicator:checked {
-                background-color: #007bff;
-                border: 2px solid #0056b3;
-                border-radius: 10px;
-            }
-        """
-
-        self.camera_radio.setStyleSheet(radio_style)
-        self.scanner_radio.setStyleSheet(radio_style)
-
-        self.method_group.addButton(self.camera_radio, 0)
-        self.method_group.addButton(self.scanner_radio, 1)
-        self.camera_radio.setChecked(True)
-
-        layout.addWidget(method_label)
-        layout.addWidget(self.camera_radio)
-        layout.addWidget(self.scanner_radio)
-        layout.addStretch()
-
-        self.content_layout.addWidget(method_frame)
-
-    def _build_header(self) -> None:
-        header_frame = QWidget()
-        header_frame.setStyleSheet(
-            """
-            QWidget {
-                background: qlineargradient(x1:0, y1:0, x2:1, y2:0,
-                    stop:0 #003A70, stop:1 #0056b3);
-                border-radius: 10px;
-                padding: 20px;
-            }
-            """
-        )
-        header_layout = QHBoxLayout(header_frame)
-
-        left_header = QVBoxLayout()
-        title = QLabel("📱 Escáner de Códigos QR")
-        title.setFont(QFont("Arial", 24, QFont.Bold))
-        title.setStyleSheet("color: white;")
-        subtitle = QLabel("Apunta la cámara hacia un código QR para escanearlo")
-        subtitle.setFont(QFont("Arial", 14))
-        subtitle.setStyleSheet("color: #e3f2fd;")
-
-        left_header.addWidget(title)
-        left_header.addWidget(subtitle)
-
-        header_layout.addLayout(left_header)
-        header_layout.addStretch()
-
-        guide_label = QLabel(
-            "💡 <b>Instrucciones:</b><br>"
-            "• Mantén distancia menor a 15cm<br>"
-            "• QR dentro del área verde<br>"
-            "• Buena iluminación"
-        )
-        guide_label.setFont(QFont("Arial", 11))
-        guide_label.setStyleSheet(
-            "color: white; background-color: rgba(255,255,255,0.2); "
-            "padding: 15px; border-radius: 8px;"
-        )
-
-        header_layout.addWidget(guide_label)
-        self.content_layout.addWidget(header_frame)
 
     def _setup_connections(self) -> None:
         self.camera_radio.toggled.connect(self._on_method_changed)
@@ -289,7 +308,7 @@ class QRScannerDialog(QDialog):
             from core.visitor_form import VisitorFormDialog
 
             auth_manager = self.get_auth_manager()
-            form_dialog = VisitorFormDialog(self, auth_manager=auth_manager)
+            form_dialog = VisitorFormDialog(self, auth_manager=auth_manager, use_modern_theme=True)
 
             if parsed_data.get("rut"):
                 form_dialog.rut_input.setText(parsed_data["rut"])
@@ -360,7 +379,7 @@ class QRScannerDialog(QDialog):
             from core.visitor_form import VisitorFormDialog
 
             auth_manager = self.get_auth_manager()
-            form_dialog = VisitorFormDialog(self, auth_manager=auth_manager)
+            form_dialog = VisitorFormDialog(self, auth_manager=auth_manager, use_modern_theme=True)
 
             QMessageBox.information(
                 self,

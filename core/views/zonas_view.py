@@ -1,10 +1,24 @@
-from PySide6.QtWidgets import QWidget, QVBoxLayout, QHBoxLayout, QLabel, QPushButton, QFrame, QGridLayout, QMessageBox, QScrollArea, QLineEdit, QComboBox, QProgressBar
+from PySide6.QtWidgets import (
+    QWidget,
+    QVBoxLayout,
+    QHBoxLayout,
+    QLabel,
+    QPushButton,
+    QFrame,
+    QGridLayout,
+    QMessageBox,
+    QScrollArea,
+    QLineEdit,
+    QComboBox,
+    QProgressBar,
+)
 from PySide6.QtCore import Qt, QTimer
-from PySide6.QtGui import QFont, QPixmap, QGuiApplication
+from PySide6.QtGui import QFont, QGuiApplication
 import sys
 import os
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from core.visitors import VisitorManager
+from string import Template
 
 # Importar colores del tema
 try:
@@ -57,219 +71,342 @@ except Exception:
 
 class ZonasView(QWidget):
     """Vista para la gestión de zonas"""
-    
+
     def __init__(self, parent=None):
         super().__init__(parent)
         self.visitor_manager = VisitorManager()
+        self.dark_mode = False
+        self.zone_cards = {}
+        self.progress_template = ""
         self.setup_ui()
         self.setup_timer()
-    
+
     def setup_ui(self):
-        """Configura la interfaz de usuario"""
-        # Crear área de scroll
         scroll_area = QScrollArea()
         scroll_area.setWidgetResizable(True)
-        scroll_area.setHorizontalScrollBarPolicy(Qt.ScrollBarAsNeeded)
-        scroll_area.setVerticalScrollBarPolicy(Qt.ScrollBarAsNeeded)
-        
-        # Widget principal que contendrá todo el contenido
-        main_widget = QWidget()
-        main_layout = QVBoxLayout(main_widget)
-        
-        # Configuración responsiva de márgenes
-        available = QGuiApplication.primaryScreen().availableGeometry()
-        if available.width() >= 1920:
-            margin = 50
-            spacing = 40
-        elif available.width() >= 1366:
-            margin = 40
-            spacing = 35
-        else:
-            margin = 30
-            spacing = 30
-            
-        main_layout.setContentsMargins(margin, margin, margin, margin)
-        main_layout.setSpacing(spacing)
-        
-        # Header con título y logo
-        header_layout = QHBoxLayout()
-        
-        # Título
-        title_layout = QVBoxLayout()
-        title = QLabel("🏢 Gestión de Zonas")
-        
-        # Configuración responsiva de fuentes
-        if available.width() >= 1920:
-            title_font_size = 24
-            subtitle_font_size = 16
-        elif available.width() >= 1366:
-            title_font_size = 20
-            subtitle_font_size = 14
-        else:
-            title_font_size = 18
-            subtitle_font_size = 12
-            
-        title_font = QFont("Segoe UI", title_font_size, QFont.Bold)
-        title.setFont(title_font)
-        title.setAlignment(Qt.AlignLeft)
-        title.setStyleSheet(f"color: {DUOC_PRIMARY}; margin-bottom: 5px;")
-        
-        subtitle = QLabel("Administración de zonas y sectores del establecimiento")
-        subtitle_font = QFont("Segoe UI", subtitle_font_size)
-        subtitle.setFont(subtitle_font)
-        subtitle.setAlignment(Qt.AlignLeft)
-        subtitle.setStyleSheet(f"color: {DUOC_NEUTRAL};")
-        
-        title_layout.addWidget(title)
-        title_layout.addWidget(subtitle)
-        header_layout.addLayout(title_layout)
-        
-        header_layout.addStretch()
-        
-        # Logo Duoc
-        logo_label = QLabel()
-        logo_pixmap = QPixmap("Logo Duoc .png")
-        if not logo_pixmap.isNull():
-            # Escalar logo responsivamente
-            if available.width() >= 1920:
-                logo_size = (160, 80)
-            elif available.width() >= 1366:
-                logo_size = (140, 70)
-            else:
-                logo_size = (120, 60)
-            scaled_pixmap = logo_pixmap.scaled(logo_size[0], logo_size[1], Qt.KeepAspectRatio, Qt.SmoothTransformation)
-            logo_label.setPixmap(scaled_pixmap)
-        else:
-            logo_label.setText("🏢 Duoc UC")
-            logo_font = QFont("Segoe UI", 14, QFont.Bold)
-            logo_label.setFont(logo_font)
-            logo_label.setStyleSheet(f"color: {DUOC_PRIMARY};")
-        
-        logo_label.setAlignment(Qt.AlignRight)
-        header_layout.addWidget(logo_label)
-        
-        main_layout.addLayout(header_layout)
+        scroll_area.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
 
-        # Barra de búsqueda y filtro
-        controls_layout = QHBoxLayout()
+        self.main_container = QWidget()
+        container_layout = QVBoxLayout(self.main_container)
+        container_layout.setContentsMargins(32, 32, 32, 24)
+        container_layout.setSpacing(24)
+
+        self.header_card = QFrame()
+        header_layout = QVBoxLayout(self.header_card)
+        header_layout.setContentsMargins(28, 28, 28, 28)
+        header_layout.setSpacing(10)
+
+        self.title_label = QLabel("Gestión de Zonas")
+        title_font = QFont("Segoe UI", 24, QFont.Bold)
+        self.title_label.setFont(title_font)
+        header_layout.addWidget(self.title_label)
+
+        self.subtitle_label = QLabel(
+            "Monitorea la ocupación y accede rápidamente a cada sector del campus."
+        )
+        self.subtitle_label.setWordWrap(True)
+        self.subtitle_label.setStyleSheet("font-size: 13px;")
+        header_layout.addWidget(self.subtitle_label)
+
+        self.header_badge = QLabel("Actualización automática cada 5 segundos")
+        self.header_badge.setAlignment(Qt.AlignLeft)
+        self.header_badge.setStyleSheet(
+            "padding: 6px 14px; border-radius: 14px; font-size: 12px; font-weight: 600;"
+        )
+        header_layout.addWidget(self.header_badge)
+
+        container_layout.addWidget(self.header_card)
+
+        self.controls_card = QFrame()
+        controls_layout = QHBoxLayout(self.controls_card)
+        controls_layout.setContentsMargins(24, 20, 24, 20)
+        controls_layout.setSpacing(16)
+
         self.search_input = QLineEdit()
         self.search_input.setPlaceholderText("Buscar zona por nombre o descripción…")
         self.search_input.setClearButtonEnabled(True)
-        self.search_input.setMaximumWidth(350)
-        controls_layout.addWidget(self.search_input)
+        self.search_input.setMinimumHeight(44)
+        controls_layout.addWidget(self.search_input, stretch=2)
 
-        controls_layout.addStretch()
+        self.filter_label = QLabel("Filtro")
+        controls_layout.addWidget(self.filter_label)
 
         self.zone_filter = QComboBox()
         self.zone_filter.addItems(["Todas", "Financiamiento", "CITT", "Auditorio", "Administración"])
-        controls_layout.addWidget(QLabel("Filtro:"))
+        self.zone_filter.setMinimumHeight(44)
         controls_layout.addWidget(self.zone_filter)
 
-        main_layout.addLayout(controls_layout)
-        
-        # Contenido principal
-        content_frame = QFrame()
-        content_frame.setFrameStyle(QFrame.StyledPanel)
-        content_frame.setStyleSheet(f"""
-            QFrame {{
-                background-color: white;
-                border: 3px solid {DUOC_PRIMARY};
-                border-radius: 20px;
-            }}
-        """)
-        content_layout = QVBoxLayout(content_frame)
-        
-        # Configuración responsiva de márgenes del contenido
-        if available.width() >= 1920:
-            content_margin = 50
-            content_spacing = 30
-        elif available.width() >= 1366:
-            content_margin = 40
-            content_spacing = 25
-        else:
-            content_margin = 30
-            content_spacing = 20
-            
-        content_layout.setContentsMargins(content_margin, content_margin, content_margin, content_margin)
-        content_layout.setSpacing(content_spacing)
-        
-        # Zonas disponibles
-        zones_title = QLabel("📍 Zonas Disponibles")
-        zones_title_font = QFont("Segoe UI", 24, QFont.Bold)
-        zones_title.setFont(zones_title_font)
-        zones_title.setAlignment(Qt.AlignCenter)
-        zones_title.setStyleSheet(f"color: {DUOC_PRIMARY}; margin-bottom: 20px; padding: 15px;")
-        content_layout.addWidget(zones_title)
-        
-        # Grid de zonas
-        zones_grid = QGridLayout()
-        zones_grid.setSpacing(20)
-        self.zones_grid = zones_grid
-        self.zone_cards = {}
-        
-        # Zona Financiamiento
-        fin_zone = self.create_zone_card("💰 Financiamiento", DUOC_SECONDARY, "Gestión de servicios financieros y becas", "Financiamiento")
-        zones_grid.addWidget(fin_zone, 0, 0)
-        self.zone_cards["Financiamiento"] = fin_zone
-        
-        # Zona CITT
-        citt_zone = self.create_zone_card("🎓 CITT", DUOC_PRIMARY, "Centro de Innovación y Transferencia Tecnológica", "CITT")
-        zones_grid.addWidget(citt_zone, 0, 1)
-        self.zone_cards["CITT"] = citt_zone
-        
-        # Zona Auditorio
-        aud_zone = self.create_zone_card("🎭 Auditorio", DUOC_ACCENT, "Espacios para eventos y presentaciones", "Auditorio")
-        zones_grid.addWidget(aud_zone, 1, 0)
-        self.zone_cards["Auditorio"] = aud_zone
-        
-        # Zona Administración
-        admin_zone = self.create_zone_card("👥 Administración", DUOC_NEUTRAL, "Oficinas administrativas y atención al público", "Administración")
-        zones_grid.addWidget(admin_zone, 1, 1)
-        self.zone_cards["Administración"] = admin_zone
-        
-        content_layout.addLayout(zones_grid)
-        
-        # Estado vacío (si filtros ocultan todo)
+        controls_layout.addStretch()
+
+        container_layout.addWidget(self.controls_card)
+
+        self.grid_card = QFrame()
+        grid_layout = QVBoxLayout(self.grid_card)
+        grid_layout.setContentsMargins(28, 28, 28, 28)
+        grid_layout.setSpacing(20)
+
+        self.zones_title = QLabel("📍 Zonas disponibles")
+        self.zones_title.setAlignment(Qt.AlignLeft)
+        self.zones_title.setStyleSheet("font-size: 18px; font-weight: 700;")
+        grid_layout.addWidget(self.zones_title)
+
+        self.zones_grid = QGridLayout()
+        self.zones_grid.setSpacing(18)
+        grid_layout.addLayout(self.zones_grid)
+
         self.empty_state = QLabel("\nNo hay zonas que coincidan con tu búsqueda/filtro.\n")
         self.empty_state.setAlignment(Qt.AlignCenter)
-        self.empty_state.setStyleSheet("color: #6c757d; border: 1px dashed #dee2e6; border-radius: 12px; padding: 18px;")
         self.empty_state.setVisible(False)
-        content_layout.addWidget(self.empty_state)
-        
-        main_layout.addWidget(content_frame)
-        main_layout.addStretch()
-        
-        # Botón de regreso
-        back_button = QPushButton("⬅️ Volver al Menú Principal")
-        
-        # Configuración responsiva del botón
-        if available.width() >= 1920:
-            btn_width, btn_height = 250, 50
-            btn_font_size = 16
-        elif available.width() >= 1366:
-            btn_width, btn_height = 220, 45
-            btn_font_size = 14
-        else:
-            btn_width, btn_height = 200, 40
-            btn_font_size = 12
-            
-        back_button.setFixedSize(btn_width, btn_height)
-        back_button.setStyleSheet(get_standard_button_style(DUOC_PRIMARY))
-        back_button.clicked.connect(self.go_to_main)
-        main_layout.addWidget(back_button, alignment=Qt.AlignCenter)
-        
-        # Configurar el scroll area
-        scroll_area.setWidget(main_widget)
-        
-        # Layout principal del widget
+        grid_layout.addWidget(self.empty_state)
+
+        container_layout.addWidget(self.grid_card)
+
+        self.back_button = QPushButton("⬅️ Volver al menú principal")
+        self.back_button.setMinimumHeight(46)
+        container_layout.addWidget(self.back_button, alignment=Qt.AlignCenter)
+
+        scroll_area.setWidget(self.main_container)
+
         layout = QVBoxLayout(self)
         layout.setContentsMargins(0, 0, 0, 0)
         layout.addWidget(scroll_area)
 
-        # Conexiones de controles
         self.search_input.textChanged.connect(self.filter_zones)
         self.zone_filter.currentTextChanged.connect(self.filter_zones)
-    
+
+        self.back_button.clicked.connect(self.go_to_main)
+
+        self.zone_cards = {}
+        zones = [
+            ("Financiamiento", "💰", DUOC_SECONDARY, "Gestión de servicios financieros y becas"),
+            ("CITT", "🎓", DUOC_PRIMARY, "Centro de Innovación y Transferencia Tecnológica"),
+            ("Auditorio", "🎭", DUOC_ACCENT, "Espacios para eventos y presentaciones"),
+            ("Administración", "👥", DUOC_NEUTRAL, "Oficinas administrativas y atención al público"),
+        ]
+
+        for index, (name, emoji, color, description) in enumerate(zones):
+            card_info = self.create_zone_card(name, emoji, color, description)
+            row, col = divmod(index, 2)
+            self.zones_grid.addWidget(card_info["frame"], row, col)
+            self.zone_cards[name] = card_info
+
+        self.apply_theme()
+
+    def set_theme(self, dark_mode: bool):
+        self.dark_mode = dark_mode
+        self.apply_theme()
+        self.update_zone_counts()
+
+    def apply_theme(self):
+        if self.dark_mode:
+            main_bg = "#0b1220"
+            card_bg = "#111827"
+            inner_card_bg = "#111827"
+            border_color = "rgba(148, 163, 184, 0.18)"
+            text_color = "#e2e8f0"
+            muted_color = "#94a3b8"
+            badge_bg = "rgba(56, 189, 248, 0.18)"
+            badge_color = "#38bdf8"
+            input_bg = "#0f172a"
+            input_border = "rgba(148, 163, 184, 0.35)"
+            input_text = "#f8fafc"
+            back_border = "rgba(148, 163, 184, 0.4)"
+            back_hover = "rgba(148, 163, 184, 0.18)"
+            progress_bg = "rgba(148, 163, 184, 0.14)"
+            progress_text = "#e2e8f0"
+        else:
+            main_bg = "#f3f4f6"
+            card_bg = "#ffffff"
+            inner_card_bg = "#ffffff"
+            border_color = "rgba(148, 163, 184, 0.2)"
+            text_color = "#0f172a"
+            muted_color = "#64748b"
+            badge_bg = "rgba(14, 165, 233, 0.14)"
+            badge_color = "#0284c7"
+            input_bg = "#ffffff"
+            input_border = "rgba(148, 163, 184, 0.3)"
+            input_text = "#1f2937"
+            back_border = "rgba(15, 23, 42, 0.25)"
+            back_hover = "rgba(15, 23, 42, 0.08)"
+            progress_bg = "rgba(148, 163, 184, 0.18)"
+            progress_text = "#0f172a"
+
+        self.progress_template = Template(
+            """
+            QProgressBar {
+                background-color: $bg_color;
+                border: 1px solid $border_color;
+                border-radius: 10px;
+                padding: 4px;
+                color: $text_color;
+            }
+            QProgressBar::chunk {
+                background-color: $chunk_color;
+                border-radius: 8px;
+            }
+            """
+        )
+        self.progress_base_colors = {
+            "bg_color": progress_bg,
+            "border_color": border_color,
+            "text_color": progress_text,
+        }
+
+        self.count_palette = {
+            "low": (DUOC_SUCCESS, "#0f172a" if not self.dark_mode else "#0f172a"),
+            "medium": (DUOC_WARNING, "#0f172a"),
+            "high": (DUOC_DANGER, "#0f172a"),
+        }
+        if self.dark_mode:
+            self.count_palette["medium"] = (DUOC_WARNING, "#0f172a")
+            self.count_palette["low"] = (DUOC_SUCCESS, "#0f172a")
+            self.count_palette["high"] = (DUOC_DANGER, "#f8fafc")
+        else:
+            self.count_palette["high"] = (DUOC_DANGER, "#ffffff")
+
+        self.main_container.setStyleSheet(
+            f"""
+            QWidget {{
+                background-color: {main_bg};
+            }}
+            QFrame#visitorsQuickSection {{ border: none; }}
+            """
+        )
+
+        self.header_card.setStyleSheet(
+            f"QFrame {{ background-color: {card_bg}; border-radius: 24px; border: 1px solid {border_color}; }}"
+        )
+        self.controls_card.setStyleSheet(
+            f"QFrame {{ background-color: {card_bg}; border-radius: 24px; border: 1px solid {border_color}; }}"
+        )
+        self.grid_card.setStyleSheet(
+            f"QFrame {{ background-color: {card_bg}; border-radius: 24px; border: 1px solid {border_color}; }}"
+        )
+
+        self.title_label.setStyleSheet(f"color: {text_color}; font-size: 24px; font-weight: 700;")
+        self.subtitle_label.setStyleSheet(f"color: {muted_color}; font-size: 13px;")
+        self.header_badge.setStyleSheet(
+            f"padding: 6px 14px; border-radius: 14px; font-size: 12px; font-weight: 600;"
+            f"background-color: {badge_bg}; color: {badge_color};"
+        )
+
+        self.search_input.setStyleSheet(
+            f"""
+            QLineEdit {{
+                background-color: {input_bg};
+                color: {input_text};
+                border: 1px solid {input_border};
+                border-radius: 14px;
+                padding: 0 16px;
+                font-size: 13px;
+            }}
+            QLineEdit:focus {{
+                border: 1px solid #38bdf8;
+            }}
+            """
+        )
+        self.filter_label.setStyleSheet(f"font-weight: 600; color: {muted_color};")
+        self.zone_filter.setStyleSheet(
+            f"""
+            QComboBox {{
+                background-color: {input_bg};
+                color: {input_text};
+                border: 1px solid {input_border};
+                border-radius: 14px;
+                padding: 0 14px;
+                min-width: 180px;
+            }}
+            QComboBox::drop-down {{ border: none; }}
+            QComboBox QAbstractItemView {{
+                background-color: {card_bg};
+                border-radius: 12px;
+                border: 1px solid {border_color};
+                padding: 4px;
+                color: {text_color};
+            }}
+            """
+        )
+
+        self.zones_title.setStyleSheet(f"font-size: 18px; font-weight: 700; color: {text_color};")
+        self.empty_state.setStyleSheet(
+            f"color: {muted_color}; border: 1px dashed {border_color};"
+            f"border-radius: 18px; padding: 20px; background-color: rgba(148, 163, 184, 0.08);"
+        )
+
+        self.back_button.setStyleSheet(
+            f"""
+            QPushButton {{
+                background-color: transparent;
+                color: {text_color};
+                border: 1px solid {back_border};
+                border-radius: 14px;
+                padding: 0 26px;
+                font-weight: 600;
+            }}
+            QPushButton:hover {{
+                background-color: {back_hover};
+            }}
+            """
+        )
+
+        for info in self.zone_cards.values():
+            accent = info["accent"]
+            frame = info["frame"]
+            frame.setStyleSheet(
+                f"QFrame {{ background-color: {inner_card_bg}; border-radius: 20px; border: 1px solid {border_color}; }}"
+            )
+            info["title"].setStyleSheet(f"color: {accent}; font-weight: 700;")
+            info["count"].setStyleSheet(
+                "padding: 8px 12px; border-radius: 12px; font-weight: 600;"
+            )
+            info["description"].setStyleSheet(f"color: {muted_color};")
+            info["view_btn"].setStyleSheet(self._ghost_button_style(accent))
+            info["add_btn"].setStyleSheet(self._accent_button_style(accent))
+
+    def _ghost_button_style(self, accent: str) -> str:
+        tint = self.lighten_color(accent, 0.45)
+        return (
+            f"""
+            QPushButton {{
+                background-color: {tint};
+                color: #0f172a;
+                border: none;
+                border-radius: 14px;
+                padding: 10px 18px;
+                font-weight: 600;
+            }}
+            QPushButton:hover {{
+                background-color: {self.darken_color(accent, 0.1)};
+                color: #ffffff;
+            }}
+            """
+        )
+
+    def _accent_button_style(self, accent: str) -> str:
+        darker = self.darken_color(accent, 0.15)
+        return (
+            f"""
+            QPushButton {{
+                background-color: {accent};
+                color: #ffffff;
+                border: none;
+                border-radius: 14px;
+                padding: 10px 18px;
+                font-weight: 600;
+            }}
+            QPushButton:hover {{
+                background-color: {darker};
+            }}
+            """
+        )
+
+    def _style_count_label(self, label: QLabel, level: str):
+        bg_color, fg_color = self.count_palette.get(level, (DUOC_SUCCESS, "#0f172a"))
+        label.setStyleSheet(
+            f"background-color: {bg_color}; color: {fg_color};"
+            "font-weight: 600; padding: 8px 12px; border-radius: 12px;"
+        )
+
     def go_to_main(self):
         """Regresa al menú principal"""
         parent = self.parent()
@@ -281,144 +418,64 @@ class ZonasView(QWidget):
                 parent.go_to_main()
                 return
             parent = parent.parent()
-    
-    def create_zone_card(self, title, color, description, zone_name):
-        """Crea una tarjeta para una zona (compacta y con contador de color)"""
-        available = QGuiApplication.primaryScreen().availableGeometry()
-        
-        if available.width() >= 1920:
-            title_font_size = 16
-            count_font_size = 14
-            desc_font_size = 12
-            btn_height = 45
-            card_padding = 20
-        elif available.width() >= 1366:
-            title_font_size = 14
-            count_font_size = 12
-            desc_font_size = 11
-            btn_height = 40
-            card_padding = 16
-        else:
-            title_font_size = 13
-            count_font_size = 11
-            desc_font_size = 10
-            btn_height = 35
-            card_padding = 14
-            
-        card = QFrame()
-        card.setFrameStyle(QFrame.StyledPanel)
-        card.setStyleSheet(f"""
-            QFrame {{
-                background-color: white;
-                border: 3px solid {color};
-                border-radius: 15px;
-                padding: {card_padding}px;
-                min-height: 180px;
-            }}
-        """)
-        
-        layout = QVBoxLayout(card)
-        layout.setSpacing(10)
-        
-        # Título
-        title_label = QLabel(title)
-        title_font = QFont("Segoe UI", title_font_size, QFont.Bold)
-        title_label.setFont(title_font)
-        title_label.setAlignment(Qt.AlignCenter)
-        title_label.setStyleSheet(f"color: {color}; margin-bottom: 5px; padding: 5px;")
-        layout.addWidget(title_label)
-        
-        # Contador
-        count_label = QLabel("👥 0 visitantes actuales")
-        count_font = QFont("Segoe UI", count_font_size, QFont.Bold)
-        count_label.setFont(count_font)
-        count_label.setAlignment(Qt.AlignCenter)
-        count_label.setStyleSheet(f"""
-            color: white; 
-            background-color: {color};
-            border-radius: 12px; 
-            padding: 6px 12px;
-            border: 2px solid {self.darken_color(color, 0.2)};
-            margin: 5px;
-        """)
-        count_label.setObjectName(f"count_{zone_name}")
-        layout.addWidget(count_label)
 
-        # Barra de progreso de capacidad (0-20)
+    def create_zone_card(self, zone_name, emoji, color, description):
+        card = QFrame()
+        card_layout = QVBoxLayout(card)
+        card_layout.setContentsMargins(20, 20, 20, 20)
+        card_layout.setSpacing(16)
+
+        title_label = QLabel(f"{emoji} {zone_name}")
+        title_label.setAlignment(Qt.AlignLeft)
+        title_label.setFont(QFont("Segoe UI", 15, QFont.Bold))
+        card_layout.addWidget(title_label)
+
+        count_label = QLabel("👥 0 visitantes actuales")
+        count_label.setAlignment(Qt.AlignLeft)
+        count_label.setFont(QFont("Segoe UI", 12, QFont.Bold))
+        card_layout.addWidget(count_label)
+
         progress = QProgressBar()
         progress.setRange(0, 20)
         progress.setValue(0)
         progress.setFormat("%v / %m")
         progress.setAlignment(Qt.AlignCenter)
-        progress.setObjectName(f"progress_{zone_name}")
-        progress.setStyleSheet("""
-            QProgressBar {
-                background-color: #f1f3f5;
-                border: 1px solid #dee2e6;
-                border-radius: 8px;
-                padding: 2px;
-                color: #343a40;
-            }
-            QProgressBar::chunk {
-                background-color: %s;
-                border-radius: 6px;
-            }
-        """ % color)
-        layout.addWidget(progress)
-        
-        # Descripción
+        card_layout.addWidget(progress)
+
         desc_label = QLabel(description)
-        desc_font = QFont("Segoe UI", desc_font_size)
-        desc_label.setFont(desc_font)
-        desc_label.setAlignment(Qt.AlignCenter)
         desc_label.setWordWrap(True)
-        desc_label.setStyleSheet(f"color: {DUOC_NEUTRAL}; padding: 6px; margin: 4px;")
-        layout.addWidget(desc_label)
-        
-        # Botones de acción rápida
-        actions = QHBoxLayout()
+        desc_label.setAlignment(Qt.AlignLeft)
+        card_layout.addWidget(desc_label)
+
+        actions_layout = QHBoxLayout()
+        actions_layout.setSpacing(12)
+
         view_btn = QPushButton("👥 Ver visitantes")
-        view_btn.setFixedHeight(btn_height)
-        view_btn.setStyleSheet(f"""
-            QPushButton {{
-                background-color: {self.darken_color(color, 0.15)};
-                color: white;
-                border: none;
-                border-radius: 8px;
-                font-weight: bold;
-                font-size: {desc_font_size}px;
-                padding: 6px 10px;
-            }}
-            QPushButton:hover {{
-                background-color: {self.darken_color(color)};
-            }}
-        """)
+        view_btn.setMinimumHeight(42)
+        view_btn.setCursor(Qt.PointingHandCursor)
         view_btn.clicked.connect(lambda: self.go_to_visitors_with_filter(zone_name))
 
         add_btn = QPushButton("➕ Registrar")
-        add_btn.setFixedHeight(btn_height)
-        add_btn.setStyleSheet(f"""
-            QPushButton {{
-                background-color: {color};
-                color: white;
-                border: none;
-                border-radius: 8px;
-                font-weight: bold;
-                font-size: {desc_font_size}px;
-                padding: 6px 10px;
-            }}
-            QPushButton:hover {{
-                background-color: {self.darken_color(color)};
-            }}
-        """)
+        add_btn.setMinimumHeight(42)
+        add_btn.setCursor(Qt.PointingHandCursor)
         add_btn.clicked.connect(lambda: self.open_new_visitor_in_zone(zone_name))
 
-        actions.addWidget(view_btn)
-        actions.addWidget(add_btn)
-        layout.addLayout(actions)
-        
-        return card
-    
+        actions_layout.addWidget(view_btn)
+        actions_layout.addWidget(add_btn)
+        actions_layout.addStretch()
+        card_layout.addLayout(actions_layout)
+
+        return {
+            "frame": card,
+            "accent": color,
+            "title": title_label,
+            "count": count_label,
+            "progress": progress,
+            "description": desc_label,
+            "view_btn": view_btn,
+            "add_btn": add_btn,
+        }
+
     def lighten_color(self, color, factor=0.1):
         color = color.lstrip('#')
         r, g, b = tuple(int(color[i:i+2], 16) for i in (0, 2, 4))
@@ -426,7 +483,7 @@ class ZonasView(QWidget):
         g = min(255, int(g + (255 - g) * factor))
         b = min(255, int(b + (255 - b) * factor))
         return f"#{r:02x}{g:02x}{b:02x}"
-    
+
     def darken_color(self, color, factor=0.2):
         color = color.lstrip('#')
         r, g, b = tuple(int(color[i:i+2], 16) for i in (0, 2, 4))
@@ -434,83 +491,45 @@ class ZonasView(QWidget):
         g = max(0, int(g * (1 - factor)))
         b = max(0, int(b * (1 - factor)))
         return f"#{r:02x}{g:02x}{b:02x}"
-    
+
     def setup_timer(self):
         self.timer = QTimer()
         self.timer.timeout.connect(self.update_zone_counts)
         self.timer.start(5000)
         self.update_zone_counts()
-    
+
     def update_zone_counts(self):
         # Forzar recarga de datos para asegurar que estén actualizados
         self.visitor_manager.force_reload()
-        
-        zones = ["Financiamiento", "CITT", "Auditorio", "Administración"]
-        
-        for zone in zones:
-            count_label = self.findChild(QLabel, f"count_{zone}")
-            progress = self.findChild(QProgressBar, f"progress_{zone}")
-            if count_label:
-                current_visitors = self.visitor_manager.get_visitors_by_sector(zone)
-                current_count = len([v for v in current_visitors if v.estado == "Dentro"])
-                count_label.setText(f"👥 {current_count} visitantes actuales")
-                
-                # Estilo según número de visitantes 🚦
-                if current_count >= 20:  # Alto
-                    count_label.setStyleSheet(f"""
-                        color: white;
-                        background-color: {DUOC_DANGER};
-                        border-radius: 12px; 
-                        padding: 6px 12px;
-                        border: 2px solid {self.darken_color(DUOC_DANGER)};
-                        font-weight: bold;
-                        margin: 5px;
-                    """)
-                elif current_count >= 10:  # Amarillo
-                    count_label.setStyleSheet(f"""
-                        color: black;
-                        background-color: {DUOC_WARNING};
-                        border-radius: 12px; 
-                        padding: 6px 12px;
-                        border: 2px solid {self.darken_color(DUOC_WARNING)};
-                        font-weight: bold;
-                        margin: 5px;
-                    """)
-                else:  # Verde
-                    count_label.setStyleSheet(f"""
-                        color: white;
-                        background-color: {DUOC_SUCCESS};
-                        border-radius: 12px; 
-                        padding: 6px 12px;
-                        border: 2px solid {self.darken_color(DUOC_SUCCESS)};
-                        font-weight: bold;
-                        margin: 5px;
-                    """)
 
-            if progress:
-                current_visitors = self.visitor_manager.get_visitors_by_sector(zone)
-                current_count = len([v for v in current_visitors if v.estado == "Dentro"])
-                progress.setValue(min(current_count, 20))
-                # Cambiar color del chunk según umbrales
-                if current_count >= 20:
-                    chunk_color = DUOC_DANGER
-                elif current_count >= 10:
-                    chunk_color = DUOC_WARNING
-                else:
-                    chunk_color = DUOC_SUCCESS
-                progress.setStyleSheet("""
-                    QProgressBar {
-                        background-color: #f1f3f5;
-                        border: 1px solid #dee2e6;
-                        border-radius: 8px;
-                        padding: 2px;
-                        color: #343a40;
-                    }
-                    QProgressBar::chunk {
-                        background-color: %s;
-                        border-radius: 6px;
-                    }
-                """ % chunk_color)
+        for zone_name, info in self.zone_cards.items():
+            count_label = info["count"]
+            progress = info["progress"]
+            current_visitors = self.visitor_manager.get_visitors_by_sector(zone_name)
+            current_count = len([v for v in current_visitors if v.estado == "Dentro"])
+            count_label.setText(f"👥 {current_count} visitantes actuales")
+
+            if current_count >= 20:
+                level = "high"
+            elif current_count >= 10:
+                level = "medium"
+            else:
+                level = "low"
+
+            self._style_count_label(count_label, level)
+
+            progress.setValue(min(current_count, 20))
+            if level == "high":
+                chunk_color = DUOC_DANGER
+            elif level == "medium":
+                chunk_color = DUOC_WARNING
+            else:
+                chunk_color = DUOC_SUCCESS
+            style_sheet = self.progress_template.substitute(
+                chunk_color=chunk_color,
+                **self.progress_base_colors,
+            )
+            progress.setStyleSheet(style_sheet)
 
         # Actualizar visibilidad por filtros/búsqueda (en caso de cambios en tiempo real)
         self.filter_zones()
@@ -519,33 +538,24 @@ class ZonasView(QWidget):
         query = self.search_input.text().strip().lower()
         selected = self.zone_filter.currentText()
         any_visible = False
-        for zone_name, card in self.zone_cards.items():
+        for zone_name, info in self.zone_cards.items():
+            frame = info["frame"]
+            title_text = info["title"].text().lower()
+            desc_text = info["description"].text().lower()
             match_filter = (selected == "Todas") or (zone_name == selected)
-            # Buscar en título y descripción dentro del card
-            # Usamos objectName para localizar labels hijos si fuese necesario
-            title_text = ""  # fallback
-            desc_text = ""
-            for child in card.findChildren(QLabel):
-                if child.text() and (" ") in child.text():
-                    # Heurística simple: el primero suele ser el título con emoji
-                    if not title_text:
-                        title_text = child.text()
-                    else:
-                        desc_text = child.text()
-                        break
-            match_query = (query == "") or (query in title_text.lower()) or (query in desc_text.lower())
+            match_query = (query == "") or (query in title_text) or (query in desc_text)
             visible = match_filter and match_query
-            card.setVisible(visible)
+            frame.setVisible(visible)
             any_visible = any_visible or visible
         self.empty_state.setVisible(not any_visible)
-    
+
     def manage_zone(self, zone_name):
         current_visitors = self.visitor_manager.get_visitors_by_sector(zone_name)
         current_count = len([v for v in current_visitors if v.estado == "Dentro"])
-        
+
         if current_count >= 20:
             reply = QMessageBox.question(
-                self, 
+                self,
                 "⚠️ Cupo Máximo Alcanzado",
                 f"La zona {zone_name} ya tiene {current_count} visitantes (cupo máximo: 20).\n\n"
                 f"¿Estás seguro que quieres agregar más visitantes a esta zona?",
@@ -554,7 +564,7 @@ class ZonasView(QWidget):
             )
             if reply == QMessageBox.No:
                 return
-        
+
         QMessageBox.information(
             self,
             f"Gestión de {zone_name}",

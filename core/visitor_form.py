@@ -1,10 +1,20 @@
 from PySide6.QtWidgets import (
-    QDialog, QVBoxLayout, QHBoxLayout, QFormLayout,
-    QLineEdit, QComboBox, QPushButton, QLabel,
-    QMessageBox, QWidget, QToolButton, QGroupBox
+    QDialog,
+    QVBoxLayout,
+    QHBoxLayout,
+    QFormLayout,
+    QLineEdit,
+    QComboBox,
+    QPushButton,
+    QLabel,
+    QMessageBox,
+    QWidget,
+    QToolButton,
+    QGroupBox,
+    QFrame,
 )
 from PySide6.QtCore import Qt
-from PySide6.QtGui import QFont, QPalette, QColor, QIcon
+from PySide6.QtGui import QFont
 from .visitors import Visitor, VisitorManager
 
 # Importar funciones de normalización de RUT
@@ -26,46 +36,58 @@ except Exception:
         return "Sistema"
 
 class VisitorFormDialog(QDialog):
-    def __init__(self, parent=None, visitor=None, auth_manager=None):
+    def __init__(self, parent=None, visitor=None, auth_manager=None, use_modern_theme=False):
         super().__init__(parent)
         self.visitor = visitor
         self.is_edit_mode = visitor is not None
         self.visitor_manager = VisitorManager()
         self.auth_manager = auth_manager  # Guardar referencia al AuthManager
+        self.dark_mode = getattr(parent, "dark_mode", False)
+        self.use_modern_theme = use_modern_theme
         
         self.setWindowTitle("Editar Visitante" if self.is_edit_mode else "Registrar Nuevo Visitante")
         self.setModal(True)
-        self.resize(400, 350)
+        self.resize(500, 480)
         
         self.setup_ui()
         self.setup_connections()
+        self.apply_theme()
         
         if self.is_edit_mode:
             self.load_visitor_data()
     
     def setup_ui(self):
         """Configura la interfaz de usuario"""
-        layout = QVBoxLayout(self)
-        layout.setSpacing(15)
-        layout.setContentsMargins(20, 20, 20, 20)
-        
-        # Título con icono
-        title_layout = QHBoxLayout()
-        title_icon = QLabel("👤")
-        title_icon.setFont(QFont("Arial", 20))
-        title = QLabel("Registro de Visitante" if not self.is_edit_mode else "Editar Visitante")
-        title.setFont(QFont("Arial", 14, QFont.Bold))
-        title_layout.addWidget(title_icon)
-        title_layout.addWidget(title)
-        title_layout.addStretch()
-        layout.addLayout(title_layout)
-        
-        # Grupo de información personal
-        personal_group = QGroupBox("📋 Información Personal")
-        personal_group.setFont(QFont("Arial", 10, QFont.Bold))
-        personal_layout = QFormLayout(personal_group)
-        personal_layout.setSpacing(12)
-        personal_layout.setLabelAlignment(Qt.AlignRight)
+        outer_layout = QVBoxLayout(self)
+        outer_layout.setContentsMargins(0, 0, 0, 0)
+        outer_layout.setSpacing(0)
+
+        self.main_container = QFrame()
+        container_layout = QVBoxLayout(self.main_container)
+        container_layout.setContentsMargins(28, 28, 28, 20)
+        container_layout.setSpacing(20)
+        outer_layout.addWidget(self.main_container)
+
+        header_layout = QHBoxLayout()
+        header_layout.setSpacing(12)
+        header_layout.setAlignment(Qt.AlignLeft)
+
+        self.title_icon = QLabel("👤")
+        self.title_icon.setFont(QFont("Segoe UI Emoji", 28))
+        header_layout.addWidget(self.title_icon)
+
+        self.title_label = QLabel("Registro de visitante" if not self.is_edit_mode else "Editar visitante")
+        self.title_label.setFont(QFont("Segoe UI", 20, QFont.Bold))
+        header_layout.addWidget(self.title_label)
+
+        header_layout.addStretch()
+        container_layout.addLayout(header_layout)
+
+        self.personal_group = QGroupBox("Información personal")
+        self.personal_group.setFont(QFont("Segoe UI", 11, QFont.Bold))
+        personal_layout = QFormLayout(self.personal_group)
+        personal_layout.setSpacing(16)
+        personal_layout.setLabelAlignment(Qt.AlignLeft)
         
         # RUT con tooltip y normalización automática
         self.rut_input = QLineEdit()
@@ -97,12 +119,11 @@ class VisitorFormDialog(QDialog):
         nombre_layout.addWidget(nombre_help)
         personal_layout.addRow("👤 Nombre Completo:", nombre_layout)
         
-        # Grupo de información de visita
-        visit_group = QGroupBox("🏢 Información de Visita")
-        visit_group.setFont(QFont("Arial", 10, QFont.Bold))
-        visit_layout = QFormLayout(visit_group)
-        visit_layout.setSpacing(12)
-        visit_layout.setLabelAlignment(Qt.AlignRight)
+        self.visit_group = QGroupBox("Información de visita")
+        self.visit_group.setFont(QFont("Segoe UI", 11, QFont.Bold))
+        visit_layout = QFormLayout(self.visit_group)
+        visit_layout.setSpacing(16)
+        visit_layout.setLabelAlignment(Qt.AlignLeft)
         
         # Acompañante con tooltip
         self.acompañante_input = QLineEdit()
@@ -133,53 +154,24 @@ class VisitorFormDialog(QDialog):
         sector_layout.addWidget(self.sector_combo)
         sector_layout.addWidget(sector_help)
         visit_layout.addRow("🏢 Sector:", sector_layout)
-        
-        layout.addWidget(personal_group)
-        layout.addWidget(visit_group)
-        
-        # Botones con iconos
-        button_layout = QHBoxLayout()
-        button_layout.addStretch()
-        
-        self.cancel_btn = QPushButton("❌ Cancelar")
-        self.cancel_btn.setToolTip("Cancelar y cerrar el formulario sin guardar")
-        self.cancel_btn.setStyleSheet("""
-            QPushButton {
-                background-color: #dc3545;
-                color: white;
-                border: none;
-                padding: 10px 20px;
-                border-radius: 6px;
-                font-weight: bold;
-                font-size: 12px;
-            }
-            QPushButton:hover {
-                background-color: #c82333;
-            }
-        """)
-        
-        save_text = "💾 Guardar" if not self.is_edit_mode else "💾 Actualizar"
+        container_layout.addWidget(self.personal_group)
+        container_layout.addWidget(self.visit_group)
+
+        button_row = QHBoxLayout()
+        button_row.addStretch()
+
+        self.cancel_btn = QPushButton("Cancelar")
+        self.cancel_btn.setMinimumHeight(42)
+        self.cancel_btn.setCursor(Qt.PointingHandCursor)
+
+        save_text = "Guardar" if not self.is_edit_mode else "Actualizar"
         self.save_btn = QPushButton(save_text)
-        self.save_btn.setToolTip("Guardar la información del visitante")
-        self.save_btn.setStyleSheet("""
-            QPushButton {
-                background-color: #28a745;
-                color: white;
-                border: none;
-                padding: 10px 20px;
-                border-radius: 6px;
-                font-weight: bold;
-                font-size: 12px;
-            }
-            QPushButton:hover {
-                background-color: #218838;
-            }
-        """)
-        
-        button_layout.addWidget(self.cancel_btn)
-        button_layout.addWidget(self.save_btn)
-        
-        layout.addLayout(button_layout)
+        self.save_btn.setMinimumHeight(42)
+        self.save_btn.setCursor(Qt.PointingHandCursor)
+
+        button_row.addWidget(self.cancel_btn)
+        button_row.addWidget(self.save_btn)
+        container_layout.addLayout(button_row)
     
     def setup_connections(self):
         """Configura las conexiones de señales"""
@@ -369,6 +361,97 @@ class VisitorFormDialog(QDialog):
         """Retorna el visitante creado o editado"""
         return self.visitor
 
+    def apply_theme(self):
+        if not self.use_modern_theme:
+            return
+
+        if self.dark_mode:
+            main_bg = "#0b1220"
+            card_bg = "#111827"
+            border_color = "rgba(148, 163, 184, 0.2)"
+            text_color = "#e2e8f0"
+            muted_color = "#94a3b8"
+            input_bg = "#0f172a"
+            input_border = "rgba(148, 163, 184, 0.35)"
+            input_fg = "#f8fafc"
+            danger = "#f87171"
+            success = "#38bdf8"
+        else:
+            main_bg = "#f3f4f6"
+            card_bg = "#ffffff"
+            border_color = "rgba(148, 163, 184, 0.2)"
+            text_color = "#0f172a"
+            muted_color = "#64748b"
+            input_bg = "#ffffff"
+            input_border = "rgba(148, 163, 184, 0.3)"
+            input_fg = "#1f2937"
+            danger = "#dc2626"
+            success = "#0ea5e9"
+
+        self.setStyleSheet(f"QDialog {{ background-color: {main_bg}; }}")
+        self.main_container.setStyleSheet(
+            f"QFrame {{ background-color: {card_bg}; border-radius: 24px; border: 1px solid {border_color}; }}"
+        )
+        self.title_label.setStyleSheet(f"color: {text_color};")
+        self.subtitle_label = None  # compatibilidad
+        self.title_icon.setStyleSheet(f"color: {success};")
+
+        for group in (self.personal_group, self.visit_group):
+            group.setStyleSheet(
+                f"QGroupBox {{ background-color: {card_bg}; border: 1px solid {border_color}; border-radius: 18px; margin-top: 16px; padding: 20px; color: {text_color}; }}"
+            )
+
+        input_style = (
+            f"QLineEdit {{ background-color: {input_bg}; color: {input_fg}; border: 1px solid {input_border}; border-radius: 12px; padding: 12px; font-size: 14px; }}"
+            "QLineEdit:focus { border: 1px solid #38bdf8; }"
+        )
+        self.rut_input.setStyleSheet(input_style)
+        self.nombre_input.setStyleSheet(input_style)
+        self.acompañante_input.setStyleSheet(input_style)
+
+        combo_style = (
+            f"QComboBox {{ background-color: {input_bg}; color: {input_fg}; border: 1px solid {input_border}; border-radius: 12px; padding: 0 12px; min-height: 40px; }}"
+            "QComboBox::drop-down { border: none; width: 28px; }"
+            f"QComboBox::down-arrow {{ border-left: 5px solid transparent; border-right: 5px solid transparent; border-top: 6px solid {input_fg}; margin-right: 10px; }}"
+            f"QComboBox QAbstractItemView {{ background-color: {card_bg}; color: {input_fg}; border: 1px solid {border_color}; border-radius: 12px; padding: 6px; selection-background-color: {success}; selection-color: #0f172a; }}"
+        )
+        self.sector_combo.setStyleSheet(combo_style)
+
+        action_style = (
+            f"QToolButton {{ background-color: transparent; border: 1px solid {border_color}; border-radius: 10px; padding: 4px 8px; color: {muted_color}; font-weight: 600; }}"
+        )
+        for tool_btn in self.findChildren(QToolButton):
+            tool_btn.setStyleSheet(action_style)
+
+        self.cancel_btn.setStyleSheet(self._button_style(danger, "#ffffff"))
+        self.save_btn.setStyleSheet(self._button_style(success, "#0f172a" if self.dark_mode else "#ffffff"))
+
+    @staticmethod
+    def _button_style(bg_color: str, text_color: str) -> str:
+        darker = VisitorFormDialog._darken_color(bg_color, 0.15)
+        return (
+            f"""
+            QPushButton {{
+                background-color: {bg_color};
+                color: {text_color};
+                border: none;
+                border-radius: 16px;
+                padding: 0 20px;
+                font-weight: 600;
+            }}
+            QPushButton:hover {{ background-color: {darker}; }}
+            """
+        )
+
+    @staticmethod
+    def _darken_color(color: str, factor: float = 0.2) -> str:
+        color = color.lstrip("#")
+        r, g, b = tuple(int(color[i : i + 2], 16) for i in (0, 2, 4))
+        r = max(0, int(r * (1 - factor)))
+        g = max(0, int(g * (1 - factor)))
+        b = max(0, int(b * (1 - factor)))
+        return f"#{r:02x}{g:02x}{b:02x}"
+
 class QuickVisitorForm(QWidget):
     """Formulario rápido para registro de visitantes desde la lista"""
     def __init__(self, parent=None, auth_manager=None):
@@ -379,73 +462,111 @@ class QuickVisitorForm(QWidget):
     
     def setup_ui(self):
         layout = QVBoxLayout(self)
-        layout.setSpacing(15)
-        
-        # Título con icono
+        layout.setSpacing(20)
+        layout.setContentsMargins(0, 0, 0, 0)
+
         title_layout = QHBoxLayout()
-        title_icon = QLabel("⚡")
-        title_icon.setFont(QFont("Arial", 16))
-        title = QLabel("Registro Rápido")
-        title.setFont(QFont("Arial", 12, QFont.Bold))
-        title_layout.addWidget(title_icon)
-        title_layout.addWidget(title)
+        self.title_icon = QLabel("⚡")
+        self.title_icon.setFont(QFont("Arial", 20))
+        self.title_label = QLabel("Registro Rápido")
+        self.title_label.setFont(QFont("Arial", 14, QFont.Bold))
+        self.title_label.setStyleSheet("padding-bottom: 6px;")
+        title_layout.addWidget(self.title_icon)
+        title_layout.addWidget(self.title_label)
         title_layout.addStretch()
         layout.addLayout(title_layout)
-        
-        # Grupo de campos
-        form_group = QGroupBox("📝 Datos del Visitante")
-        form_group.setFont(QFont("Arial", 9, QFont.Bold))
-        form_layout = QFormLayout(form_group)
-        form_layout.setSpacing(10)
-        
-        # RUT con normalización automática
+
+        self.form_group = QGroupBox("📝 Datos del Visitante")
+        self.form_group.setFont(QFont("Arial", 10, QFont.Bold))
+        form_layout = QFormLayout(self.form_group)
+        form_layout.setSpacing(18)
+        form_layout.setLabelAlignment(Qt.AlignLeft)
+        form_layout.setFormAlignment(Qt.AlignLeft | Qt.AlignTop)
+        form_layout.setHorizontalSpacing(20)
+
         self.rut_input = QLineEdit()
-        self.rut_input.setPlaceholderText("Ej: 12345678-9 o 123456789")
-        self.rut_input.setToolTip("🆔 RUT del visitante (se formateará automáticamente)")
-        form_layout.addRow("🆔 RUT:", self.rut_input)
-        
-        # Nombre
+        self.rut_input.setPlaceholderText("Ej: 12.345.678-9")
+        self.rut_input.setMinimumHeight(42)
+        form_layout.addRow("🆔 RUT", self.rut_input)
+
         self.nombre_input = QLineEdit()
-        self.nombre_input.setPlaceholderText("Nombre completo")
-        self.nombre_input.setToolTip("👤 Nombre completo del visitante")
-        form_layout.addRow("👤 Nombre:", self.nombre_input)
-        
-        # Acompañante
+        self.nombre_input.setPlaceholderText("Nombre completo del visitante")
+        self.nombre_input.setMinimumHeight(42)
+        form_layout.addRow("👤 Nombre", self.nombre_input)
+
         self.acompañante_input = QLineEdit()
-        self.acompañante_input.setPlaceholderText("Quien invita")
-        self.acompañante_input.setToolTip("🤝 Persona que invita al visitante")
-        form_layout.addRow("🤝 Acompañante:", self.acompañante_input)
-        
-        # Sector
+        self.acompañante_input.setPlaceholderText("Nombre de quien invita")
+        self.acompañante_input.setMinimumHeight(42)
+        form_layout.addRow("🤝 Acompañante", self.acompañante_input)
+
         self.sector_combo = QComboBox()
         self.sector_combo.addItems(["Financiamiento", "CITT", "Auditorio", "Administración"])
-        self.sector_combo.setToolTip("🏢 Sector de destino")
-        form_layout.addRow("🏢 Sector:", self.sector_combo)
-        
-        layout.addWidget(form_group)
-        
-        # Botón de registro
+        self.sector_combo.setMinimumHeight(42)
+        form_layout.addRow("🏢 Sector", self.sector_combo)
+
+        layout.addWidget(self.form_group)
+
         self.registrar_btn = QPushButton("🚀 Registrar Rápido")
-        self.registrar_btn.setToolTip("Registrar el visitante con los datos ingresados")
-        self.registrar_btn.setStyleSheet("""
-            QPushButton {
-                background-color: #007bff;
-                color: white;
-                border: none;
-                padding: 12px;
-                border-radius: 6px;
-                font-weight: bold;
-                font-size: 11px;
-            }
-            QPushButton:hover {
-                background-color: #0056b3;
-            }
-        """)
+        self.registrar_btn.setMinimumHeight(46)
+        self.registrar_btn.setCursor(Qt.PointingHandCursor)
         layout.addWidget(self.registrar_btn)
-        
-        # Conectar normalización automática del RUT
-        self.rut_input.textChanged.connect(self.normalize_rut_input)
-        self.rut_input.editingFinished.connect(self.finalize_rut_format)
+
+        layout.addStretch()
+        self.setMinimumHeight(400)
+
+    def apply_theme(self, dark_mode: bool):
+        if dark_mode:
+            card_bg = "#111827"
+            border = "rgba(148, 163, 184, 0.25)"
+            title_color = "#e2e8f0"
+            label_color = "#cbd5f5"
+            input_bg = "#0f172a"
+            input_fg = "#f8fafc"
+            input_border = "rgba(148, 163, 184, 0.35)"
+            button_bg = "#38bdf8"
+            button_fg = "#0f172a"
+            button_hover = "#0ea5e9"
+        else:
+            card_bg = "#ffffff"
+            border = "rgba(148, 163, 184, 0.2)"
+            title_color = "#0f172a"
+            label_color = "#475569"
+            input_bg = "#ffffff"
+            input_fg = "#1f2937"
+            input_border = "rgba(148, 163, 184, 0.35)"
+            button_bg = "#0f172a"
+            button_fg = "#f8fafc"
+            button_hover = "#1e293b"
+
+        self.title_label.setStyleSheet(f"color: {title_color};")
+        self.form_group.setStyleSheet(
+            f"QGroupBox {{ background-color: {card_bg}; border-radius: 18px;"
+            f"border: 1px solid {border}; margin-top: 18px; padding: 16px; color: {label_color}; }}"
+        )
+
+        input_style = (
+            f"QLineEdit {{ background-color: {input_bg}; color: {input_fg};"
+            f"border: 1px solid {input_border}; border-radius: 12px; padding: 0 14px; }}"
+            f"QLineEdit:focus {{ border: 1px solid #38bdf8; }}"
+        )
+        combo_style = (
+            f"QComboBox {{ background-color: {input_bg}; color: {input_fg};"
+            f"border: 1px solid {input_border}; border-radius: 12px; padding: 0 14px; }}"
+            "QComboBox::drop-down { border: none; }"
+            f"QComboBox QAbstractItemView {{ background-color: {card_bg}; color: {input_fg}; border-radius: 12px; border: 1px solid {border}; }}"
+        )
+        self.rut_input.setStyleSheet(input_style)
+        self.nombre_input.setStyleSheet(input_style)
+        self.acompañante_input.setStyleSheet(input_style)
+        self.sector_combo.setStyleSheet(combo_style)
+
+        self.registrar_btn.setStyleSheet(
+            f"QPushButton {{ background-color: {button_bg}; color: {button_fg};"
+            "border-radius: 14px; font-weight: 600; }}"
+            f"QPushButton:hover {{ background-color: {button_hover}; }}"
+        )
+
+        self.title_icon.setStyleSheet(f"color: {title_color};")
     
     def normalize_rut_input(self):
         """Normaliza el RUT mientras el usuario escribe"""
