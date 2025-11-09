@@ -6,6 +6,7 @@ from PySide6.QtWidgets import (
 from PySide6.QtGui import QAction, QPalette, QColor, QGuiApplication, QFont, QPixmap
 from PySide6.QtCore import Qt, Signal
 from core.auth_manager import AuthManager
+from core.theme import DUOC_PRIMARY
 
 class LoginDialog(QDialog):
     """Ventana de login con diseño profesional mejorado"""
@@ -20,7 +21,8 @@ class LoginDialog(QDialog):
         self.setModal(True)
         
         # Configuración de ventana
-        self.setFixedSize(520, 720)  # Aumenté de 480x650 a 520x720
+        self.resize(640, 640)
+        self.setMinimumSize(600, 620)
         self.setWindowFlags(Qt.Dialog | Qt.CustomizeWindowHint | Qt.WindowTitleHint | Qt.WindowCloseButtonHint)
         
         # Layout principal
@@ -34,145 +36,99 @@ class LoginDialog(QDialog):
     
     def setup_ui(self):
         """Configura toda la interfaz de usuario"""
-        main_layout = QVBoxLayout(self)
-        main_layout.setContentsMargins(40, 40, 40, 40)
-        main_layout.setSpacing(0)
-        
-        # === LOGO SECTION ===
-        logo_container = self.create_logo_section()
-        main_layout.addWidget(logo_container)
-        
-        # Espaciador
-        main_layout.addItem(QSpacerItem(20, 30, QSizePolicy.Minimum, QSizePolicy.Fixed))
-        
-        # === TITLE SECTION ===
+        root_layout = QVBoxLayout(self)
+        root_layout.setContentsMargins(24, 24, 24, 24)
+        root_layout.setSpacing(0)
+
+        container = QFrame()
+        self.container_frame = container
+        container.setStyleSheet(
+            """
+            QFrame {
+                background-color: rgba(255, 255, 255, 0.92);
+                border-radius: 24px;
+                border: 1px solid rgba(0, 0, 0, 0.05);
+            }
+            """
+        )
+        main_layout = QVBoxLayout(container)
+        main_layout.setContentsMargins(32, 32, 32, 32)
+        main_layout.setSpacing(24)
+
         title_container = self.create_title_section()
         main_layout.addWidget(title_container)
-        
-        # Espaciador
-        main_layout.addItem(QSpacerItem(20, 40, QSizePolicy.Minimum, QSizePolicy.Fixed))
-        
-        # === FORM SECTION ===
+
         form_container = self.create_form_section()
         main_layout.addWidget(form_container)
-        
-        # Espaciador flexible
-        main_layout.addItem(QSpacerItem(20, 40, QSizePolicy.Minimum, QSizePolicy.Expanding))
-        
-        # === BUTTONS SECTION ===
+
         buttons_container = self.create_buttons_section()
         main_layout.addWidget(buttons_container)
-        
-        # === INFO SECTION ===
-        info_container = self.create_info_section()
-        main_layout.addWidget(info_container)
 
-    def create_logo_section(self):
-        """Crea la sección del logo"""
-        container = QFrame()
-        container.setStyleSheet("""
-            QFrame {
-                background-color: transparent;
-                border: none;
-            }
-        """)
-        
-        layout = QVBoxLayout(container)
-        layout.setContentsMargins(0, 0, 0, 0)
-        layout.setSpacing(0)
-        
-        # Logo
-        logo_label = QLabel()
-        logo_pixmap = QPixmap("Logo Duoc .png")
-        if not logo_pixmap.isNull():
-            # Logo grande y bien visible
-            scaled_pixmap = logo_pixmap.scaled(300, 150, Qt.KeepAspectRatio, Qt.SmoothTransformation)
-            logo_label.setPixmap(scaled_pixmap)
-            logo_label.setFixedSize(300, 150)
-        else:
-            logo_label.setText("🏢 Duoc UC")
-            logo_font = QFont()
-            logo_font.setPointSize(24)
-            logo_font.setBold(True)
-            logo_label.setFont(logo_font)
-            logo_label.setFixedHeight(100)
-        
-        logo_label.setAlignment(Qt.AlignCenter)
-        logo_label.setStyleSheet("""
-            QLabel {
-                background-color: transparent;
-                border: none;
-                margin: 0px;
-                padding: 0px;
-            }
-        """)
-        
-        layout.addWidget(logo_label, alignment=Qt.AlignCenter)
-        return container
+        root_layout.addStretch(1)
+        root_layout.addWidget(container)
+        root_layout.addStretch(1)
 
     def create_title_section(self):
         """Crea la sección de títulos"""
         container = QFrame()
-        container.setStyleSheet("""
+        container.setStyleSheet(
+            """
             QFrame {
                 background-color: transparent;
                 border: none;
             }
-        """)
-        
-        layout = QVBoxLayout(container)
+            """
+        )
+
+        layout = QHBoxLayout(container)
         layout.setContentsMargins(0, 0, 0, 0)
-        layout.setSpacing(10)
-        
-        # Título principal
-        self.title_label = QLabel("Acceso Administrativo")
+        layout.setSpacing(12)
+        layout.addStretch()
+
+        logo_label = QLabel()
+        logo_pixmap = QPixmap("Logo Duoc .png")
+        if not logo_pixmap.isNull():
+            scaled_pixmap = logo_pixmap.scaled(120, 60, Qt.KeepAspectRatio, Qt.SmoothTransformation)
+            logo_label.setPixmap(scaled_pixmap)
+        else:
+            logo_label.setText("Duoc UC")
+            logo_font = QFont()
+            logo_font.setPointSize(16)
+            logo_font.setBold(True)
+            logo_label.setFont(logo_font)
+
+        title_label = QLabel("VisitaSegura · Acceso Administrativo")
         title_font = QFont()
-        title_font.setPointSize(20)
+        title_font.setPointSize(16)
         title_font.setBold(True)
-        self.title_label.setFont(title_font)
-        self.title_label.setAlignment(Qt.AlignCenter)
-        self.title_label.setStyleSheet("""
-            QLabel {
-                background-color: transparent;
-                border: none;
-                margin: 0px;
-                padding: 0px;
-            }
-        """)
-        
-        # Subtítulo
-        self.subtitle_label = QLabel("VisitaSegura - San Bernardo")
-        subtitle_font = QFont()
-        subtitle_font.setPointSize(14)
-        self.subtitle_label.setFont(subtitle_font)
-        self.subtitle_label.setAlignment(Qt.AlignCenter)
-        self.subtitle_label.setStyleSheet("""
-            QLabel {
-                background-color: transparent;
-                border: none;
-                margin: 0px;
-                padding: 0px;
-            }
-        """)
-        
-        layout.addWidget(self.title_label)
-        layout.addWidget(self.subtitle_label)
+        title_label.setFont(title_font)
+        title_label.setAlignment(Qt.AlignLeft | Qt.AlignVCenter)
+
+        layout.addWidget(logo_label, alignment=Qt.AlignLeft)
+        layout.addWidget(title_label, alignment=Qt.AlignLeft)
+        layout.addStretch()
+
+        self.title_label = title_label
+        self.subtitle_label = None
         return container
 
     def create_form_section(self):
         """Crea la sección del formulario"""
         container = QFrame()
-        container.setStyleSheet("""
+        self.form_frame = container
+        container.setStyleSheet(
+            """
             QFrame {
-                background-color: white;
-                border-radius: 15px;
-                border: 1px solid #e1e8ed;
+                background-color: rgba(255, 255, 255, 0.9);
+                border-radius: 18px;
+                border: 1px solid rgba(0, 0, 0, 0.06);
             }
-        """)
-        
+            """
+        )
+
         layout = QVBoxLayout(container)
-        layout.setContentsMargins(30, 30, 30, 30)
-        layout.setSpacing(35)  # Aumenté de 25 a 35 para más espacio entre campos
+        layout.setContentsMargins(28, 28, 28, 28)
+        layout.setSpacing(28)
         
         # Campo Usuario
         user_section = self.create_input_section("Usuario:", "Ingrese su nombre de usuario")
@@ -221,7 +177,6 @@ class LoginDialog(QDialog):
             QLineEdit:focus {
                 border-color: #007bff;
                 background-color: white;
-                box-shadow: 0 0 0 3px rgba(0, 123, 255, 0.1);
             }
             QLineEdit:hover {
                 border-color: #007bff;
@@ -241,112 +196,62 @@ class LoginDialog(QDialog):
     def create_buttons_section(self):
         """Crea la sección de botones"""
         container = QFrame()
-        container.setStyleSheet("""
+        container.setStyleSheet(
+            """
             QFrame {
                 background-color: transparent;
                 border: none;
             }
-        """)
-        
-        layout = QHBoxLayout(container)
-        layout.setContentsMargins(0, 0, 0, 0)
-        layout.setSpacing(20)
-        
-        # Botón Cancelar
-        self.btn_cancel = QPushButton("❌ Cancelar")
-        self.btn_cancel.setFixedHeight(50)
-        self.btn_cancel.setStyleSheet("""
-            QPushButton {
-                background-color: #6c757d;
-                color: white;
-                border: none;
-                border-radius: 10px;
-                font-size: 15px;
-                font-weight: bold;
-                padding: 0px;
-            }
-            QPushButton:hover {
-                background-color: #5a6268;
-                transform: scale(1.02);
-            }
-            QPushButton:pressed {
-                background-color: #495057;
-            }
-        """)
-        
-        # Botón Ingresar
-        self.btn_login = QPushButton("✅ Ingresar")
-        self.btn_login.setFixedHeight(50)
-        self.btn_login.setStyleSheet("""
-            QPushButton {
-                background-color: #28a745;
-                color: white;
-                border: none;
-                border-radius: 10px;
-                font-size: 15px;
-                font-weight: bold;
-                padding: 0px;
-            }
-            QPushButton:hover {
-                background-color: #218838;
-                transform: scale(1.02);
-            }
-            QPushButton:pressed {
-                background-color: #1e7e34;
-            }
-        """)
-        
-        layout.addWidget(self.btn_cancel)
-        layout.addWidget(self.btn_login)
-        
-        return container
-    
-    def create_info_section(self):
-        """Crea la sección de información"""
-        container = QFrame()
-        container.setStyleSheet("""
-            QFrame {
-                background-color: transparent;
-                border: none;
-            }
-        """)
-        
+            """
+        )
+
         layout = QVBoxLayout(container)
-        layout.setContentsMargins(0, 10, 0, 0)
-        layout.setSpacing(5)
-        
-        # Información de usuarios por defecto
-        info_label = QLabel("💡 Usuarios por defecto:")
-        info_label.setStyleSheet("""
-            QLabel {
-                color: #6c757d;
-                font-size: 12px;
-                font-weight: bold;
+        layout.setContentsMargins(0, 0, 0, 0)
+        layout.setSpacing(12)
+
+        # Botón Cancelar
+        self.btn_cancel = QPushButton("Cancelar")
+        self.btn_cancel.setFixedHeight(48)
+        self.btn_cancel.setCursor(Qt.PointingHandCursor)
+        self.btn_cancel.setStyleSheet(
+            """
+            QPushButton {
                 background-color: transparent;
-                border: none;
-                margin: 0px;
-                padding: 0px;
+                color: #6b7280;
+                border: 1px solid rgba(0, 0, 0, 0.2);
+                border-radius: 12px;
+                padding: 10px 18px;
+                font-size: 14px;
+                font-weight: 600;
             }
-        """)
-        info_label.setAlignment(Qt.AlignCenter)
-        layout.addWidget(info_label)
-        
-        users_label = QLabel("• admin / admin123\n• guardia1 / guardia123")
-        users_label.setStyleSheet("""
-            QLabel {
-                color: #95a5a6;
-                font-size: 11px;
-                background-color: transparent;
-                border: none;
-                margin: 0px;
-                padding: 0px;
-                line-height: 1.4;
+            QPushButton:hover {
+                background-color: rgba(0, 0, 0, 0.04);
             }
-        """)
-        users_label.setAlignment(Qt.AlignCenter)
-        layout.addWidget(users_label)
-        
+            """
+        )
+
+        # Botón Ingresar
+        self.btn_login = QPushButton("Continuar")
+        self.btn_login.setFixedHeight(48)
+        self.btn_login.setCursor(Qt.PointingHandCursor)
+        buttons_row = QHBoxLayout()
+        buttons_row.setSpacing(16)
+        buttons_row.addWidget(self.btn_cancel)
+        buttons_row.addWidget(self.btn_login)
+        layout.addLayout(buttons_row)
+
+        tip_label = self.create_info_section()
+        layout.addWidget(tip_label)
+
         return container
+
+    def create_info_section(self):
+        tip_label = QLabel("💡 Usa tu cuenta creada por el administrador para acceder al panel administrativo.")
+        tip_label.setAlignment(Qt.AlignCenter)
+        tip_label.setStyleSheet("font-size: 12px; color: #6b7280;")
+        self.tip_label = tip_label
+        return tip_label
+
     
     def setup_connections(self):
         """Configura las conexiones de señales"""
@@ -404,79 +309,137 @@ class LoginDialog(QDialog):
     def apply_theme(self):
         """Aplica el tema actual (claro u oscuro)"""
         if self.dark_mode:
-            # Modo oscuro
-            self.setStyleSheet("""
+            self.setStyleSheet(
+                """
                 QDialog {
-                    background: qlineargradient(x1:0, y1:0, x2:0, y2:1,
-                        stop:0 #2c3e50, stop:1 #34495e);
+                    background-color: #1f2a37;
                 }
-            """)
-            
-            # Textos en blanco para modo oscuro
-            if hasattr(self, 'title_label'):
-                self.title_label.setStyleSheet("""
-                    QLabel {
-                        color: white;
-                        background-color: transparent;
-                        border: none;
-                        margin: 0px;
-                        padding: 0px;
+                """
+            )
+            if getattr(self, "title_label", None):
+                self.title_label.setStyleSheet("color: #e2e8f0; background-color: transparent;")
+            if getattr(self, "container_frame", None):
+                self.container_frame.setStyleSheet(
+                    """
+                    QFrame {
+                        background-color: #111827;
+                        border-radius: 24px;
+                        border: 1px solid rgba(255, 255, 255, 0.08);
                     }
-                """)
-            
-            if hasattr(self, 'subtitle_label'):
-                self.subtitle_label.setStyleSheet("""
-                    QLabel {
-                        color: white;
-                        background-color: transparent;
-                        border: none;
-                        margin: 0px;
-                        padding: 0px;
+                    """
+                )
+            if getattr(self, "form_frame", None):
+                self.form_frame.setStyleSheet(
+                    """
+                    QFrame {
+                        background-color: #1f2933;
+                        border-radius: 18px;
+                        border: 1px solid rgba(255, 255, 255, 0.1);
                     }
-                """)
-            
-            # Actualizar estilos para modo oscuro
-            self.update_dark_mode_styles()
+                    """
+                )
         else:
-            # Modo claro
-            self.setStyleSheet("""
+            self.setStyleSheet(
+                """
                 QDialog {
-                    background: qlineargradient(x1:0, y1:0, x2:0, y2:1,
-                        stop:0 #f8f9fa, stop:1 #e9ecef);
+                    background-color: #eef1f6;
                 }
-            """)
-            
-            # Textos en negro para modo claro
-            if hasattr(self, 'title_label'):
-                self.title_label.setStyleSheet("""
-                    QLabel {
-                        color: #2c3e50;
-                        background-color: transparent;
-                        border: none;
-                        margin: 0px;
-                        padding: 0px;
+                """
+            )
+            if getattr(self, "title_label", None):
+                self.title_label.setStyleSheet("color: #1f2933; background-color: transparent;")
+            if getattr(self, "container_frame", None):
+                self.container_frame.setStyleSheet(
+                    """
+                    QFrame {
+                        background-color: rgba(255, 255, 255, 0.92);
+                        border-radius: 24px;
+                        border: 1px solid rgba(0, 0, 0, 0.05);
                     }
-                """)
-            
-            if hasattr(self, 'subtitle_label'):
-                self.subtitle_label.setStyleSheet("""
-                    QLabel {
-                        color: #7f8c8d;
-                        background-color: transparent;
-                        border: none;
-                        margin: 0px;
-                        padding: 0px;
+                    """
+                )
+            if getattr(self, "form_frame", None):
+                self.form_frame.setStyleSheet(
+                    """
+                    QFrame {
+                        background-color: rgba(255, 255, 255, 0.9);
+                        border-radius: 18px;
+                        border: 1px solid rgba(0, 0, 0, 0.06);
                     }
-                """)
+                    """
+                )
+            if hasattr(self, "tip_label"):
+                self.tip_label.setStyleSheet("color: #6b7280; font-size: 12px;")
+
+        self.update_dark_mode_styles()
 
     def update_dark_mode_styles(self):
         """Actualiza los estilos para modo oscuro"""
         if self.dark_mode:
-            # Actualizar campos de entrada para modo oscuro
             input_style = """
                 QLineEdit {
-                    background-color: white;
-                    border: 2px solid #6c757d;
+                    background-color: #1f2933;
+                    border: 2px solid rgba(255, 255, 255, 0.15);
+                    border-radius: 10px;
+                    padding: 18px 25px;
+                    font-size: 15px;
+                    color: #f8fafc;
+                    font-weight: 500;
+                }
+                QLineEdit:focus {
+                    border-color: #38bdf8;
+                    background-color: #25313d;
+                }
+                QLineEdit:hover {
+                    border-color: #38bdf8;
+                }
+            """
+
+            button_style = """
+                QPushButton {
+                    background-color: #1f2933;
+                    color: #e2e8f0;
+                    border: 1px solid rgba(255, 255, 255, 0.15);
+                    border-radius: 12px;
+                    padding: 10px 20px;
+                    font-size: 14px;
+                    font-weight: 600;
+                }
+                QPushButton:hover {
+                    background-color: #25313d;
+                }
+            """
+
+            primary_button_style = """
+                QPushButton {
+                    background-color: #0ea5e9;
+                    color: #0f172a;
+                    border: none;
+                    border-radius: 12px;
+                    padding: 10px 24px;
+                    font-size: 14px;
+                    font-weight: 600;
+                }
+                QPushButton:hover {
+                    background-color: #38bdf8;
+                }
+            """
+
+            if hasattr(self, "input_user"):
+                self.input_user.setStyleSheet(input_style)
+            if hasattr(self, "input_pass"):
+                self.input_pass.setStyleSheet(input_style)
+            if hasattr(self, "btn_cancel"):
+                self.btn_cancel.setStyleSheet(button_style)
+            if hasattr(self, "btn_login"):
+                self.btn_login.setStyleSheet(primary_button_style)
+            if hasattr(self, "tip_label"):
+                self.tip_label.setStyleSheet("color: #cbd5f5; font-size: 12px;")
+        else:
+            default_input_style = """
+                QLineEdit {
+                    background-color: #f8f9fa;
+                    border: 2px solid #e9ecef;
                     border-radius: 10px;
                     padding: 18px 25px;
                     font-size: 15px;
@@ -484,20 +447,54 @@ class LoginDialog(QDialog):
                     font-weight: 500;
                 }
                 QLineEdit:focus {
-                    border-color: #17a2b8;
+                    border-color: #007bff;
                     background-color: white;
-                    box-shadow: 0 0 0 3px rgba(23, 162, 184, 0.1);
                 }
                 QLineEdit:hover {
-                    border-color: #17a2b8;
+                    border-color: #007bff;
                     background-color: white;
                 }
             """
-            
-            if hasattr(self, 'input_user'):
-                self.input_user.setStyleSheet(input_style)
-            if hasattr(self, 'input_pass'):
-                self.input_pass.setStyleSheet(input_style)
+
+            cancel_style = """
+                QPushButton {
+                    background-color: transparent;
+                    color: #6b7280;
+                    border: 1px solid rgba(0, 0, 0, 0.2);
+                    border-radius: 12px;
+                    padding: 10px 18px;
+                    font-size: 14px;
+                    font-weight: 600;
+                }
+                QPushButton:hover {
+                    background-color: rgba(0, 0, 0, 0.04);
+                }
+            """
+
+            login_style = f"""
+                QPushButton {{
+                    background-color: {DUOC_PRIMARY};
+                    color: #ffffff;
+                    border-radius: 12px;
+                    padding: 10px 24px;
+                    font-size: 14px;
+                    font-weight: 600;
+                }}
+                QPushButton:hover {{
+                    background-color: #0059a5;
+                }}
+            """
+
+            if hasattr(self, "input_user"):
+                self.input_user.setStyleSheet(default_input_style)
+            if hasattr(self, "input_pass"):
+                self.input_pass.setStyleSheet(default_input_style)
+            if hasattr(self, "btn_cancel"):
+                self.btn_cancel.setStyleSheet(cancel_style)
+            if hasattr(self, "btn_login"):
+                self.btn_login.setStyleSheet(login_style)
+            if hasattr(self, "tip_label"):
+                self.tip_label.setStyleSheet("color: #6b7280; font-size: 12px;")
     
     def get_auth_manager(self) -> AuthManager:
         """Retorna el gestor de autenticación"""

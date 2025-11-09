@@ -1,7 +1,7 @@
 from PySide6.QtWidgets import (QWidget, QVBoxLayout, QHBoxLayout, QLabel, QPushButton, 
                                QFrame, QGridLayout, QTableWidget, QTableWidgetItem, 
                                QHeaderView, QMessageBox, QFileDialog, QProgressBar, QComboBox,
-                               QSizePolicy, QScrollArea)
+                               QSizePolicy, QScrollArea, QAbstractItemView)
 from PySide6.QtCore import Qt, QThread, Signal, QTimer
 from PySide6.QtGui import QFont, QPixmap, QColor, QGuiApplication
 import sys
@@ -16,9 +16,10 @@ from matplotlib.figure import Figure
 try:
     from core.theme import (
         DUOC_PRIMARY, DUOC_SECONDARY, DUOC_SUCCESS, DUOC_DANGER, DUOC_INFO,
-        darken_color as duoc_darken, lighten_color as duoc_lighten, get_standard_button_style, get_standard_table_style,
+        darken_color as duoc_darken, lighten_color as duoc_lighten, get_standard_button_style,
         format_rut_display, get_current_user
     )
+    from core.ui import configure_modern_table, apply_modern_table_theme
 except Exception:
     DUOC_PRIMARY = "#003A70"
     DUOC_SECONDARY = "#FFB81C"
@@ -40,10 +41,11 @@ except Exception:
         b = min(255, int(b + (255 - b) * factor))
         return f"#{r:02x}{g:02x}{b:02x}"
     def get_standard_button_style(color, text_color=None):
+        resolved_color = text_color or ('#000000' if color in [DUOC_SECONDARY, "#ffc107"] else '#ffffff')
         return f"""
             QPushButton {{
                 background-color: {color};
-                color: {'#000000' if color in [DUOC_SECONDARY, "#ffc107"] else '#ffffff'};
+                color: {resolved_color};
                 border: none;
                 border-radius: 6px;
                 padding: 10px 16px;
@@ -58,30 +60,29 @@ except Exception:
                 color: #adb5bd;
             }}
         """
-    def get_standard_table_style():
-        return """
-            QTableWidget {
-                background: white;
-                color: black;
-                gridline-color: #e9ecef;
-                alternate-background-color: #f8f9fa;
-                selection-background-color: #003A70;
-                selection-color: white;
-            }
-            QHeaderView::section {
-                background-color: #2c3e50;
-                color: white;
-                font-weight: bold;
-                border: none;
-                padding: 8px 10px;
-            }
-        """
     def format_rut_display(rut):
         """Fallback si no se puede importar la función"""
         return rut
     def get_current_user():
         """Fallback si no se puede importar la función"""
         return "Sistema"
+    def configure_modern_table(table, **kwargs):  # type: ignore
+        table.setSelectionBehavior(QTableWidget.SelectRows)
+        table.setSelectionMode(QAbstractItemView.SingleSelection)
+        table.setShowGrid(False)
+        table.verticalHeader().setVisible(False)
+    def apply_modern_table_theme(table, dark_mode=False):  # type: ignore
+        base_bg = "#0f172a" if dark_mode else "#ffffff"
+        base_fg = "#e2e8f0" if dark_mode else "#1f2937"
+        table.setStyleSheet(
+            f"""
+            QTableWidget {{
+                background-color: {base_bg};
+                color: {base_fg};
+                border: none;
+            }}
+            """
+        )
 import numpy as np
 
 # Agregar el directorio padre al path para importar módulos
@@ -665,14 +666,14 @@ class ReportesView(QWidget):
             "📍 Estado",
             "👨‍💼 Registrado por"
         ])
-        
-        # Configurar tabla responsiva con mejor distribución de columnas
-        self.visitors_table.setAlternatingRowColors(True)
-        self.visitors_table.setSelectionBehavior(QTableWidget.SelectRows)
+
+        configure_modern_table(self.visitors_table, row_height=self.screen_config['row_height'])
+        apply_modern_table_theme(self.visitors_table)
+
         # Scrollbars según necesidad
         self.visitors_table.setVerticalScrollBarPolicy(Qt.ScrollBarAsNeeded)
         self.visitors_table.setHorizontalScrollBarPolicy(Qt.ScrollBarAsNeeded)
-        
+
         # Configurar distribución de columnas para mejor legibilidad
         header = self.visitors_table.horizontalHeader()
         header.setSectionResizeMode(0, QHeaderView.Stretch)          # Nombre (expandible)
@@ -683,17 +684,11 @@ class ReportesView(QWidget):
         header.setSectionResizeMode(5, QHeaderView.ResizeToContents) # Acompañante (compacto)
         header.setSectionResizeMode(6, QHeaderView.ResizeToContents) # Estado (compacto)
         header.setSectionResizeMode(7, QHeaderView.ResizeToContents) # Usuario registrador (compacto)
-        
+
         # Establecer tamaños mínimos para mejor legibilidad
         header.setMinimumSectionSize(100)  # Tamaño mínimo para todas las columnas
         header.setDefaultSectionSize(140)  # Tamaño por defecto más generoso
-        
-        # Configurar altura de filas responsiva usando configuración centralizada
-        self.visitors_table.verticalHeader().setDefaultSectionSize(self.screen_config['row_height'])
-        
-        # Usar estilo estandarizado para la tabla
-        self.visitors_table.setStyleSheet(get_standard_table_style())
-        
+
         # Configurar la tabla para que use todo el espacio disponible
         self.visitors_table.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
         content_layout.addWidget(self.visitors_table, 1)  # El 1 hace que tome todo el espacio disponible
@@ -953,7 +948,7 @@ class ReportesView(QWidget):
             
             # Ajustar altura de filas
             for row in range(len(visitors_data)):
-                self.visitors_table.setRowHeight(row, 40)
+                self.visitors_table.setRowHeight(row, self.screen_config['row_height'])
             
             # Las esquinas inferiores se manejan con CSS
             

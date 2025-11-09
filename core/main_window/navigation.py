@@ -9,7 +9,6 @@ from PySide6.QtWidgets import (
     QLabel,
     QPushButton,
     QSizePolicy,
-    QToolBar,
     QWidget,
     QVBoxLayout,
     QMessageBox,
@@ -30,29 +29,96 @@ from .dependencies import (
 )
 
 
+def heading_font(size: int = 20, bold: bool = True) -> QFont:
+    font = QFont()
+    font.setPointSize(size)
+    font.setBold(bold)
+    return font
+
+
+def body_font(size: int = 13) -> QFont:
+    font = QFont()
+    font.setPointSize(size)
+    return font
+
+
 class NavigationMixin:
     """Encapsula la configuración de vistas y acciones de navegación."""
 
     def setup_toolbar(self) -> None:
-        toolbar = QToolBar("Navegación")
-        self.addToolBar(toolbar)
-        toolbar.setMovable(False)
-        toolbar.setFloatable(False)
+        self.toolbar_header = QWidget()
+        self.toolbar_header.setObjectName("ToolbarContainer")
+        header_layout = QHBoxLayout(self.toolbar_header)
+        header_layout.setContentsMargins(24, 12, 24, 12)
+        header_layout.setSpacing(16)
 
-        self.home_action = QAction("🏠 Inicio", self)
-        self.home_action.triggered.connect(self.go_to_main)
-        self.home_action.setVisible(False)
-        toolbar.addAction(self.home_action)
+        title_group = QWidget()
+        title_layout = QHBoxLayout(title_group)
+        title_layout.setContentsMargins(0, 0, 0, 0)
+        title_layout.setSpacing(12)
 
-        toolbar.addSeparator()
+        logo_label = QLabel()
+        logo_pixmap = QPixmap("Logo Duoc .png")
+        if not logo_pixmap.isNull():
+            resized = logo_pixmap.scaled(110, 55, Qt.KeepAspectRatio, Qt.SmoothTransformation)
+            logo_label.setPixmap(resized)
+        else:
+            logo_label.setText("Duoc UC")
+            logo_label.setFont(heading_font(16))
 
-        spacer = QWidget()
-        spacer.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Preferred)
-        toolbar.addWidget(spacer)
+        title_label = QLabel("VisitaSegura")
+        title_label.setObjectName("ToolbarTitle")
+        title_label.setFont(heading_font(18))
 
-        self.theme_action = QAction("🌙 Modo oscuro", self)
-        self.theme_action.triggered.connect(self.toggle_theme)
-        toolbar.addAction(self.theme_action)
+        title_layout.addWidget(logo_label)
+        title_layout.addWidget(title_label)
+        header_layout.addWidget(title_group)
+
+        header_layout.addStretch()
+
+        self.home_button = QPushButton("🏠 Inicio")
+        self.home_button.setCursor(Qt.PointingHandCursor)
+        self.home_button.setFixedHeight(32)
+        self.home_button.setVisible(False)
+        self.home_button.setStyleSheet(
+            """
+            QPushButton {
+                background-color: rgba(0, 0, 0, 0.04);
+                border: none;
+                border-radius: 10px;
+                padding: 6px 12px;
+                font-size: 12px;
+            }
+            QPushButton:hover {
+                background-color: rgba(0, 0, 0, 0.12);
+            }
+            """
+        )
+        self.home_button.clicked.connect(self.go_to_main)
+        header_layout.addWidget(self.home_button)
+
+        self.theme_toggle_button = QPushButton()
+        self.theme_toggle_button.setCursor(Qt.PointingHandCursor)
+        self.theme_toggle_button.setFixedHeight(32)
+        self.theme_toggle_button.setStyleSheet(
+            """
+            QPushButton {
+                background-color: rgba(0, 58, 112, 0.08);
+                border: 1px solid rgba(0, 58, 112, 0.16);
+                border-radius: 10px;
+                padding: 6px 14px;
+                font-size: 12px;
+            }
+            QPushButton:hover {
+                background-color: rgba(0, 58, 112, 0.16);
+            }
+            """
+        )
+        self.theme_toggle_button.clicked.connect(self.toggle_theme)
+        self.theme_toggle_button.setText("☀️ Modo claro" if getattr(self, "dark_mode", False) else "🌙 Modo oscuro")
+        header_layout.addWidget(self.theme_toggle_button)
+
+        self.setMenuWidget(self.toolbar_header)
 
     # ------------------------------------------------------------------
     # Configuración de vistas
@@ -80,64 +146,44 @@ class NavigationMixin:
         self.navigation_manager.navigate_to("main")
 
     def create_main_view(self) -> QWidget:
-        main_widget = QWidget()
-        layout = QVBoxLayout(main_widget)
-        layout.setContentsMargins(20, 20, 20, 20)
-        layout.setSpacing(20)
+        background = QWidget()
+        self.background_widget = background
+        outer_layout = QVBoxLayout(background)
+        outer_layout.setContentsMargins(0, 20, 0, 20)
+        outer_layout.setSpacing(0)
 
-        title_label = QLabel("VisitaSegura")
-        title_font = QFont()
-        title_font.setPointSize(24)
-        title_font.setBold(True)
-        title_label.setFont(title_font)
-        title_label.setAlignment(Qt.AlignCenter)
-        layout.addWidget(title_label)
+        outer_layout.addStretch(1)
 
-        subtitle_label = QLabel("Sistema de Gestión de Visitas Para La sede de San Bernardo")
-        subtitle_font = QFont()
-        subtitle_font.setPointSize(12)
-        subtitle_label.setFont(subtitle_font)
-        subtitle_label.setAlignment(Qt.AlignCenter)
-        layout.addWidget(subtitle_label)
+        card = QFrame()
+        self.central_card = card
+        card_layout = QVBoxLayout(card)
+        card_layout.setSpacing(24)
+        card_layout.setAlignment(Qt.AlignCenter)
 
-        logo_label = QLabel()
-        logo_pixmap = QPixmap("Logo Duoc .png")
-        if not logo_pixmap.isNull():
-            scaled_pixmap = logo_pixmap.scaled(200, 100, Qt.KeepAspectRatio, Qt.SmoothTransformation)
-            logo_label.setPixmap(scaled_pixmap)
-        else:
-            logo_label.setText("Logo Duoc UC")
-            logo_font = QFont()
-            logo_font.setPointSize(14)
-            logo_font.setBold(True)
-            logo_label.setFont(logo_font)
+        intro_label = QLabel("Selecciona un módulo para continuar")
+        intro_label.setFont(body_font(14))
+        intro_label.setAlignment(Qt.AlignCenter)
+        self.intro_label = intro_label
+        card_layout.addWidget(intro_label)
 
-        logo_label.setAlignment(Qt.AlignCenter)
-        layout.addWidget(logo_label)
-
-        spacer1 = QWidget()
-        spacer1.setFixedHeight(30)
-        layout.addWidget(spacer1)
-
-        buttons_frame = QFrame()
-        buttons_layout = QGridLayout(buttons_frame)
+        buttons_layout = QGridLayout()
         buttons_layout.setSpacing(20)
         self.create_main_buttons(buttons_layout)
-        layout.addWidget(buttons_frame, alignment=Qt.AlignCenter)
-
-        spacer2 = QWidget()
-        spacer2.setSizePolicy(QSizePolicy.Preferred, QSizePolicy.Expanding)
-        layout.addWidget(spacer2)
+        card_layout.addLayout(buttons_layout)
 
         self.btn_open_login = QPushButton("🔐 Administración")
         self.btn_open_login.clicked.connect(self.open_login)
-        self.btn_open_login.setMinimumSize(200, 50)
-        self.btn_open_login.setMaximumHeight(50)
-        self.btn_open_login.setSizePolicy(QSizePolicy.Preferred, QSizePolicy.Fixed)
-        self.btn_open_login.setStyleSheet(get_standard_button_style("#6c757d"))
-        layout.addWidget(self.btn_open_login, alignment=Qt.AlignCenter)
+        self.btn_open_login.setMinimumHeight(46)
+        self.btn_open_login.setMinimumWidth(260)
+        self.btn_open_login.setCursor(Qt.PointingHandCursor)
+        card_layout.addWidget(self.btn_open_login, alignment=Qt.AlignCenter)
 
-        return main_widget
+        outer_layout.addWidget(card, alignment=Qt.AlignCenter)
+        outer_layout.addStretch(2)
+
+        self._update_background_theme()
+        self._update_card_theme()
+        return background
 
     def create_main_buttons(self, layout: QGridLayout) -> None:
         available = QGuiApplication.primaryScreen().availableGeometry()
@@ -152,45 +198,82 @@ class NavigationMixin:
             btn_width, btn_height = 150, 100
             font_size = 12
 
-        self.btn_visitas = QPushButton("📋 Registrar Visitas")
-        self.btn_visitas.clicked.connect(self.open_visitas)
-        self.btn_visitas.setMinimumSize(btn_width, btn_height)
-        self.btn_visitas.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
-        self.btn_visitas.setStyleSheet(self.get_button_style(DUOC_PRIMARY, font_size))
-        layout.addWidget(self.btn_visitas, 0, 0)
+        self.quick_access_buttons = []
 
-        self.btn_visitantes = QPushButton("👥 Visitantes Actuales")
-        self.btn_visitantes.clicked.connect(self.open_visitantes)
-        self.btn_visitantes.setMinimumSize(btn_width, btn_height)
-        self.btn_visitantes.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
-        self.btn_visitantes.setStyleSheet(self.get_button_style(DUOC_SECONDARY, font_size))
-        layout.addWidget(self.btn_visitantes, 0, 1)
+        def add_button(
+            row: int,
+            col: int,
+            title: str,
+            description: str,
+            icon: str,
+            accent: str,
+            callback,
+            col_span: int = 1,
+        ) -> QPushButton:
+            button = QPushButton(f"{icon} {title}\n{description}")
+            button.clicked.connect(callback)
+            button.setMinimumSize(btn_width, btn_height)
+            button.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
+            button.setCursor(Qt.PointingHandCursor)
+            button.setProperty("accentColor", accent)
+            button.setProperty("fontSize", font_size)
+            layout.addWidget(button, row, col, 1, col_span)
+            self.quick_access_buttons.append(button)
+            return button
 
-        self.btn_zonas = QPushButton("🏢 Zonas")
-        self.btn_zonas.clicked.connect(self.open_zonas)
-        self.btn_zonas.setMinimumSize(btn_width, btn_height)
-        self.btn_zonas.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
-        self.btn_zonas.setStyleSheet(self.get_button_style(DUOC_SECONDARY, font_size))
-        layout.addWidget(self.btn_zonas, 1, 0)
+        self.btn_visitas = add_button(
+            0,
+            0,
+            "Registrar Visitas",
+            "Controla ingresos y salidas",
+            "📋",
+            DUOC_PRIMARY,
+            self.open_visitas,
+        )
 
-        self.btn_reportes = QPushButton("📊 Reportes")
-        self.btn_reportes.clicked.connect(self.open_reportes)
-        self.btn_reportes.setMinimumSize(btn_width, btn_height)
-        self.btn_reportes.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
-        self.btn_reportes.setStyleSheet(self.get_button_style(DUOC_PRIMARY, font_size))
-        layout.addWidget(self.btn_reportes, 1, 1)
+        self.btn_visitantes = add_button(
+            0,
+            1,
+            "Visitantes Actuales",
+            "Revisa quién está en la sede",
+            "👥",
+            DUOC_SECONDARY,
+            self.open_visitantes,
+        )
 
-        self.btn_usuarios = QPushButton("👥 Usuarios")
-        self.btn_usuarios.clicked.connect(self.open_usuarios)
-        self.btn_usuarios.setMinimumSize(btn_width, btn_height)
-        self.btn_usuarios.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
-        self.btn_usuarios.setStyleSheet(self.get_button_style("#6f42c1", font_size))
+        self.btn_zonas = add_button(
+            1,
+            0,
+            "Zonas",
+            "Administra espacios y aforos",
+            "🏢",
+            DUOC_INFO,
+            self.open_zonas,
+        )
+
+        self.btn_reportes = add_button(
+            1,
+            1,
+            "Reportes",
+            "Genera estadísticas y reportes",
+            "📊",
+            DUOC_PRIMARY,
+            self.open_reportes,
+        )
+
+        self.btn_usuarios = add_button(
+            2,
+            0,
+            "Usuarios",
+            "Gestiona cuentas y permisos",
+            "🛡️",
+            "#6f42c1",
+            self.open_usuarios,
+            col_span=2,
+        )
         self.btn_usuarios.setVisible(False)
-        layout.addWidget(self.btn_usuarios, 2, 0, 1, 2)
 
-    def get_button_style(self, color: str, font_size: int = 16) -> str:
-        base_style = get_standard_button_style(color)
-        return base_style.replace("font-size: 14px;", f"font-size: {font_size}px;")
+        self._update_card_theme()
 
     # ------------------------------------------------------------------
     # Navegación entre vistas
@@ -234,7 +317,8 @@ class NavigationMixin:
 
     def on_view_changed(self, view_name: str) -> None:
         self.current_view = view_name
-        self.home_action.setVisible(view_name != "main")
+        if hasattr(self, "home_button"):
+            self.home_button.setVisible(view_name != "main")
 
         titles = {
             "main": "VisitaSegura - Menú Principal",

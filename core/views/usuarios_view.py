@@ -4,7 +4,7 @@ from PySide6.QtWidgets import (
     QPushButton, QTableWidget, QTableWidgetItem, QHeaderView,
     QLabel, QFrame, QMessageBox, QDialog, QFormLayout,
     QLineEdit, QComboBox, QCheckBox, QDialogButtonBox,
-    QGroupBox, QSpacerItem, QSizePolicy
+    QGroupBox, QSpacerItem, QSizePolicy, QAbstractItemView
 )
 from PySide6.QtCore import Qt, Signal
 from PySide6.QtGui import QFont, QColor
@@ -15,14 +15,16 @@ from datetime import datetime
 try:
     from core.theme import (
         DUOC_PRIMARY, DUOC_SECONDARY, DUOC_SUCCESS, DUOC_DANGER, DUOC_INFO,
-        darken_color as duoc_darken, get_standard_button_style, get_standard_table_style
+        darken_color as duoc_darken, get_standard_button_style
     )
+    from core.ui import configure_modern_table, apply_modern_table_theme
 except Exception:
     DUOC_PRIMARY = "#003A70"
     DUOC_SECONDARY = "#FFB81C"
     DUOC_SUCCESS = "#28a745"
     DUOC_DANGER = "#dc3545"
     DUOC_INFO = "#17a2b8"
+
     def duoc_darken(color, factor=0.2):
         color = color.lstrip('#')
         r, g, b = tuple(int(color[i:i+2], 16) for i in (0, 2, 4))
@@ -30,11 +32,13 @@ except Exception:
         g = max(0, int(g * (1 - factor)))
         b = max(0, int(b * (1 - factor)))
         return f"#{r:02x}{g:02x}{b:02x}"
+
     def get_standard_button_style(color, text_color=None):
+        resolved_color = text_color or ('#000000' if color in [DUOC_SECONDARY, "#ffc107"] else '#ffffff')
         return f"""
             QPushButton {{
                 background-color: {color};
-                color: {'#000000' if color in [DUOC_SECONDARY, "#ffc107"] else '#ffffff'};
+                color: {resolved_color};
                 border: none;
                 border-radius: 6px;
                 padding: 10px 16px;
@@ -49,24 +53,26 @@ except Exception:
                 color: #adb5bd;
             }}
         """
-    def get_standard_table_style():
-        return """
-            QTableWidget {
-                background: white;
-                color: black;
-                gridline-color: #e9ecef;
-                alternate-background-color: #f8f9fa;
-                selection-background-color: #003A70;
-                selection-color: white;
-            }
-            QHeaderView::section {
-                background-color: #2c3e50;
-                color: white;
-                font-weight: bold;
+
+    def configure_modern_table(*args, **kwargs):  # type: ignore
+        table = args[0]
+        table.setSelectionBehavior(QTableWidget.SelectRows)
+        table.setSelectionMode(QAbstractItemView.SingleSelection)
+        table.setShowGrid(False)
+        table.verticalHeader().setVisible(False)
+
+    def apply_modern_table_theme(table, dark_mode=False):  # type: ignore
+        base_bg = "#0f172a" if dark_mode else "#ffffff"
+        base_fg = "#e2e8f0" if dark_mode else "#1f2937"
+        table.setStyleSheet(
+            f"""
+            QTableWidget {{
+                background-color: {base_bg};
+                color: {base_fg};
                 border: none;
-                padding: 8px 10px;
-            }
-        """
+            }}
+            """
+        )
 
 class UserFormDialog(QDialog):
     """Diálogo para crear/editar usuarios"""
@@ -277,161 +283,239 @@ class UsuariosView(QWidget):
     
     def apply_table_theme(self):
         """Aplica el tema a la tabla"""
-        if self.dark_mode:
-            # Tema oscuro
-            self.users_table.setStyleSheet(f"""
-                QTableWidget {{
-                    gridline-color: #404040;
-                    background-color: #2b2b2b;
-                    alternate-background-color: #353535;
-                    font-size: 12px;
-                    border: none;
-                    border-radius: 0px;
-                    selection-background-color: {DUOC_SECONDARY};
-                    font-family: 'Segoe UI', Arial, sans-serif;
-                    color: #ffffff;
-                }}
-                QTableWidget::item {{
-                    padding: 12px 10px;
-                    border-bottom: 1px solid #404040;
-                    border-right: 1px solid #404040;
-                    font-family: 'Segoe UI', Arial, sans-serif;
-                    color: #ffffff;
-                }}
-                QTableWidget::item:selected {{
-                    background-color: {DUOC_SECONDARY};
-                    color: #000000;
-                }}
-                QTableWidget::item:hover {{
-                    background-color: #404040;
-                }}
-                QHeaderView::section {{
-                    background-color: #1e1e1e;
-                    color: #ffffff;
-                    font-weight: bold;
-                    border: none;
-                    padding: 12px 10px;
-                    font-family: 'Segoe UI', Arial, sans-serif;
-                    border-bottom: 2px solid {DUOC_SECONDARY};
-                }}
-                QHeaderView::section:hover {{
-                    background-color: #404040;
-                }}
-            """)
-        else:
-            # Tema claro - usar estilo estandarizado
-            self.users_table.setStyleSheet(get_standard_table_style())
+        apply_modern_table_theme(self.users_table, self.dark_mode)
     
     def apply_widget_theme(self):
         """Aplica el tema a otros widgets de la vista"""
         if self.dark_mode:
-            # Tema oscuro para otros elementos
-            self.setStyleSheet("""
-                QWidget {
-                    background-color: #2b2b2b;
-                    color: #ffffff;
-                }
-                QLabel {
-                    color: #ffffff;
-                }
-            """)
+            outer_bg = "#0b1220"
+            card_bg = "#111827"
+            secondary_bg = "#152033"
+            text_color = "#e2e8f0"
+            muted_color = "#94a3b8"
         else:
-            # Tema claro para otros elementos
-            self.setStyleSheet("""
-                QWidget {
-                    background-color: #ffffff;
-                    color: #000000;
-                }
-                QLabel {
-                    color: #000000;
-                }
-            """)
+            outer_bg = "#f3f4f6"
+            card_bg = "#ffffff"
+            secondary_bg = "#ffffff"
+            text_color = "#0f172a"
+            muted_color = "#64748b"
+
+        self.main_container.setStyleSheet(f"""
+            QFrame#usersMainContainer {{
+                background-color: {outer_bg};
+            }}
+        """)
+
+        self.header_card.setStyleSheet(f"""
+            QFrame#usersHeaderCard {{
+                background-color: {card_bg};
+                border-radius: 24px;
+                border: 1px solid rgba(148, 163, 184, {'0.25' if not self.dark_mode else '0.18'});
+            }}
+        """)
+
+        self.actions_card.setStyleSheet(f"""
+            QFrame#usersActionsCard {{
+                background-color: {secondary_bg};
+                border-radius: 20px;
+                border: 1px solid rgba(148, 163, 184, {'0.2' if not self.dark_mode else '0.16'});
+            }}
+        """)
+
+        self.table_card.setStyleSheet(f"""
+            QFrame#usersTableCard {{
+                background-color: {card_bg if not self.dark_mode else '#0f172a'};
+                border-radius: 20px;
+                border: 1px solid rgba(148, 163, 184, {'0.2' if not self.dark_mode else '0.18'});
+            }}
+        """)
+
+        self.title_label.setStyleSheet(f"color: {text_color};")
+        self.subtitle_label.setStyleSheet(f"color: {muted_color};")
+        self.badge_label.setStyleSheet(
+            "padding: 6px 14px; border-radius: 12px; font-size: 12px;"
+            + ("background-color: rgba(14, 165, 233, 0.16); color: #38bdf8;"
+               if self.dark_mode
+               else f"background-color: rgba(56, 189, 248, 0.18); color: {DUOC_PRIMARY};")
+        )
+        self.info_label.setStyleSheet(f"color: {muted_color}; font-size: 12px;")
+
+        variants_light = {
+            "primary": ("#0ea5e9", "#0f172a"),
+            "info": ("#1d4ed8", "#f8fafc"),
+            "danger": ("#dc2626", "#f8fafc"),
+            "neutral": ("#e2e8f0", "#1f2937"),
+        }
+        variants_dark = {
+            "primary": ("#38bdf8", "#0f172a"),
+            "info": ("#60a5fa", "#0f172a"),
+            "danger": ("#f87171", "#0f172a"),
+            "neutral": ("#1f2937", "#e2e8f0"),
+        }
+        palette = variants_dark if self.dark_mode else variants_light
+
+        for button in self.action_buttons:
+            variant = button.property("variant")
+            bg_color, fg_color = palette.get(variant, ("#64748b", "#f8fafc"))
+            if self.dark_mode:
+                hover_color = self._mix_color(bg_color, "#ffffff", 0.18)
+            else:
+                hover_color = duoc_darken(bg_color, 0.12)
+            button.setStyleSheet(
+                f"""
+                QPushButton {{
+                    background-color: {bg_color};
+                    color: {fg_color};
+                    border: none;
+                    border-radius: 12px;
+                    padding: 12px 20px;
+                    font-weight: 600;
+                }}
+                QPushButton:hover {{
+                    background-color: {hover_color};
+                }}
+                QPushButton:disabled {{
+                    background-color: rgba(148, 163, 184, 0.25);
+                    color: rgba(148, 163, 184, 0.8);
+                }}
+                """
+            )
     
     def setup_ui(self):
         """Configura la interfaz de usuario"""
-        layout = QVBoxLayout(self)
-        layout.setContentsMargins(20, 20, 20, 20)
-        layout.setSpacing(15)
-        
-        # Título
-        title_label = QLabel("👥 Gestión de Usuarios")
+        outer_layout = QVBoxLayout(self)
+        outer_layout.setContentsMargins(0, 0, 0, 0)
+        outer_layout.setSpacing(0)
+
+        self.main_container = QFrame()
+        self.main_container.setObjectName("usersMainContainer")
+        main_layout = QVBoxLayout(self.main_container)
+        main_layout.setContentsMargins(32, 32, 32, 32)
+        main_layout.setSpacing(24)
+        outer_layout.addWidget(self.main_container)
+
+        # Encabezado
+        self.header_card = QFrame()
+        self.header_card.setObjectName("usersHeaderCard")
+        header_layout = QVBoxLayout(self.header_card)
+        header_layout.setContentsMargins(24, 24, 24, 24)
+        header_layout.setSpacing(12)
+
+        self.title_label = QLabel("Gestión de Usuarios")
         title_font = QFont()
-        title_font.setPointSize(20)
+        title_font.setPointSize(22)
         title_font.setBold(True)
-        title_label.setFont(title_font)
-        title_label.setAlignment(Qt.AlignCenter)
-        layout.addWidget(title_label)
-        
-        # Subtítulo
-        subtitle_label = QLabel("Administrar usuarios del sistema")
+        self.title_label.setFont(title_font)
+        header_layout.addWidget(self.title_label)
+
+        self.subtitle_label = QLabel("Administra cuentas, roles y accesos al panel administrativo.")
         subtitle_font = QFont()
         subtitle_font.setPointSize(12)
-        subtitle_label.setFont(subtitle_font)
-        subtitle_label.setAlignment(Qt.AlignCenter)
-        subtitle_label.setStyleSheet("color: #6c757d;")
-        layout.addWidget(subtitle_label)
-        
-        # Botones de acción
-        buttons_layout = QHBoxLayout()
-        
-        self.btn_add = QPushButton("➕ Agregar Usuario")
+        self.subtitle_label.setFont(subtitle_font)
+        self.subtitle_label.setWordWrap(True)
+        header_layout.addWidget(self.subtitle_label)
+
+        self.badge_label = QLabel("🔐 Solo administradores")
+        self.badge_label.setAlignment(Qt.AlignCenter)
+        header_layout.addWidget(self.badge_label, alignment=Qt.AlignLeft)
+
+        main_layout.addWidget(self.header_card)
+
+        # Acciones rápidas
+        self.actions_card = QFrame()
+        self.actions_card.setObjectName("usersActionsCard")
+        actions_layout = QHBoxLayout(self.actions_card)
+        actions_layout.setContentsMargins(24, 24, 24, 24)
+        actions_layout.setSpacing(16)
+
+        self.action_buttons = []
+
+        self.btn_add = QPushButton("➕ Nuevo usuario")
         self.btn_add.clicked.connect(self.add_user)
-        self.btn_add.setStyleSheet(get_standard_button_style(DUOC_SUCCESS))
-        
-        self.btn_edit = QPushButton("✏️ Editar Usuario")
+        self._configure_action_button(self.btn_add, "primary")
+
+        self.btn_edit = QPushButton("✏️ Editar seleccionado")
         self.btn_edit.clicked.connect(self.edit_user)
         self.btn_edit.setEnabled(False)
-        self.btn_edit.setStyleSheet(get_standard_button_style(DUOC_INFO))
-        
-        self.btn_delete = QPushButton("🗑️ Eliminar Usuario")
+        self._configure_action_button(self.btn_edit, "info")
+
+        self.btn_delete = QPushButton("🗑️ Eliminar usuario")
         self.btn_delete.clicked.connect(self.delete_user)
         self.btn_delete.setEnabled(False)
-        self.btn_delete.setStyleSheet(get_standard_button_style(DUOC_DANGER))
-        
-        self.btn_refresh = QPushButton("🔄 Actualizar")
+        self._configure_action_button(self.btn_delete, "danger")
+
+        self.btn_refresh = QPushButton("🔄 Actualizar lista")
         self.btn_refresh.clicked.connect(self.load_users)
-        self.btn_refresh.setStyleSheet(get_standard_button_style("#6c757d"))
-        
-        buttons_layout.addWidget(self.btn_add)
-        buttons_layout.addWidget(self.btn_edit)
-        buttons_layout.addWidget(self.btn_delete)
-        buttons_layout.addWidget(self.btn_refresh)
-        
-        # Espaciador
-        spacer = QSpacerItem(40, 20, QSizePolicy.Expanding, QSizePolicy.Minimum)
-        buttons_layout.addItem(spacer)
-        
-        layout.addLayout(buttons_layout)
-        
-        # Tabla de usuarios
+        self._configure_action_button(self.btn_refresh, "neutral")
+
+        actions_layout.addWidget(self.btn_add)
+        actions_layout.addWidget(self.btn_edit)
+        actions_layout.addWidget(self.btn_delete)
+        actions_layout.addWidget(self.btn_refresh)
+        actions_layout.addStretch()
+
+        main_layout.addWidget(self.actions_card)
+
+        # Tabla y contenedor
+        self.table_card = QFrame()
+        self.table_card.setObjectName("usersTableCard")
+        table_layout = QVBoxLayout(self.table_card)
+        table_layout.setContentsMargins(0, 0, 0, 0)
+        table_layout.setSpacing(0)
+
         self.users_table = QTableWidget()
         self.users_table.setColumnCount(5)
         self.users_table.setHorizontalHeaderLabels([
-            "Usuario", "Nombre Completo", "Rol", "Estado", "Último Login"
+            "Usuario", "Nombre completo", "Rol", "Estado", "Último acceso"
         ])
-        
-        # Configurar tabla
+        configure_modern_table(self.users_table, row_height=60)
         header = self.users_table.horizontalHeader()
-        header.setSectionResizeMode(0, QHeaderView.ResizeToContents)  # Usuario
-        header.setSectionResizeMode(1, QHeaderView.Stretch)           # Nombre
-        header.setSectionResizeMode(2, QHeaderView.ResizeToContents)  # Rol
-        header.setSectionResizeMode(3, QHeaderView.ResizeToContents)  # Estado
-        header.setSectionResizeMode(4, QHeaderView.ResizeToContents)  # Último Login
-        
-        self.users_table.setSelectionBehavior(QTableWidget.SelectRows)
-        self.users_table.setAlternatingRowColors(True)
-        self.apply_table_theme()
-        
-        # Conectar selección
+        header.setSectionResizeMode(0, QHeaderView.ResizeToContents)
+        header.setSectionResizeMode(1, QHeaderView.Stretch)
+        header.setSectionResizeMode(2, QHeaderView.ResizeToContents)
+        header.setSectionResizeMode(3, QHeaderView.ResizeToContents)
+        header.setSectionResizeMode(4, QHeaderView.ResizeToContents)
+        header.setHighlightSections(False)
+        header_font = QFont()
+        header_font.setPointSize(11)
+        header_font.setBold(True)
+        self.users_table.horizontalHeader().setFont(header_font)
+        header.setDefaultAlignment(Qt.AlignLeft | Qt.AlignVCenter)
+        self.users_table.setVerticalScrollBarPolicy(Qt.ScrollBarAsNeeded)
+        self.users_table.setHorizontalScrollBarPolicy(Qt.ScrollBarAsNeeded)
         self.users_table.itemSelectionChanged.connect(self.on_selection_changed)
-        
-        layout.addWidget(self.users_table)
-        
-        # Información de usuarios
-        info_label = QLabel("💡 Solo los administradores pueden gestionar usuarios")
-        info_label.setStyleSheet("color: #6c757d; font-size: 12px;")
-        info_label.setAlignment(Qt.AlignCenter)
-        layout.addWidget(info_label)
+        table_layout.addWidget(self.users_table)
+
+        main_layout.addWidget(self.table_card)
+
+        # Información adicional
+        self.info_label = QLabel("💡 Solo los administradores pueden gestionar usuarios.")
+        self.info_label.setWordWrap(True)
+        self.info_label.setAlignment(Qt.AlignCenter)
+        main_layout.addWidget(self.info_label)
+
+        self.apply_table_theme()
+        self.apply_widget_theme()
+
+    def _configure_action_button(self, button: QPushButton, variant: str):
+        button.setCursor(Qt.PointingHandCursor)
+        button.setMinimumHeight(46)
+        button.setProperty("variant", variant)
+        button.setStyleSheet("border-radius: 12px; font-weight: 600;")
+        self.action_buttons.append(button)
+
+    @staticmethod
+    def _mix_color(color_hex: str, target_hex: str, ratio: float) -> str:
+        """Mezcla dos colores hex en el porcentaje indicado."""
+        color_hex = color_hex.lstrip("#")
+        target_hex = target_hex.lstrip("#")
+        base = tuple(int(color_hex[i:i+2], 16) for i in (0, 2, 4))
+        target = tuple(int(target_hex[i:i+2], 16) for i in (0, 2, 4))
+        blended = tuple(
+            int(base[i] * (1 - ratio) + target[i] * ratio)
+            for i in range(3)
+        )
+        return f"#{blended[0]:02x}{blended[1]:02x}{blended[2]:02x}"
     
     
     def load_users(self):
@@ -457,31 +541,23 @@ class UsuariosView(QWidget):
                 
                 # Rol
                 role_item = QTableWidgetItem(user.get('role', '').title())
+                role_item.setTextAlignment(Qt.AlignCenter)
                 if self.dark_mode:
-                    if user.get('role') == 'admin':
-                        role_item.setBackground(QColor(220, 53, 69, 80))  # Rojo más visible en oscuro
-                    else:
-                        role_item.setBackground(QColor(40, 167, 69, 80))  # Verde más visible en oscuro
+                    badge_color = QColor(248, 113, 113, 90) if user.get('role') == 'admin' else QColor(96, 165, 250, 90)
                 else:
-                    if user.get('role') == 'admin':
-                        role_item.setBackground(QColor(220, 53, 69, 50))  # Rojo suave en claro
-                    else:
-                        role_item.setBackground(QColor(40, 167, 69, 50))  # Verde suave en claro
+                    badge_color = QColor(220, 53, 69, 60) if user.get('role') == 'admin' else QColor(59, 130, 246, 45)
+                role_item.setBackground(badge_color)
                 self.users_table.setItem(row, 2, role_item)
                 
                 # Estado
                 status = "Activo" if user.get('is_active', True) else "Inactivo"
                 status_item = QTableWidgetItem(status)
+                status_item.setTextAlignment(Qt.AlignCenter)
                 if self.dark_mode:
-                    if user.get('is_active', True):
-                        status_item.setBackground(QColor(40, 167, 69, 80))  # Verde más visible en oscuro
-                    else:
-                        status_item.setBackground(QColor(220, 53, 69, 80))  # Rojo más visible en oscuro
+                    badge_color = QColor(34, 197, 94, 90) if user.get('is_active', True) else QColor(248, 113, 113, 90)
                 else:
-                    if user.get('is_active', True):
-                        status_item.setBackground(QColor(40, 167, 69, 50))  # Verde suave en claro
-                    else:
-                        status_item.setBackground(QColor(220, 53, 69, 50))  # Rojo suave en claro
+                    badge_color = QColor(34, 197, 94, 60) if user.get('is_active', True) else QColor(248, 113, 113, 60)
+                status_item.setBackground(badge_color)
                 self.users_table.setItem(row, 3, status_item)
                 
                 # Último login
@@ -493,10 +569,13 @@ class UsuariosView(QWidget):
                         last_login_str = str(last_login)
                 else:
                     last_login_str = "Nunca"
-                self.users_table.setItem(row, 4, QTableWidgetItem(last_login_str))
+                last_login_item = QTableWidgetItem(last_login_str)
+                last_login_item.setTextAlignment(Qt.AlignRight | Qt.AlignVCenter)
+                self.users_table.setItem(row, 4, last_login_item)
+
+                self.users_table.setRowHeight(row, 60)
             
-            # Ajustar altura de filas
-            self.users_table.resizeRowsToContents()
+            # La altura se controla manualmente para mantener la estética de la tarjeta
             
         except Exception as e:
             QMessageBox.critical(

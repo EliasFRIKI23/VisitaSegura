@@ -9,15 +9,17 @@ from PySide6.QtGui import QFont, QAction, QIcon, QColor, QPixmap
 try:
     from .theme import (
         DUOC_PRIMARY, DUOC_SECONDARY, DUOC_SUCCESS, DUOC_DANGER, DUOC_INFO,
-        darken_color as duoc_darken, get_standard_button_style, get_standard_table_style,
+        darken_color as duoc_darken, get_standard_button_style,
         normalize_rut, format_rut_display, get_current_user
     )
+    from core.ui import configure_modern_table, apply_modern_table_theme
 except Exception:
     DUOC_PRIMARY = "#003A70"
     DUOC_SECONDARY = "#FFB81C"
     DUOC_SUCCESS = "#28a745"
     DUOC_DANGER = "#dc3545"
     DUOC_INFO = "#17a2b8"
+
     def duoc_darken(color, factor=0.2):
         color = color.lstrip('#')
         r, g, b = tuple(int(color[i:i+2], 16) for i in (0, 2, 4))
@@ -25,11 +27,13 @@ except Exception:
         g = max(0, int(g * (1 - factor)))
         b = max(0, int(b * (1 - factor)))
         return f"#{r:02x}{g:02x}{b:02x}"
+
     def get_standard_button_style(color, text_color=None):
+        resolved_color = text_color or ('#000000' if color in [DUOC_SECONDARY, "#ffc107"] else '#ffffff')
         return f"""
             QPushButton {{
                 background-color: {color};
-                color: {'#000000' if color in [DUOC_SECONDARY, "#ffc107"] else '#ffffff'};
+                color: {resolved_color};
                 border: none;
                 border-radius: 6px;
                 padding: 10px 16px;
@@ -44,33 +48,37 @@ except Exception:
                 color: #adb5bd;
             }}
         """
-    def get_standard_table_style():
-        return """
-            QTableWidget {
-                background: white;
-                color: black;
-                gridline-color: #e9ecef;
-                alternate-background-color: #f8f9fa;
-                selection-background-color: #003A70;
-                selection-color: white;
-            }
-            QHeaderView::section {
-                background-color: #2c3e50;
-                color: white;
-                font-weight: bold;
-                border: none;
-                padding: 8px 10px;
-            }
-        """
+
     def normalize_rut(rut_input):
         """Fallback si no se puede importar la función"""
         return rut_input
+
     def format_rut_display(rut):
         """Fallback si no se puede importar la función"""
         return rut
+
     def get_current_user():
         """Fallback si no se puede importar la función"""
         return "Sistema"
+
+    def configure_modern_table(table, **kwargs):  # type: ignore
+        table.setSelectionBehavior(QTableWidget.SelectRows)
+        table.setSelectionMode(QAbstractItemView.SingleSelection)
+        table.setShowGrid(False)
+        table.verticalHeader().setVisible(False)
+
+    def apply_modern_table_theme(table, dark_mode=False):  # type: ignore
+        base_bg = "#0f172a" if dark_mode else "#ffffff"
+        base_fg = "#e2e8f0" if dark_mode else "#1f2937"
+        table.setStyleSheet(
+            f"""
+            QTableWidget {{
+                background-color: {base_bg};
+                color: {base_fg};
+                border: none;
+            }}
+            """
+        )
 from datetime import datetime
 from .visitors import VisitorManager
 from .visitor_form import VisitorFormDialog, QuickVisitorForm
@@ -223,20 +231,8 @@ class VisitorListWidget(QWidget):
         ])
         
         # Configurar tabla
-        self.visitor_table.setSelectionBehavior(QAbstractItemView.SelectRows)
-        self.visitor_table.setAlternatingRowColors(True)
-        self.visitor_table.setSortingEnabled(True)
-        self.visitor_table.setContextMenuPolicy(Qt.CustomContextMenu)
-        # Scroll según necesidad
-        self.visitor_table.setVerticalScrollBarPolicy(Qt.ScrollBarAsNeeded)
-        self.visitor_table.setHorizontalScrollBarPolicy(Qt.ScrollBarAsNeeded)
-
-        # Estética de encabezados y filas
-        vh = self.visitor_table.verticalHeader()
-        vh.setVisible(False)
-        vh.setDefaultSectionSize(36)
-
-        self.visitor_table.setStyleSheet(get_standard_table_style())
+        configure_modern_table(self.visitor_table)
+        apply_modern_table_theme(self.visitor_table)
 
         
         # Ajustar columnas con mejor distribución
