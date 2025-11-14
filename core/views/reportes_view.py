@@ -456,10 +456,13 @@ class ReportesView(QWidget):
         
         # Contenedor principal para los gráficos en layout horizontal
         charts_container = QWidget()
-        charts_container.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Preferred)
+        charts_container.setObjectName("ChartsContainer")
+        charts_container.setSizePolicy(QSizePolicy.Maximum, QSizePolicy.Preferred)
+        charts_container.setMaximumWidth(1400)
         charts_main_layout = QHBoxLayout(charts_container)
         charts_main_layout.setSpacing(15)
         charts_main_layout.setContentsMargins(5, 5, 5, 5)
+        charts_main_layout.setAlignment(Qt.AlignCenter)
         
         # Gráfico 1: Visitantes por Día
         chart1_container = QFrame()
@@ -570,8 +573,8 @@ class ReportesView(QWidget):
         chart2_container.setMinimumHeight(min_height)
         chart3_container.setMinimumHeight(min_height)
         
-        # Agregar el contenedor de gráficos al layout principal
-        content_layout.addWidget(charts_container)
+        # Agregar el contenedor de gráficos al layout principal centrado
+        content_layout.addWidget(charts_container, alignment=Qt.AlignHCenter)
         
         
         # Tarjetas de métricas resumidas

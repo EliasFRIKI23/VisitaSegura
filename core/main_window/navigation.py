@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from PySide6.QtCore import Qt
-from PySide6.QtGui import QAction, QFont, QGuiApplication, QPixmap
+from PySide6.QtGui import QAction, QFont, QGuiApplication, QPixmap, QColor
 from PySide6.QtWidgets import (
     QFrame,
     QGridLayout,
@@ -12,6 +12,7 @@ from PySide6.QtWidgets import (
     QWidget,
     QVBoxLayout,
     QMessageBox,
+    QGraphicsDropShadowEffect,
 )
 
 from .dependencies import (
@@ -162,15 +163,32 @@ class NavigationMixin:
 
         card = QFrame()
         self.central_card = card
+
+        # Aplicar sombra suave para resaltar la tarjeta principal
+        shadow = QGraphicsDropShadowEffect(card)
+        shadow.setBlurRadius(45)
+        shadow.setOffset(0, 20)
+        shadow.setColor(QColor(0, 0, 0, 45))
+        card.setGraphicsEffect(shadow)
+        self.card_shadow = shadow
+
         card_layout = QVBoxLayout(card)
-        card_layout.setSpacing(24)
+        card_layout.setSpacing(28)
         card_layout.setAlignment(Qt.AlignCenter)
+
+        # Encabezado estilo "pill" con mensaje principal
+        self.intro_container = QFrame()
+        self.intro_container.setObjectName("IntroContainer")
+        intro_container_layout = QVBoxLayout(self.intro_container)
+        intro_container_layout.setContentsMargins(24, 16, 24, 16)
+        intro_container_layout.setSpacing(0)
 
         intro_label = QLabel("Selecciona un módulo para continuar")
         intro_label.setFont(body_font(14))
         intro_label.setAlignment(Qt.AlignCenter)
         self.intro_label = intro_label
-        card_layout.addWidget(intro_label)
+        intro_container_layout.addWidget(intro_label)
+        card_layout.addWidget(self.intro_container)
 
         buttons_layout = QGridLayout()
         buttons_layout.setSpacing(20)
@@ -227,21 +245,10 @@ class NavigationMixin:
             self.quick_access_buttons.append(button)
             return button
 
-        # Colores institucionales suaves de DUOC UC para los botones principales
-        def get_soft_duoc_color(base_color, factor=0.85):
-            """Crea una versión suave de un color mezclándolo con blanco"""
-            base_color = base_color.lstrip('#')
-            r, g, b = tuple(int(base_color[i:i+2], 16) for i in (0, 2, 4))
-            r = min(255, int(r + (255 - r) * (1 - factor)))
-            g = min(255, int(g + (255 - g) * (1 - factor)))
-            b = min(255, int(b + (255 - b) * (1 - factor)))
-            return f"#{r:02x}{g:02x}{b:02x}"
-        
-        # Colores suaves con buen contraste y agradables a la vista
-        soft_blue = get_soft_duoc_color(DUOC_PRIMARY, 0.82)  # Azul institucional suave
-        soft_yellow = get_soft_duoc_color(DUOC_SECONDARY, 0.88)  # Amarillo institucional suave
-        soft_blue_alt = get_soft_duoc_color(DUOC_PRIMARY, 0.78)  # Azul alternativo más claro
-        soft_yellow_alt = get_soft_duoc_color(DUOC_SECONDARY, 0.85)  # Amarillo alternativo
+        # Paleta institucional Duoc UC para las tarjetas principales
+        duoc_blue = DUOC_PRIMARY
+        duoc_gold = DUOC_SECONDARY
+        neutral_card = "#f5f6fb"
 
         self.btn_visitas = add_button(
             0,
@@ -249,7 +256,7 @@ class NavigationMixin:
             "Registrar Visitas",
             "Controla ingresos y salidas",
             "📋",
-            soft_blue,
+            duoc_blue,
             self.open_visitas,
         )
 
@@ -259,7 +266,7 @@ class NavigationMixin:
             "Visitantes Actuales",
             "Revisa quién está en la sede",
             "👥",
-            soft_yellow,
+            duoc_gold,
             self.open_visitantes,
         )
 
@@ -269,7 +276,7 @@ class NavigationMixin:
             "Zonas",
             "Administra espacios y aforos",
             "🏢",
-            soft_blue_alt,
+            duoc_gold,
             self.open_zonas,
         )
 
@@ -279,7 +286,7 @@ class NavigationMixin:
             "Reportes",
             "Genera estadísticas y reportes",
             "📊",
-            soft_yellow_alt,
+            duoc_blue,
             self.open_reportes,
         )
 
@@ -289,7 +296,7 @@ class NavigationMixin:
             "Manual de Usuario",
             "Consulta la guía de uso del sistema",
             "📖",
-            soft_blue,
+            duoc_blue,
             self.open_manual,
         )
 
@@ -299,7 +306,7 @@ class NavigationMixin:
             "Usuarios",
             "Gestiona cuentas y permisos",
             "🛡️",
-            soft_blue,
+            duoc_gold,
             self.open_usuarios,
         )
         self.btn_usuarios.setVisible(False)

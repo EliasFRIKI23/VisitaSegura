@@ -114,6 +114,8 @@ class ThemeMixin:
             return
 
         if self.dark_mode:
+            duoc_blue = "#0D47A1"
+            duoc_gold = "#FFCA45"
             card_style = """
                 QFrame {
                     background-color: #252830;
@@ -144,6 +146,38 @@ class ThemeMixin:
             intro_color = "#e2e8f0" if self.dark_mode else "#4a5568"
             self.intro_label.setStyleSheet(f"color: {intro_color}; font-size: 14px;")
 
+        if hasattr(self, "intro_container"):
+            if self.dark_mode:
+                self.intro_container.setStyleSheet(
+                    """
+                    QFrame#IntroContainer {
+                        background-color: #1f2a37;
+                        border-radius: 30px;
+                        border: 1px solid rgba(255, 255, 255, 0.08);
+                    }
+                    """
+                )
+            else:
+                self.intro_container.setStyleSheet(
+                    """
+                    QFrame#IntroContainer {
+                        background-color: rgba(255, 255, 255, 0.96);
+                        border-radius: 30px;
+                        border: 1px solid rgba(15, 23, 42, 0.08);
+                    }
+                    """
+                )
+
+        if hasattr(self, "card_shadow"):
+            if self.dark_mode:
+                self.card_shadow.setColor(QColor(0, 0, 0, 180))
+                self.card_shadow.setBlurRadius(55)
+                self.card_shadow.setOffset(0, 30)
+            else:
+                self.card_shadow.setColor(QColor(0, 0, 0, 55))
+                self.card_shadow.setBlurRadius(45)
+                self.card_shadow.setOffset(0, 22)
+
         if hasattr(self, "quick_access_buttons"):
             # Función auxiliar para oscurecer colores (solo para los botones principales)
             def darken_color(color, factor=0.15):
@@ -153,23 +187,41 @@ class ThemeMixin:
                 g = max(0, int(g * (1 - factor)))
                 b = max(0, int(b * (1 - factor)))
                 return f"#{r:02x}{g:02x}{b:02x}"
+
+            def lighten_color(color, factor=0.15):
+                color = color.lstrip('#')
+                r, g, b = tuple(int(color[i:i+2], 16) for i in (0, 2, 4))
+                r = min(255, int(r + (255 - r) * factor))
+                g = min(255, int(g + (255 - g) * factor))
+                b = min(255, int(b + (255 - b) * factor))
+                return f"#{r:02x}{g:02x}{b:02x}"
+
+            def is_dark_color(color) -> bool:
+                color = color.lstrip('#')
+                r, g, b = tuple(int(color[i:i+2], 16) for i in (0, 2, 4))
+                # luminosidad perceptual
+                luminance = 0.299 * r + 0.587 * g + 0.114 * b
+                return luminance < 155
             
             for button in self.quick_access_buttons:
                 accent = button.property("accentColor") or DUOC_PRIMARY
                 font_size = button.property("fontSize") or 14
                 
-                # Usar colores suaves de DUOC UC como fondo en modo claro
-                if not self.dark_mode:
-                    # El accent ya es un color suave, usarlo como fondo
+                if self.dark_mode:
+                    # Mantener colores institucionales vibrantes
                     button_bg_color = accent
-                    hover_bg = darken_color(accent, 0.1)
-                    border_color_btn = darken_color(accent, 0.3)
-                    text_color_button = "#0f172a"  # Texto oscuro para buen contraste
+                    hover_bg = lighten_color(accent, 0.1)
+                    border_color_btn = "transparent"
+                    text_color_button = "#f8fafc"
                 else:
-                    button_bg_color = button_bg
-                    hover_bg = button_bg
-                    border_color_btn = button_border
-                    text_color_button = text_color
+                    button_bg_color = accent
+                    if is_dark_color(accent):
+                        hover_bg = lighten_color(accent, 0.12)
+                        text_color_button = "#f8fafc"
+                    else:
+                        hover_bg = darken_color(accent, 0.12)
+                        text_color_button = "#0f172a"
+                    border_color_btn = "transparent"
                 
                 button.setStyleSheet(
                     f"""

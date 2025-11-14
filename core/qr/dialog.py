@@ -175,6 +175,12 @@ class QRScannerDialog(QDialog):
         self.subtitle_label.setWordWrap(True)
         header_text.addWidget(self.subtitle_label)
 
+        self.droidcam_link = QLabel('<a href="https://droidcam.app">📱 Usa tu teléfono como cámara con DroidCam</a>')
+        self.droidcam_link.setOpenExternalLinks(True)
+        self.droidcam_link.setAlignment(Qt.AlignLeft)
+        self.droidcam_link.setStyleSheet("color: #38bdf8; font-size: 13px; font-weight: 600;")
+        header_text.addWidget(self.droidcam_link)
+
         header_layout.addLayout(header_text)
         header_layout.addStretch()
 

@@ -1,5 +1,7 @@
 DUOC_PRIMARY = "#003A70"   # Azul institucional
+DUOC_PRIMARY_LIGHT = "#0D47A1"  # Variante luminosa para modo oscuro
 DUOC_SECONDARY = "#FFB81C" # Amarillo institucional
+DUOC_SECONDARY_LIGHT = "#FFCA45"  # Variante luminosa para modo oscuro
 DUOC_GRAY_DARK = "#495057"
 DUOC_GRAY = "#6c757d"
 DUOC_SUCCESS = "#28a745"

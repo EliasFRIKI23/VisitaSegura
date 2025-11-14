@@ -91,6 +91,7 @@ class VisitorFormDialog(QDialog):
         
         # RUT con tooltip y normalización automática
         self.rut_input = QLineEdit()
+        self.rut_input.setStyleSheet("font-size: 13px;")
         self.rut_input.setPlaceholderText("Ej: 12345678-9 o 123456789")
         self.rut_input.setToolTip("🔍 Ingrese el RUT del visitante (se formateará automáticamente)")
         
@@ -106,6 +107,7 @@ class VisitorFormDialog(QDialog):
         
         # Nombre completo con tooltip
         self.nombre_input = QLineEdit()
+        self.nombre_input.setStyleSheet("font-size: 13px;")
         self.nombre_input.setPlaceholderText("Nombre y apellidos completos")
         self.nombre_input.setToolTip("👤 Ingrese el nombre completo del visitante")
         
@@ -127,6 +129,7 @@ class VisitorFormDialog(QDialog):
         
         # Acompañante con tooltip
         self.acompañante_input = QLineEdit()
+        self.acompañante_input.setStyleSheet("font-size: 13px;")
         self.acompañante_input.setPlaceholderText("Persona que invita o recibe al visitante")
         self.acompañante_input.setToolTip("🤝 Ingrese el nombre de quien invita al visitante")
         
@@ -486,16 +489,19 @@ class QuickVisitorForm(QWidget):
 
         self.rut_input = QLineEdit()
         self.rut_input.setPlaceholderText("Ej: 12.345.678-9")
+        self.rut_input.setStyleSheet("font-size: 13px;")
         self.rut_input.setMinimumHeight(42)
         form_layout.addRow("🆔 RUT", self.rut_input)
 
         self.nombre_input = QLineEdit()
         self.nombre_input.setPlaceholderText("Nombre completo del visitante")
+        self.nombre_input.setStyleSheet("font-size: 13px;")
         self.nombre_input.setMinimumHeight(42)
         form_layout.addRow("👤 Nombre", self.nombre_input)
 
         self.acompañante_input = QLineEdit()
         self.acompañante_input.setPlaceholderText("Nombre de quien invita")
+        self.acompañante_input.setStyleSheet("font-size: 13px;")
         self.acompañante_input.setMinimumHeight(42)
         form_layout.addRow("🤝 Acompañante", self.acompañante_input)
 

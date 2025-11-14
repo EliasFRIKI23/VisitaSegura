@@ -494,6 +494,29 @@ class UsuariosView(QWidget):
         self.info_label.setAlignment(Qt.AlignCenter)
         main_layout.addWidget(self.info_label)
 
+        # Botón para volver al menú principal (ubicado al final como en otras vistas)
+        self.back_button = QPushButton("⬅️ Volver al Menú Principal")
+        self.back_button.setCursor(Qt.PointingHandCursor)
+        self.back_button.setFixedHeight(44)
+        self.back_button.setStyleSheet(
+            """
+            QPushButton {
+                background-color: #5c677d;
+                color: #f8fafc;
+                border: none;
+                border-radius: 14px;
+                font-size: 13px;
+                font-weight: 600;
+                padding: 0 24px;
+            }
+            QPushButton:hover {
+                background-color: #485063;
+            }
+            """
+        )
+        self.back_button.clicked.connect(self.go_back_to_main)
+        main_layout.addWidget(self.back_button, alignment=Qt.AlignCenter)
+
         self.apply_table_theme()
         self.apply_widget_theme()
 
@@ -708,3 +731,15 @@ class UsuariosView(QWidget):
                     "Error", 
                     "No se pudo eliminar el usuario. Verifique que no sea el último administrador."
                 )
+
+    def go_back_to_main(self):
+        """Vuelve al menú principal de la aplicación."""
+        parent = self.parent()
+        while parent is not None:
+            if hasattr(parent, "navigation_manager"):
+                parent.navigation_manager.navigate_to("main")
+                return
+            if hasattr(parent, "go_to_main"):
+                parent.go_to_main()
+                return
+            parent = parent.parent()

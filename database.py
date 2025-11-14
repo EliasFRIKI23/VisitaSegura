@@ -1,11 +1,16 @@
 # database.py
 from pymongo import MongoClient
+from pymongo.errors import ServerSelectionTimeoutError, ConfigurationError
 import os
+import socket
 
 
 # URL de conexión a MongoDB Atlas
 MONGO_URI = "mongodb+srv://feliaravena_db_user:6FitO8nAmbEgPRlj@visitasegura.m4fpfsy.mongodb.net/miapp?retryWrites=true&w=majority&appName=VisitaSegura"
 OFFLINE_ENV_VAR = "VISITASEGURA_OFFLINE"
+
+# Timeout para conexión (5 segundos - suficiente para detectar bloqueos DNS rápidamente)
+CONNECTION_TIMEOUT = 5  # segundos
 
 # Crear conexión global
 client = None
@@ -31,7 +36,17 @@ def connect_db():
         return False
 
     try:
-        client = MongoClient(MONGO_URI)
+        # Configurar timeout para evitar que se quede colgado con DNS bloqueados
+        client = MongoClient(
+            MONGO_URI,
+            serverSelectionTimeoutMS=CONNECTION_TIMEOUT * 1000,  # Convertir a milisegundos
+            connectTimeoutMS=CONNECTION_TIMEOUT * 1000,
+            socketTimeoutMS=CONNECTION_TIMEOUT * 1000
+        )
+        
+        # Intentar un ping rápido para verificar conectividad
+        client.admin.command("ping")
+        
         db = client["miapp"]
 
         # Colecciones
@@ -43,6 +58,14 @@ def connect_db():
         print(f"Colecciones disponibles: {db.list_collection_names()}")
         return True
 
+    except (ServerSelectionTimeoutError, socket.gaierror, ConfigurationError) as e:
+        # Errores de DNS, timeout o configuración (incluye bloqueos de DNS)
+        print(f"Error de conexión (posible bloqueo DNS o sin internet): {e}")
+        client = None
+        db = None
+        usuarios_collection = None
+        visitantes_collection = None
+        return False
     except Exception as e:
         print("Error al conectar con MongoDB:", e)
         client = None
