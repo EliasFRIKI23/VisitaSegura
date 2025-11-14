@@ -227,13 +227,29 @@ class NavigationMixin:
             self.quick_access_buttons.append(button)
             return button
 
+        # Colores institucionales suaves de DUOC UC para los botones principales
+        def get_soft_duoc_color(base_color, factor=0.85):
+            """Crea una versión suave de un color mezclándolo con blanco"""
+            base_color = base_color.lstrip('#')
+            r, g, b = tuple(int(base_color[i:i+2], 16) for i in (0, 2, 4))
+            r = min(255, int(r + (255 - r) * (1 - factor)))
+            g = min(255, int(g + (255 - g) * (1 - factor)))
+            b = min(255, int(b + (255 - b) * (1 - factor)))
+            return f"#{r:02x}{g:02x}{b:02x}"
+        
+        # Colores suaves con buen contraste y agradables a la vista
+        soft_blue = get_soft_duoc_color(DUOC_PRIMARY, 0.82)  # Azul institucional suave
+        soft_yellow = get_soft_duoc_color(DUOC_SECONDARY, 0.88)  # Amarillo institucional suave
+        soft_blue_alt = get_soft_duoc_color(DUOC_PRIMARY, 0.78)  # Azul alternativo más claro
+        soft_yellow_alt = get_soft_duoc_color(DUOC_SECONDARY, 0.85)  # Amarillo alternativo
+
         self.btn_visitas = add_button(
             0,
             0,
             "Registrar Visitas",
             "Controla ingresos y salidas",
             "📋",
-            DUOC_PRIMARY,
+            soft_blue,
             self.open_visitas,
         )
 
@@ -243,7 +259,7 @@ class NavigationMixin:
             "Visitantes Actuales",
             "Revisa quién está en la sede",
             "👥",
-            DUOC_SECONDARY,
+            soft_yellow,
             self.open_visitantes,
         )
 
@@ -253,7 +269,7 @@ class NavigationMixin:
             "Zonas",
             "Administra espacios y aforos",
             "🏢",
-            DUOC_INFO,
+            soft_blue_alt,
             self.open_zonas,
         )
 
@@ -263,19 +279,28 @@ class NavigationMixin:
             "Reportes",
             "Genera estadísticas y reportes",
             "📊",
-            DUOC_PRIMARY,
+            soft_yellow_alt,
             self.open_reportes,
+        )
+
+        self.btn_manual = add_button(
+            2,
+            0,
+            "Manual de Usuario",
+            "Consulta la guía de uso del sistema",
+            "📖",
+            soft_blue,
+            self.open_manual,
         )
 
         self.btn_usuarios = add_button(
             2,
-            0,
+            1,
             "Usuarios",
             "Gestiona cuentas y permisos",
             "🛡️",
-            "#6f42c1",
+            soft_blue,
             self.open_usuarios,
-            col_span=2,
         )
         self.btn_usuarios.setVisible(False)
 
@@ -317,6 +342,19 @@ class NavigationMixin:
             return
 
         self.navigation_manager.navigate_to("usuarios")
+
+    def open_manual(self) -> None:
+        """Abre el manual de usuario"""
+        try:
+            from core.help_dialog import HelpDialog
+            help_dialog = HelpDialog(self)
+            help_dialog.exec()
+        except Exception as e:
+            QMessageBox.critical(
+                self,
+                "Error",
+                f"No se pudo abrir el manual de usuario:\n{str(e)}"
+            )
 
     def go_to_main(self) -> None:
         self.navigation_manager.navigate_to("main")

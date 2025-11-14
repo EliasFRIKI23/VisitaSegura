@@ -532,6 +532,12 @@ class VisitorListWidget(QWidget):
             f"background-color: {badge_bg}; color: {badge_color}; font-weight: 600;"
         )
 
+        # Color hover más suave para el botón de ayuda (no tan oscuro)
+        if self.dark_mode:
+            help_hover = "#60a5fa"  # Azul más claro en modo oscuro
+        else:
+            help_hover = "#0284c7"  # Azul más oscuro pero no negro en modo claro
+        
         self.help_btn.setStyleSheet(
             f"""
             QToolButton {{
@@ -543,7 +549,7 @@ class VisitorListWidget(QWidget):
                 font-size: 16px;
             }}
             QToolButton:hover {{
-                background-color: {refresh_bg};
+                background-color: {help_hover};
             }}
             """
         )

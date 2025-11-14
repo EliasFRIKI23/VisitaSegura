@@ -145,23 +145,50 @@ class ThemeMixin:
             self.intro_label.setStyleSheet(f"color: {intro_color}; font-size: 14px;")
 
         if hasattr(self, "quick_access_buttons"):
+            # Función auxiliar para oscurecer colores (solo para los botones principales)
+            def darken_color(color, factor=0.15):
+                color = color.lstrip('#')
+                r, g, b = tuple(int(color[i:i+2], 16) for i in (0, 2, 4))
+                r = max(0, int(r * (1 - factor)))
+                g = max(0, int(g * (1 - factor)))
+                b = max(0, int(b * (1 - factor)))
+                return f"#{r:02x}{g:02x}{b:02x}"
+            
             for button in self.quick_access_buttons:
                 accent = button.property("accentColor") or DUOC_PRIMARY
                 font_size = button.property("fontSize") or 14
+                
+                # Usar colores suaves de DUOC UC como fondo en modo claro
+                if not self.dark_mode:
+                    # El accent ya es un color suave, usarlo como fondo
+                    button_bg_color = accent
+                    hover_bg = darken_color(accent, 0.1)
+                    border_color_btn = darken_color(accent, 0.3)
+                    text_color_button = "#0f172a"  # Texto oscuro para buen contraste
+                else:
+                    button_bg_color = button_bg
+                    hover_bg = button_bg
+                    border_color_btn = button_border
+                    text_color_button = text_color
+                
                 button.setStyleSheet(
                     f"""
                     QPushButton {{
-                        background-color: {button_bg};
+                        background-color: {button_bg_color};
                         border-radius: 18px;
-                        border: 1px solid {button_border};
+                        border: 1px solid {border_color_btn};
                         padding: 16px 20px;
                         text-align: left;
                         font-size: {font_size}px;
                         font-weight: 600;
-                        color: {text_color};
+                        color: {text_color_button};
                     }}
                     QPushButton:hover {{
-                        border: 1px solid {accent};
+                        background-color: {hover_bg};
+                        border: 1px solid {darken_color(accent, 0.2) if not self.dark_mode else accent};
+                    }}
+                    QPushButton:pressed {{
+                        background-color: {darken_color(accent, 0.2) if not self.dark_mode else button_bg};
                     }}
                     """
                 )
