@@ -82,17 +82,20 @@ class NavigationMixin:
         self.home_button.setFixedHeight(32)
         self.home_button.setVisible(False)
         self.home_button.setStyleSheet(
-            """
-            QPushButton {
-                background-color: rgba(0, 0, 0, 0.04);
-                border: none;
+            f"""
+            QPushButton {{
+                background-color: rgba(255, 184, 28, 0.15);
+                border: 1px solid {DUOC_SECONDARY};
                 border-radius: 10px;
                 padding: 6px 12px;
                 font-size: 12px;
-            }
-            QPushButton:hover {
-                background-color: rgba(0, 0, 0, 0.12);
-            }
+                color: {DUOC_SECONDARY};
+                font-weight: 600;
+            }}
+            QPushButton:hover {{
+                background-color: {DUOC_SECONDARY};
+                color: #000000;
+            }}
             """
         )
         self.home_button.clicked.connect(self.go_to_main)

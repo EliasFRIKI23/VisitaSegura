@@ -10,7 +10,7 @@ DUOC_DANGER = "#dc3545"
 DUOC_BLUE = "#007bff"  # Mantener para acentos existentes
 
 # Colores estandarizados para tablas y botones
-DUOC_TABLE_HEADER_BG = "#2c3e50"      # Fondo del encabezado de tabla
+DUOC_TABLE_HEADER_BG = DUOC_PRIMARY    # Fondo del encabezado de tabla (azul institucional)
 DUOC_TABLE_HEADER_TEXT = "#ffffff"     # Texto del encabezado de tabla
 DUOC_TABLE_ROW_ALT = "#f8f9fa"        # Fila alterna de tabla
 DUOC_TABLE_BORDER = "#e8e8e8"         # Borde de tabla

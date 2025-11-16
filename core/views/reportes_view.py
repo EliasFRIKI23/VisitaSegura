@@ -429,14 +429,14 @@ class ReportesView(QWidget):
         charts_title = QLabel("📊 Análisis Visual de Visitantes")
         charts_title.setFont(QFont("Arial", 18, QFont.Bold))
         charts_title.setAlignment(Qt.AlignLeft)
-        charts_title.setStyleSheet("""
-            QLabel {
-                color: #2c3e50;
+        charts_title.setStyleSheet(f"""
+            QLabel {{
+                color: #ffffff;
                 padding: 12px 16px;
-                background-color: #ecf0f1;
+                background-color: {DUOC_PRIMARY};
                 border-radius: 10px;
                 margin: 10px 0px;
-            }
+            }}
         """)
         charts_header.addWidget(charts_title)
         charts_header.addStretch()
@@ -480,14 +480,14 @@ class ReportesView(QWidget):
         chart1_title = QLabel("👥 Visitantes por Día")
         chart1_title.setFont(QFont("Arial", 14, QFont.Bold))
         chart1_title.setAlignment(Qt.AlignCenter)
-        chart1_title.setStyleSheet("""
-            QLabel {
-                color: #2c3e50;
+        chart1_title.setStyleSheet(f"""
+            QLabel {{
+                color: #ffffff;
                 padding: 8px;
-                background-color: #e8f4fd;
+                background-color: {DUOC_PRIMARY};
                 border-radius: 6px;
                 margin: 2px;
-            }
+            }}
         """)
         chart1_layout.addWidget(chart1_title)
         
@@ -514,14 +514,14 @@ class ReportesView(QWidget):
         chart2_title = QLabel("👤 Estado de Visitantes")
         chart2_title.setFont(QFont("Arial", 14, QFont.Bold))
         chart2_title.setAlignment(Qt.AlignCenter)
-        chart2_title.setStyleSheet("""
-            QLabel {
-                color: #2c3e50;
+        chart2_title.setStyleSheet(f"""
+            QLabel {{
+                color: #000000;
                 padding: 8px;
-                background-color: #e8f5e8;
+                background-color: {DUOC_SECONDARY};
                 border-radius: 6px;
                 margin: 2px;
-            }
+            }}
         """)
         chart2_layout.addWidget(chart2_title)
         
@@ -547,14 +547,14 @@ class ReportesView(QWidget):
         chart3_title = QLabel("🏢 Destinos Más Frecuentes")
         chart3_title.setFont(QFont("Arial", 14, QFont.Bold))
         chart3_title.setAlignment(Qt.AlignCenter)
-        chart3_title.setStyleSheet("""
-            QLabel {
-                color: #2c3e50;
+        chart3_title.setStyleSheet(f"""
+            QLabel {{
+                color: #000000;
                 padding: 8px;
-                background-color: #fff3cd;
+                background-color: {DUOC_SECONDARY};
                 border-radius: 6px;
                 margin: 2px;
-            }
+            }}
         """)
         chart3_layout.addWidget(chart3_title)
         
@@ -587,8 +587,8 @@ class ReportesView(QWidget):
         cards_spec = [
             ("👥 Visitantes Hoy", "0", DUOC_SECONDARY, "Ingresos del día"),
             ("🏢 Zonas Activas", "0", DUOC_PRIMARY, "Zonas con visitantes"),
-            ("📈 Total Visitas", "0", "#6f42c1", "Acumulado de registros"),
-            ("⏱️ Promedio Estancia", "N/A", "#20c997", "Tiempo promedio")
+            ("📈 Total Visitas", "0", DUOC_PRIMARY, "Acumulado de registros"),
+            ("⏱️ Promedio Estancia", "N/A", DUOC_SECONDARY, "Tiempo promedio")
         ]
         for title, value, color, desc in cards_spec:
             card = self.create_stat_card(title, value, color, desc)
@@ -729,7 +729,22 @@ class ReportesView(QWidget):
         # Botón de regreso
         back_button = QPushButton("⬅️ Volver al Menú Principal")
         back_button.setFixedSize(200, 40)
-        back_button.setStyleSheet(get_standard_button_style("#6c757d"))
+        back_button.setStyleSheet(
+            f"""
+            QPushButton {{
+                background-color: rgba(255, 184, 28, 0.1);
+                color: {DUOC_SECONDARY};
+                border: 2px solid {DUOC_SECONDARY};
+                border-radius: 14px;
+                padding: 10px 20px;
+                font-weight: 600;
+            }}
+            QPushButton:hover {{
+                background-color: {DUOC_SECONDARY};
+                color: #000000;
+            }}
+            """
+        )
         back_button.clicked.connect(self.go_to_main)
         main_layout.addWidget(back_button, alignment=Qt.AlignCenter)
     

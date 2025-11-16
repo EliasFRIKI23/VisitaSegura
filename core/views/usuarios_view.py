@@ -15,6 +15,7 @@ from datetime import datetime
 try:
     from core.theme import (
         DUOC_PRIMARY, DUOC_SECONDARY, DUOC_SUCCESS, DUOC_DANGER, DUOC_INFO,
+        DUOC_GRAY, DUOC_GRAY_DARK,
         darken_color as duoc_darken, get_standard_button_style
     )
     from core.ui import configure_modern_table, apply_modern_table_theme
@@ -290,15 +291,15 @@ class UsuariosView(QWidget):
         if self.dark_mode:
             outer_bg = "#0b1220"
             card_bg = "#111827"
-            secondary_bg = "#152033"
+            secondary_bg = DUOC_GRAY_DARK  # Gris institucional oscuro
             text_color = "#e2e8f0"
             muted_color = "#94a3b8"
         else:
             outer_bg = "#f3f4f6"
             card_bg = "#ffffff"
-            secondary_bg = "#ffffff"
+            secondary_bg = "#f8f9fa"  # Gris claro institucional para tarjetas secundarias
             text_color = "#0f172a"
-            muted_color = "#64748b"
+            muted_color = DUOC_GRAY  # Gris institucional para texto secundario
 
         self.main_container.setStyleSheet(f"""
             QFrame#usersMainContainer {{
@@ -499,19 +500,20 @@ class UsuariosView(QWidget):
         self.back_button.setCursor(Qt.PointingHandCursor)
         self.back_button.setFixedHeight(44)
         self.back_button.setStyleSheet(
-            """
-            QPushButton {
-                background-color: #5c677d;
-                color: #f8fafc;
-                border: none;
+            f"""
+            QPushButton {{
+                background-color: rgba(255, 184, 28, 0.1);
+                color: {DUOC_SECONDARY};
+                border: 2px solid {DUOC_SECONDARY};
                 border-radius: 14px;
                 font-size: 13px;
                 font-weight: 600;
                 padding: 0 24px;
-            }
-            QPushButton:hover {
-                background-color: #485063;
-            }
+            }}
+            QPushButton:hover {{
+                background-color: {DUOC_SECONDARY};
+                color: #000000;
+            }}
             """
         )
         self.back_button.clicked.connect(self.go_back_to_main)

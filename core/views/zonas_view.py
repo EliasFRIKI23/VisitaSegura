@@ -254,11 +254,11 @@ class ZonasView(QWidget):
 
         self.count_palette = {
             "low": (DUOC_SUCCESS, "#0f172a" if not self.dark_mode else "#0f172a"),
-            "medium": (DUOC_WARNING, "#0f172a"),
+            "medium": (DUOC_SECONDARY, "#0f172a"),
             "high": (DUOC_DANGER, "#0f172a"),
         }
         if self.dark_mode:
-            self.count_palette["medium"] = (DUOC_WARNING, "#0f172a")
+            self.count_palette["medium"] = (DUOC_SECONDARY, "#0f172a")
             self.count_palette["low"] = (DUOC_SUCCESS, "#0f172a")
             self.count_palette["high"] = (DUOC_DANGER, "#f8fafc")
         else:
@@ -287,7 +287,7 @@ class ZonasView(QWidget):
         self.subtitle_label.setStyleSheet(f"color: {muted_color}; font-size: 13px;")
         self.header_badge.setStyleSheet(
             f"padding: 6px 14px; border-radius: 14px; font-size: 12px; font-weight: 600;"
-            f"background-color: {badge_bg}; color: {badge_color};"
+            f"background-color: rgba(0, 58, 112, 0.12); color: {DUOC_PRIMARY};"
         )
 
         self.search_input.setStyleSheet(
@@ -301,7 +301,7 @@ class ZonasView(QWidget):
                 font-size: 13px;
             }}
             QLineEdit:focus {{
-                border: 1px solid #38bdf8;
+                border: 1px solid {DUOC_PRIMARY};
             }}
             """
         )
@@ -336,15 +336,16 @@ class ZonasView(QWidget):
         self.back_button.setStyleSheet(
             f"""
             QPushButton {{
-                background-color: transparent;
-                color: {text_color};
-                border: 1px solid {back_border};
+                background-color: rgba(255, 184, 28, 0.1);
+                color: {DUOC_SECONDARY};
+                border: 2px solid {DUOC_SECONDARY};
                 border-radius: 14px;
                 padding: 0 26px;
                 font-weight: 600;
             }}
             QPushButton:hover {{
-                background-color: {back_hover};
+                background-color: {DUOC_SECONDARY};
+                color: #000000;
             }}
             """
         )

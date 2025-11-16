@@ -387,11 +387,11 @@ class LoginDialog(QDialog):
                     font-weight: 500;
                 }
                 QLineEdit:focus {
-                    border-color: #38bdf8;
+                    border-color: {DUOC_PRIMARY};
                     background-color: #25313d;
                 }
                 QLineEdit:hover {
-                    border-color: #38bdf8;
+                    border-color: {DUOC_PRIMARY};
                 }
             """
 
@@ -410,19 +410,19 @@ class LoginDialog(QDialog):
                 }
             """
 
-            primary_button_style = """
-                QPushButton {
-                    background-color: #0ea5e9;
-                    color: #0f172a;
+            primary_button_style = f"""
+                QPushButton {{
+                    background-color: {DUOC_PRIMARY};
+                    color: #ffffff;
                     border: none;
                     border-radius: 12px;
                     padding: 10px 24px;
                     font-size: 14px;
                     font-weight: 600;
-                }
-                QPushButton:hover {
-                    background-color: #38bdf8;
-                }
+                }}
+                QPushButton:hover {{
+                    background-color: #0059a5;
+                }}
             """
 
             if hasattr(self, "input_user"):
@@ -447,11 +447,11 @@ class LoginDialog(QDialog):
                     font-weight: 500;
                 }
                 QLineEdit:focus {
-                    border-color: #007bff;
+                    border-color: {DUOC_PRIMARY};
                     background-color: white;
                 }
                 QLineEdit:hover {
-                    border-color: #007bff;
+                    border-color: {DUOC_PRIMARY};
                     background-color: white;
                 }
             """

@@ -1,7 +1,7 @@
 from PySide6.QtWidgets import (
     QWidget, QVBoxLayout, QHBoxLayout, QTableWidget, QTableWidgetItem,
     QPushButton, QLabel, QComboBox, QLineEdit, QHeaderView, QMessageBox,
-    QMenu, QAbstractItemView, QFrame, QSplitter, QToolButton, QGroupBox,
+    QMenu, QAbstractItemView, QFrame, QSplitter, QGroupBox,
     QDialog
 )
 from PySide6.QtCore import Qt, Signal, QTimer
@@ -9,6 +9,7 @@ from PySide6.QtGui import QFont, QAction, QIcon, QColor, QPixmap
 try:
     from .theme import (
         DUOC_PRIMARY, DUOC_SECONDARY, DUOC_SUCCESS, DUOC_DANGER, DUOC_INFO,
+        DUOC_GRAY, DUOC_GRAY_DARK,
         darken_color as duoc_darken, get_standard_button_style,
         normalize_rut, format_rut_display, get_current_user
     )
@@ -148,36 +149,12 @@ class VisitorListWidget(QWidget):
         self.header_badge = QLabel("Actualización automática cada 30 segundos")
         self.header_badge.setAlignment(Qt.AlignLeft)
         self.header_badge.setStyleSheet(
-            "padding: 6px 14px; border-radius: 14px; font-size: 12px;"
-            "background-color: rgba(14, 165, 233, 0.12); color: #0284c7; font-weight: 600;"
+            f"padding: 6px 14px; border-radius: 14px; font-size: 12px;"
+            f"background-color: rgba(0, 58, 112, 0.12); color: {DUOC_PRIMARY}; font-weight: 600;"
         )
         header_text_layout.addWidget(self.header_badge)
 
         header_layout.addLayout(header_text_layout, stretch=1)
-
-        self.help_btn = QToolButton()
-        self.help_btn.setText("?")
-        self.help_btn.setCursor(Qt.PointingHandCursor)
-        self.help_btn.setToolTip(
-            "📖 Ayuda: Doble clic para cambiar estado | Clic derecho para menú | Filtros por estado y sector"
-        )
-        self.help_btn.setFixedSize(40, 40)
-        self.help_btn.setStyleSheet(
-            """
-            QToolButton {
-                background-color: #0ea5e9;
-                color: #0f172a;
-                border: none;
-                border-radius: 20px;
-                font-weight: 700;
-                font-size: 16px;
-            }
-            QToolButton:hover {
-                background-color: #38bdf8;
-            }
-            """
-        )
-        header_layout.addWidget(self.help_btn, alignment=Qt.AlignTop)
 
         container_layout.addWidget(self.header_card)
 
@@ -246,17 +223,17 @@ class VisitorListWidget(QWidget):
         self.refresh_btn.setMinimumHeight(44)
         self.refresh_btn.setToolTip("Actualizar la lista de visitantes")
         self.refresh_btn.setStyleSheet(
-            """
-            QPushButton {
-                background-color: #0f172a;
-                color: #f8fafc;
+            f"""
+            QPushButton {{
+                background-color: {DUOC_PRIMARY};
+                color: #ffffff;
                 border-radius: 14px;
                 padding: 0 24px;
                 font-weight: 600;
-            }
-            QPushButton:hover {
-                background-color: #1e293b;
-            }
+            }}
+            QPushButton:hover {{
+                background-color: {duoc_darken(DUOC_PRIMARY, 0.1)};
+            }}
             """
         )
         controls_layout.addWidget(self.refresh_btn)
@@ -307,21 +284,21 @@ class VisitorListWidget(QWidget):
         self.edit_btn.setMinimumHeight(46)
         self.edit_btn.setToolTip("Editar la información del visitante seleccionado")
         self.edit_btn.setStyleSheet(
-            """
-            QPushButton {
-                background-color: #0ea5e9;
-                color: #0f172a;
+            f"""
+            QPushButton {{
+                background-color: {DUOC_PRIMARY};
+                color: #ffffff;
                 border-radius: 14px;
                 padding: 12px 22px;
                 font-weight: 600;
-            }
-            QPushButton:hover {
-                background-color: #38bdf8;
-            }
-            QPushButton:disabled {
+            }}
+            QPushButton:hover {{
+                background-color: {duoc_darken(DUOC_PRIMARY, 0.1)};
+            }}
+            QPushButton:disabled {{
                 background-color: rgba(148, 163, 184, 0.25);
                 color: rgba(148, 163, 184, 0.9);
-            }
+            }}
             """
         )
         actions_layout.addWidget(self.edit_btn)
@@ -454,10 +431,10 @@ class VisitorListWidget(QWidget):
         if self.dark_mode:
             main_bg = "#0b1220"
             card_bg = "#111827"
-            sidebar_bg = "#111827"
+            sidebar_bg = DUOC_GRAY_DARK  # Gris institucional oscuro para tarjetas secundarias
             border_color = "rgba(148, 163, 184, 0.18)"
             text_color = "#e2e8f0"
-            muted_color = "#94a3b8"
+            muted_color = DUOC_GRAY  # Gris institucional para texto secundario
             badge_bg = "rgba(56, 189, 248, 0.18)"
             badge_color = "#38bdf8"
             input_bg = "#0f172a"
@@ -466,20 +443,18 @@ class VisitorListWidget(QWidget):
             button_border = "rgba(148, 163, 184, 0.35)"
             empty_bg = "rgba(148, 163, 184, 0.12)"
             empty_border = "rgba(148, 163, 184, 0.25)"
-            refresh_bg = "#38bdf8"
-            refresh_fg = "#0f172a"
-            refresh_hover = "#0ea5e9"
+            refresh_bg = DUOC_PRIMARY
+            refresh_fg = "#ffffff"
+            refresh_hover = duoc_darken(DUOC_PRIMARY, 0.1)
             back_border = "rgba(148, 163, 184, 0.4)"
             back_hover = "rgba(148, 163, 184, 0.18)"
-            help_bg = "#38bdf8"
-            help_fg = "#0f172a"
         else:
             main_bg = "#f3f4f6"
             card_bg = "#ffffff"
-            sidebar_bg = "#ffffff"
+            sidebar_bg = "#f8f9fa"  # Gris claro institucional para tarjetas secundarias
             border_color = "rgba(148, 163, 184, 0.2)"
             text_color = "#0f172a"
-            muted_color = "#64748b"
+            muted_color = DUOC_GRAY  # Gris institucional para texto secundario
             badge_bg = "rgba(14, 165, 233, 0.12)"
             badge_color = "#0284c7"
             input_bg = "#ffffff"
@@ -488,13 +463,11 @@ class VisitorListWidget(QWidget):
             button_border = "rgba(148, 163, 184, 0.25)"
             empty_bg = "rgba(148, 163, 184, 0.08)"
             empty_border = "rgba(148, 163, 184, 0.35)"
-            refresh_bg = "#0f172a"
-            refresh_fg = "#f8fafc"
-            refresh_hover = "#1e293b"
+            refresh_bg = DUOC_PRIMARY
+            refresh_fg = "#ffffff"
+            refresh_hover = duoc_darken(DUOC_PRIMARY, 0.1)
             back_border = "rgba(15, 23, 42, 0.25)"
             back_hover = "rgba(15, 23, 42, 0.08)"
-            help_bg = "#0ea5e9"
-            help_fg = "#0f172a"
 
         self.main_container.setStyleSheet(
             f"""
@@ -532,28 +505,6 @@ class VisitorListWidget(QWidget):
             f"background-color: {badge_bg}; color: {badge_color}; font-weight: 600;"
         )
 
-        # Color hover más suave para el botón de ayuda (no tan oscuro)
-        if self.dark_mode:
-            help_hover = "#60a5fa"  # Azul más claro en modo oscuro
-        else:
-            help_hover = "#0284c7"  # Azul más oscuro pero no negro en modo claro
-        
-        self.help_btn.setStyleSheet(
-            f"""
-            QToolButton {{
-                background-color: {help_bg};
-                color: {help_fg};
-                border: none;
-                border-radius: 20px;
-                font-weight: 700;
-                font-size: 16px;
-            }}
-            QToolButton:hover {{
-                background-color: {help_hover};
-            }}
-            """
-        )
-
         self.search_input.setStyleSheet(
             f"""
             QLineEdit {{
@@ -565,7 +516,7 @@ class VisitorListWidget(QWidget):
                 color: {input_text};
             }}
             QLineEdit:focus {{
-                border-color: #38bdf8;
+                border-color: {DUOC_PRIMARY};
             }}
             """
         )
@@ -626,21 +577,21 @@ class VisitorListWidget(QWidget):
             """
         )
         self.edit_btn.setStyleSheet(
-            """
-            QPushButton {
-                background-color: #0ea5e9;
-                color: #0f172a;
+            f"""
+            QPushButton {{
+                background-color: {DUOC_PRIMARY};
+                color: #ffffff;
                 border-radius: 14px;
                 padding: 12px 22px;
                 font-weight: 600;
-            }
-            QPushButton:hover {
-                background-color: #38bdf8;
-            }
-            QPushButton:disabled {
+            }}
+            QPushButton:hover {{
+                background-color: {duoc_darken(DUOC_PRIMARY, 0.1)};
+            }}
+            QPushButton:disabled {{
                 background-color: rgba(148, 163, 184, 0.25);
                 color: rgba(148, 163, 184, 0.9);
-            }
+            }}
             """
         )
         self.delete_btn.setStyleSheet(
@@ -680,15 +631,16 @@ class VisitorListWidget(QWidget):
         self.back_button.setStyleSheet(
             f"""
             QPushButton {{
-                background-color: transparent;
-                color: {text_color};
-                border: 1px solid {back_border};
+                background-color: rgba(255, 184, 28, 0.1);
+                color: {DUOC_SECONDARY};
+                border: 2px solid {DUOC_SECONDARY};
                 border-radius: 14px;
                 padding: 0 26px;
                 font-weight: 600;
             }}
             QPushButton:hover {{
-                background-color: {back_hover};
+                background-color: {DUOC_SECONDARY};
+                color: #000000;
             }}
             """
         )
@@ -710,7 +662,6 @@ class VisitorListWidget(QWidget):
         self.visitor_table.itemSelectionChanged.connect(self.on_selection_changed)
         self.visitor_table.itemDoubleClicked.connect(self.toggle_visitor_status)
         self.visitor_table.customContextMenuRequested.connect(self.show_context_menu)
-        self.help_btn.clicked.connect(self.show_help)
     
     # === Métodos públicos para integración con otras vistas ===
     def set_zone_filter(self, sector: str):

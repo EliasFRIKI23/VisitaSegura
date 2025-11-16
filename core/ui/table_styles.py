@@ -2,6 +2,12 @@ from PySide6.QtWidgets import QTableWidget, QHeaderView, QAbstractItemView
 from PySide6.QtGui import QFont
 from PySide6.QtCore import Qt
 
+try:
+    from core.theme import DUOC_PRIMARY, DUOC_PRIMARY_LIGHT
+except ImportError:
+    DUOC_PRIMARY = "#003A70"
+    DUOC_PRIMARY_LIGHT = "#0D47A1"
+
 _DARK_SELECTION = "rgba(255, 184, 28, 0.32)"
 _DARK_HOVER = "rgba(96, 165, 250, 0.22)"
 _LIGHT_SELECTION = "rgba(14, 82, 140, 0.16)"
@@ -62,8 +68,8 @@ def apply_modern_table_theme(table: QTableWidget, dark_mode: bool = False) -> No
                 background-color: {_DARK_HOVER};
             }}
             QHeaderView::section {{
-                background-color: #0b1220;
-                color: #94a3b8;
+                background-color: {DUOC_PRIMARY};
+                color: #ffffff;
                 font-weight: 600;
                 border: none;
                 padding: 16px 18px;
@@ -76,7 +82,7 @@ def apply_modern_table_theme(table: QTableWidget, dark_mode: bool = False) -> No
                 border-top-right-radius: 18px;
             }}
             QTableCornerButton::section {{
-                background-color: #0b1220;
+                background-color: {DUOC_PRIMARY};
                 border: none;
                 border-top-left-radius: 18px;
             }}
@@ -119,8 +125,8 @@ def apply_modern_table_theme(table: QTableWidget, dark_mode: bool = False) -> No
                 background-color: {_LIGHT_HOVER};
             }}
             QHeaderView::section {{
-                background-color: #0b1120;
-                color: #e2e8f0;
+                background-color: {DUOC_PRIMARY};
+                color: #ffffff;
                 font-weight: 600;
                 border: none;
                 padding: 16px 18px;
@@ -133,7 +139,7 @@ def apply_modern_table_theme(table: QTableWidget, dark_mode: bool = False) -> No
                 border-top-right-radius: 18px;
             }}
             QTableCornerButton::section {{
-                background-color: #0b1120;
+                background-color: {DUOC_PRIMARY};
                 border: none;
                 border-top-left-radius: 18px;
             }}
