@@ -18,6 +18,7 @@ from PySide6.QtWidgets import (
     QWidget,
     QFrame,
 )
+from core.ui.icon_loader import get_icon_for_emoji
 
 from .camera_section import CameraScannerSection
 from .pistol_section import PistolScannerSection
@@ -35,7 +36,7 @@ class QRScannerDialog(QDialog):
         self.current_carnet_data: Optional[Dict[str, str]] = None
         self.dark_mode = getattr(parent, "dark_mode", False)
 
-        self.setWindowTitle("📱 Escáner de QR - VisitaSegura")
+        self.setWindowTitle("Escáner de QR - VisitaSegura")
         self.setModal(True)
         self.resize(1400, 900)
         self.setWindowFlags(
@@ -145,8 +146,15 @@ class QRScannerDialog(QDialog):
         self.method_label.setFont(QFont("Segoe UI", 14, QFont.Bold))
 
         self.method_group = QButtonGroup(self)
-        self.camera_radio = QRadioButton("📷 Cámara")
-        self.scanner_radio = QRadioButton("🔫 Pistola QR")
+        self.camera_radio = QRadioButton("Cámara")
+        camera_icon = get_icon_for_emoji("📷", 16)
+        if not camera_icon.isNull():
+            self.camera_radio.setIcon(camera_icon)
+        
+        self.scanner_radio = QRadioButton("Pistola QR")
+        scanner_icon = get_icon_for_emoji("🔫", 16)
+        if not scanner_icon.isNull():
+            self.scanner_radio.setIcon(scanner_icon)
 
         for radio in (self.camera_radio, self.scanner_radio):
             radio.setCursor(Qt.PointingHandCursor)
@@ -175,23 +183,55 @@ class QRScannerDialog(QDialog):
         self.subtitle_label.setWordWrap(True)
         header_text.addWidget(self.subtitle_label)
 
-        self.droidcam_link = QLabel('<a href="https://droidcam.app">📱 Usa tu teléfono como cámara con DroidCam</a>')
+        # Crear layout horizontal para link con icono
+        droidcam_layout = QHBoxLayout()
+        droidcam_layout.setContentsMargins(0, 0, 0, 0)
+        droidcam_layout.setSpacing(6)
+        
+        droidcam_icon = get_icon_for_emoji("📱", 16)
+        if not droidcam_icon.isNull():
+            icon_label = QLabel()
+            icon_label.setPixmap(droidcam_icon.pixmap(16, 16))
+            droidcam_layout.addWidget(icon_label)
+        
+        self.droidcam_link = QLabel('<a href="https://droidcam.app">Usa tu teléfono como cámara con DroidCam</a>')
         self.droidcam_link.setOpenExternalLinks(True)
         self.droidcam_link.setAlignment(Qt.AlignLeft)
         self.droidcam_link.setStyleSheet("color: #38bdf8; font-size: 13px; font-weight: 600;")
-        header_text.addWidget(self.droidcam_link)
+        droidcam_layout.addWidget(self.droidcam_link)
+        droidcam_layout.addStretch()
+        
+        droidcam_container = QWidget()
+        droidcam_container.setLayout(droidcam_layout)
+        header_text.addWidget(droidcam_container)
 
         header_layout.addLayout(header_text)
         header_layout.addStretch()
 
+        # Crear layout horizontal para guide con icono
+        guide_layout = QHBoxLayout()
+        guide_layout.setContentsMargins(0, 0, 0, 0)
+        guide_layout.setSpacing(8)
+        
+        guide_icon = get_icon_for_emoji("💡", 18)
+        if not guide_icon.isNull():
+            icon_label = QLabel()
+            icon_label.setPixmap(guide_icon.pixmap(18, 18))
+            guide_layout.addWidget(icon_label)
+        
         self.guide_label = QLabel(
-            "💡 Consejos rápidos:\n"
+            "Consejos rápidos:\n"
             "• Mantén el QR dentro del recuadro\n"
             "• Comprueba buena iluminación\n"
             "• Para pistola, enfoca el campo de texto"
         )
         self.guide_label.setAlignment(Qt.AlignLeft)
-        header_layout.addWidget(self.guide_label)
+        guide_layout.addWidget(self.guide_label)
+        guide_layout.addStretch()
+        
+        guide_container = QWidget()
+        guide_container.setLayout(guide_layout)
+        header_layout.addWidget(guide_container)
 
         self.content_layout.addWidget(self.method_card)
         self.content_layout.addWidget(self.header_card)
@@ -282,7 +322,7 @@ class QRScannerDialog(QDialog):
         parsed_data = parse_carnet_data(qr_data)
         self.current_carnet_data = parsed_data
 
-        info_text = "<b>🆔 Carnet Detectado:</b><br><br>"
+        info_text = "<b>Carnet Detectado:</b><br><br>"
 
         self.camera_section.clear_info_actions()
         self.camera_section.set_register_button_visible(False)
@@ -290,11 +330,11 @@ class QRScannerDialog(QDialog):
         if parsed_data.get("rut"):
             info_text += (
                 f"<b>RUT:</b> <font color='#28a745' size='4'>{parsed_data['rut']}</font><br><br>"
-                "<i>✅ RUT extraído automáticamente del carnet.</i><br>"
-                "<i>💡 Presione 'Iniciar Registro' para obtener el nombre completo.</i><br>"
+                "<i>RUT extraído automáticamente del carnet.</i><br>"
+                "<i>Presione 'Iniciar Registro' para obtener el nombre completo.</i><br>"
             )
             self.camera_section.set_register_button_visible(True)
-            self.camera_section.set_register_button_text("📝 Iniciar Registro")
+            self.camera_section.set_register_button_text("Iniciar Registro")
         else:
             info_text += (
                 f"<b>Contenido:</b> {qr_data[:100]}...<br><br>"
@@ -323,7 +363,7 @@ class QRScannerDialog(QDialog):
             if parsed_data.get("rut"):
                 QMessageBox.information(
                     self,
-                    "🔍 Consultando API",
+                    "Consultando API",
                     f"Obteniendo nombre para RUT {parsed_data['rut']}...\n\nPor favor espere un momento.",
                 )
                 nombre_obtenido = get_name_from_registry(parsed_data["rut"])
@@ -355,7 +395,7 @@ class QRScannerDialog(QDialog):
                 "Complete los campos restantes:\n• Acompañante\n• Sector\n\nY confirme el registro."
             )
 
-            QMessageBox.information(self, "📋 Datos Pre-rellenados", message)
+            QMessageBox.information(self, "Datos Pre-rellenados", message)
 
             if form_dialog.exec():
                 visitor = form_dialog.get_visitor()
@@ -366,7 +406,7 @@ class QRScannerDialog(QDialog):
                     if manager.add_visitor(visitor):
                         QMessageBox.information(
                             self,
-                            "✅ Éxito",
+                            "Éxito",
                             f"Visitante {visitor.nombre_completo} registrado correctamente",
                         )
                         self.camera_section.clear_info()
@@ -374,11 +414,11 @@ class QRScannerDialog(QDialog):
                     else:
                         QMessageBox.warning(
                             self,
-                            "⚠️ Advertencia",
+                            "Advertencia",
                             "El visitante ya existe en el sistema",
                         )
         except Exception as exc:
-            QMessageBox.critical(self, "❌ Error", f"Error al abrir registro:\n{str(exc)}")
+            QMessageBox.critical(self, "Error", f"Error al abrir registro:\n{str(exc)}")
 
     def open_manual_registration(self) -> None:
         try:
@@ -389,7 +429,7 @@ class QRScannerDialog(QDialog):
 
             QMessageBox.information(
                 self,
-                "📝 Registro Manual",
+                "Registro Manual",
                 "Se abrirá el formulario de registro manual.\n\n"
                 "Por favor, complete todos los campos:\n"
                 "• RUT\n"
@@ -408,18 +448,18 @@ class QRScannerDialog(QDialog):
                     if manager.add_visitor(visitor):
                         QMessageBox.information(
                             self,
-                            "✅ Éxito",
+                            "Éxito",
                             f"Visitante {visitor.nombre_completo} registrado correctamente",
                         )
                         self.camera_section.clear_info()
                     else:
                         QMessageBox.warning(
                             self,
-                            "⚠️ Advertencia",
+                            "Advertencia",
                             "El visitante ya existe en el sistema",
                         )
         except Exception as exc:
-            QMessageBox.critical(self, "❌ Error", f"Error al abrir registro manual:\n{str(exc)}")
+            QMessageBox.critical(self, "Error", f"Error al abrir registro manual:\n{str(exc)}")
 
     # ------------------------------------------------------------------
     # Manejo de QR de visitante
@@ -441,7 +481,7 @@ class QRScannerDialog(QDialog):
 
     def show_visitor_info(self, visitor_data: Dict) -> None:
         info_text = (
-            "<b>👤 Visitante Detectado:</b><br><br>"
+            "<b>Visitante Detectado:</b><br><br>"
             f"<b>Nombre:</b> {visitor_data.get('nombre_completo', 'N/A')}<br>"
             f"<b>RUT:</b> {visitor_data.get('rut', 'N/A')}<br>"
             f"<b>Acompañante:</b> {visitor_data.get('acompañante', 'N/A')}<br>"
@@ -453,7 +493,8 @@ class QRScannerDialog(QDialog):
         self.camera_section.clear_info_actions()
         self.camera_section.set_register_button_visible(False)
 
-        register_btn = QPushButton("✅ Registrar Visitante")
+        register_btn = QPushButton("Registrar Visitante")
+        register_btn.setIcon(get_icon_for_emoji("✅", 18))
         register_btn.setStyleSheet(
             """
             QPushButton {
@@ -485,19 +526,19 @@ class QRScannerDialog(QDialog):
             if manager.add_visitor(visitor):
                 QMessageBox.information(
                     self,
-                    "✅ Éxito",
+                    "Éxito",
                     f"Visitante {visitor.nombre_completo} registrado correctamente",
                 )
                 self.camera_section.clear_info()
             else:
                 QMessageBox.warning(
                     self,
-                    "⚠️ Advertencia",
+                    "Advertencia",
                     "El visitante ya existe en el sistema",
                 )
         except Exception as exc:
             QMessageBox.critical(
-                self, "❌ Error", f"Error al registrar visitante:\n{str(exc)}"
+                self, "Error", f"Error al registrar visitante:\n{str(exc)}"
             )
 
     # ------------------------------------------------------------------

@@ -4,6 +4,7 @@ from PySide6.QtWidgets import (QWidget, QVBoxLayout, QHBoxLayout, QLabel, QPushB
                                QSizePolicy, QScrollArea, QAbstractItemView)
 from PySide6.QtCore import Qt, QThread, Signal, QTimer
 from PySide6.QtGui import QFont, QPixmap, QColor, QGuiApplication
+from core.ui.icon_loader import get_icon_for_emoji
 import sys
 import os
 from datetime import datetime, timedelta
@@ -426,19 +427,41 @@ class ReportesView(QWidget):
         # Sección de Gráficos - Layout Horizontal
         # Encabezado de gráficos con selector de rango
         charts_header = QHBoxLayout()
-        charts_title = QLabel("📊 Análisis Visual de Visitantes")
+        # Crear layout horizontal para título con icono
+        charts_title_layout = QHBoxLayout()
+        charts_title_layout.setContentsMargins(12, 0, 16, 0)
+        charts_title_layout.setSpacing(8)
+        
+        charts_title_icon = get_icon_for_emoji("📊", 20)
+        if not charts_title_icon.isNull():
+            icon_label = QLabel()
+            icon_label.setPixmap(charts_title_icon.pixmap(20, 20))
+            charts_title_layout.addWidget(icon_label)
+        
+        charts_title = QLabel("Análisis Visual de Visitantes")
         charts_title.setFont(QFont("Arial", 18, QFont.Bold))
         charts_title.setAlignment(Qt.AlignLeft)
         charts_title.setStyleSheet(f"""
             QLabel {{
                 color: #ffffff;
-                padding: 12px 16px;
+                padding: 12px 0px;
+                background-color: transparent;
+                border-radius: 0px;
+                margin: 0px;
+            }}
+        """)
+        charts_title_layout.addWidget(charts_title)
+        
+        charts_title_container = QWidget()
+        charts_title_container.setStyleSheet(f"""
+            QWidget {{
                 background-color: {DUOC_PRIMARY};
                 border-radius: 10px;
                 margin: 10px 0px;
             }}
         """)
-        charts_header.addWidget(charts_title)
+        charts_title_container.setLayout(charts_title_layout)
+        charts_header.addWidget(charts_title_container)
         charts_header.addStretch()
         range_label = QLabel("Rango:")
         range_label.setFont(QFont("Arial", 11, QFont.Bold))
@@ -477,19 +500,42 @@ class ReportesView(QWidget):
             }
         """)
         
-        chart1_title = QLabel("👥 Visitantes por Día")
+        # Crear layout horizontal para título con icono
+        chart1_title_layout = QHBoxLayout()
+        chart1_title_layout.setContentsMargins(8, 0, 8, 0)
+        chart1_title_layout.setSpacing(6)
+        chart1_title_layout.setAlignment(Qt.AlignCenter)
+        
+        chart1_icon = get_icon_for_emoji("👥", 16)
+        if not chart1_icon.isNull():
+            icon_label = QLabel()
+            icon_label.setPixmap(chart1_icon.pixmap(16, 16))
+            chart1_title_layout.addWidget(icon_label)
+        
+        chart1_title = QLabel("Visitantes por Día")
         chart1_title.setFont(QFont("Arial", 14, QFont.Bold))
         chart1_title.setAlignment(Qt.AlignCenter)
-        chart1_title.setStyleSheet(f"""
-            QLabel {{
+        chart1_title.setStyleSheet("""
+            QLabel {
                 color: #ffffff;
-                padding: 8px;
+                padding: 8px 0px;
+                background-color: transparent;
+                border-radius: 0px;
+                margin: 0px;
+            }
+        """)
+        chart1_title_layout.addWidget(chart1_title)
+        
+        chart1_title_container = QWidget()
+        chart1_title_container.setStyleSheet(f"""
+            QWidget {{
                 background-color: {DUOC_PRIMARY};
                 border-radius: 6px;
                 margin: 2px;
             }}
         """)
-        chart1_layout.addWidget(chart1_title)
+        chart1_title_container.setLayout(chart1_title_layout)
+        chart1_layout.addWidget(chart1_title_container)
         
         self.chart1 = ChartWidget()
         # Hacer el gráfico flexible dentro de su card
@@ -511,19 +557,42 @@ class ReportesView(QWidget):
             }
         """)
         
-        chart2_title = QLabel("👤 Estado de Visitantes")
+        # Crear layout horizontal para título con icono
+        chart2_title_layout = QHBoxLayout()
+        chart2_title_layout.setContentsMargins(8, 0, 8, 0)
+        chart2_title_layout.setSpacing(6)
+        chart2_title_layout.setAlignment(Qt.AlignCenter)
+        
+        chart2_icon = get_icon_for_emoji("👤", 16)
+        if not chart2_icon.isNull():
+            icon_label = QLabel()
+            icon_label.setPixmap(chart2_icon.pixmap(16, 16))
+            chart2_title_layout.addWidget(icon_label)
+        
+        chart2_title = QLabel("Estado de Visitantes")
         chart2_title.setFont(QFont("Arial", 14, QFont.Bold))
         chart2_title.setAlignment(Qt.AlignCenter)
-        chart2_title.setStyleSheet(f"""
-            QLabel {{
+        chart2_title.setStyleSheet("""
+            QLabel {
                 color: #000000;
-                padding: 8px;
+                padding: 8px 0px;
+                background-color: transparent;
+                border-radius: 0px;
+                margin: 0px;
+            }
+        """)
+        chart2_title_layout.addWidget(chart2_title)
+        
+        chart2_title_container = QWidget()
+        chart2_title_container.setStyleSheet(f"""
+            QWidget {{
                 background-color: {DUOC_SECONDARY};
                 border-radius: 6px;
                 margin: 2px;
             }}
         """)
-        chart2_layout.addWidget(chart2_title)
+        chart2_title_container.setLayout(chart2_title_layout)
+        chart2_layout.addWidget(chart2_title_container)
         
         self.chart2 = ChartWidget()
         self.chart2.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
@@ -544,19 +613,42 @@ class ReportesView(QWidget):
             }
         """)
         
-        chart3_title = QLabel("🏢 Destinos Más Frecuentes")
+        # Crear layout horizontal para título con icono
+        chart3_title_layout = QHBoxLayout()
+        chart3_title_layout.setContentsMargins(8, 0, 8, 0)
+        chart3_title_layout.setSpacing(6)
+        chart3_title_layout.setAlignment(Qt.AlignCenter)
+        
+        chart3_icon = get_icon_for_emoji("🏢", 16)
+        if not chart3_icon.isNull():
+            icon_label = QLabel()
+            icon_label.setPixmap(chart3_icon.pixmap(16, 16))
+            chart3_title_layout.addWidget(icon_label)
+        
+        chart3_title = QLabel("Destinos Más Frecuentes")
         chart3_title.setFont(QFont("Arial", 14, QFont.Bold))
         chart3_title.setAlignment(Qt.AlignCenter)
-        chart3_title.setStyleSheet(f"""
-            QLabel {{
+        chart3_title.setStyleSheet("""
+            QLabel {
                 color: #000000;
-                padding: 8px;
+                padding: 8px 0px;
+                background-color: transparent;
+                border-radius: 0px;
+                margin: 0px;
+            }
+        """)
+        chart3_title_layout.addWidget(chart3_title)
+        
+        chart3_title_container = QWidget()
+        chart3_title_container.setStyleSheet(f"""
+            QWidget {{
                 background-color: {DUOC_SECONDARY};
                 border-radius: 6px;
                 margin: 2px;
             }}
         """)
-        chart3_layout.addWidget(chart3_title)
+        chart3_title_container.setLayout(chart3_title_layout)
+        chart3_layout.addWidget(chart3_title_container)
         
         self.chart3 = ChartWidget()
         self.chart3.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
@@ -585,37 +677,61 @@ class ReportesView(QWidget):
         self.metric_cards = {}
         # Placeholders; se actualizan en update_statistics
         cards_spec = [
-            ("👥 Visitantes Hoy", "0", DUOC_SECONDARY, "Ingresos del día"),
-            ("🏢 Zonas Activas", "0", DUOC_PRIMARY, "Zonas con visitantes"),
-            ("📈 Total Visitas", "0", DUOC_PRIMARY, "Acumulado de registros"),
-            ("⏱️ Promedio Estancia", "N/A", DUOC_SECONDARY, "Tiempo promedio")
+            ("👥", "Visitantes Hoy", "0", DUOC_SECONDARY, "Ingresos del día"),
+            ("🏢", "Zonas Activas", "0", DUOC_PRIMARY, "Zonas con visitantes"),
+            ("📈", "Total Visitas", "0", DUOC_PRIMARY, "Acumulado de registros"),
+            ("⏱️", "Promedio Estancia", "N/A", DUOC_SECONDARY, "Tiempo promedio")
         ]
-        for title, value, color, desc in cards_spec:
-            card = self.create_stat_card(title, value, color, desc)
+        for emoji, title, value, color, desc in cards_spec:
+            card = self.create_stat_card(emoji, title, value, color, desc)
             self.metric_cards[title] = card
             metrics_layout.addWidget(card)
         content_layout.addWidget(metrics_container)
 
         # Reporte de Visitantes
-        current_visitors_title = QLabel("👥 Reporte de Visitantes")
+        # Crear layout horizontal para título con icono
+        current_visitors_title_layout = QHBoxLayout()
+        current_visitors_title_layout.setContentsMargins(15, 0, 15, 0)
+        current_visitors_title_layout.setSpacing(8)
+        current_visitors_title_layout.setAlignment(Qt.AlignCenter)
+        
+        visitors_title_icon = get_icon_for_emoji("👥", 20)
+        if not visitors_title_icon.isNull():
+            icon_label = QLabel()
+            icon_label.setPixmap(visitors_title_icon.pixmap(20, 20))
+            current_visitors_title_layout.addWidget(icon_label)
+        
+        current_visitors_title = QLabel("Reporte de Visitantes")
         current_visitors_title.setFont(QFont("Arial", 18, QFont.Bold))
         current_visitors_title.setAlignment(Qt.AlignCenter)
         current_visitors_title.setStyleSheet("""
             QLabel {
                 color: #2c3e50;
-                padding: 15px;
+                padding: 15px 0px;
+                background-color: transparent;
+                border-radius: 0px;
+                margin: 0px;
+            }
+        """)
+        current_visitors_title_layout.addWidget(current_visitors_title)
+        
+        current_visitors_title_container = QWidget()
+        current_visitors_title_container.setStyleSheet("""
+            QWidget {
                 background-color: #ecf0f1;
                 border-radius: 10px;
                 margin: 10px 0px;
             }
         """)
-        content_layout.addWidget(current_visitors_title)
+        current_visitors_title_container.setLayout(current_visitors_title_layout)
+        content_layout.addWidget(current_visitors_title_container)
         
         # Botones de acción para el reporte
         action_layout = QHBoxLayout()
         
         # Botón para actualizar datos responsivo
-        self.btn_refresh = QPushButton("🔄 Actualizar Datos")
+        self.btn_refresh = QPushButton("Actualizar Datos")
+        self.btn_refresh.setIcon(get_icon_for_emoji("🔄", 18))
         self.btn_refresh.setMinimumSize(self.screen_config['btn_width'], self.screen_config['btn_height'])
         self.btn_refresh.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Preferred)
         self.btn_refresh.setStyleSheet(get_standard_button_style(DUOC_SECONDARY))
@@ -659,16 +775,15 @@ class ReportesView(QWidget):
         # Tabla de visitantes
         self.visitors_table = QTableWidget()
         self.visitors_table.setColumnCount(8)  # 8 columnas incluyendo usuario registrador
-        self.visitors_table.setHorizontalHeaderLabels([
-            "👤 Nombre",
-            "📄 RUT", 
-            "📅 Entrada",
-            "📅 Salida",
-            "🏢 Destino",
-            "🤝 Acompañante",
-            "📍 Estado",
-            "👨‍💼 Registrado por"
-        ])
+        from PySide6.QtWidgets import QTableWidgetItem
+        header_icons = ["👤", "📄", "📅", "📅", "🏢", "🤝", "📍", "👨‍💼"]
+        header_labels = ["Nombre", "RUT", "Entrada", "Salida", "Destino", "Acompañante", "Estado", "Registrado por"]
+        for i, (icon_emoji, label) in enumerate(zip(header_icons, header_labels)):
+            header_item = QTableWidgetItem(label)
+            icon = get_icon_for_emoji(icon_emoji, 16)
+            if not icon.isNull():
+                header_item.setIcon(icon)
+            self.visitors_table.setHorizontalHeaderItem(i, header_item)
 
         configure_modern_table(self.visitors_table, row_height=self.screen_config['row_height'])
         apply_modern_table_theme(self.visitors_table)
@@ -727,7 +842,8 @@ class ReportesView(QWidget):
         main_layout.addWidget(scroll_area, 1)  # El 1 hace que tome todo el espacio disponible
         
         # Botón de regreso
-        back_button = QPushButton("⬅️ Volver al Menú Principal")
+        back_button = QPushButton("Volver al Menú Principal")
+        back_button.setIcon(get_icon_for_emoji("⬅️", 18))
         back_button.setFixedSize(200, 40)
         back_button.setStyleSheet(
             f"""
@@ -761,7 +877,7 @@ class ReportesView(QWidget):
                 return
             parent = parent.parent()
     
-    def create_stat_card(self, title, value, color, description):
+    def create_stat_card(self, emoji, title, value, color, description):
         """Crea una tarjeta de estadística responsiva"""
         card = QFrame()
         card.setFrameStyle(QFrame.StyledPanel)
@@ -788,12 +904,27 @@ class ReportesView(QWidget):
         value_label.setStyleSheet(f"color: {color};")
         layout.addWidget(value_label)
         
-        # Título
+        # Título con icono
+        title_layout = QHBoxLayout()
+        title_layout.setContentsMargins(0, 0, 0, 0)
+        title_layout.setSpacing(6)
+        title_layout.setAlignment(Qt.AlignCenter)
+        
+        title_icon = get_icon_for_emoji(emoji, 18)
+        if not title_icon.isNull():
+            icon_label = QLabel()
+            icon_label.setPixmap(title_icon.pixmap(18, 18))
+            title_layout.addWidget(icon_label)
+        
         title_label = QLabel(title)
         title_label.setFont(QFont("Arial", self.screen_config['title_font_size'], QFont.Bold))
         title_label.setAlignment(Qt.AlignCenter)
-        layout.addWidget(title_label)
         title_label.setStyleSheet("color: #000000;")
+        title_layout.addWidget(title_label)
+        
+        title_container = QWidget()
+        title_container.setLayout(title_layout)
+        layout.addWidget(title_container)
         
         # Descripción
         desc_label = QLabel(description)
@@ -1015,10 +1146,10 @@ class ReportesView(QWidget):
             # Actualizar tarjetas de métricas
             stats = self.calculate_statistics(all_visitors)
             cards_map = {
-                "👥 Visitantes Hoy": stats.get('visitors_today', '0'),
-                "🏢 Zonas Activas": stats.get('active_zones', '0'),
-                "📈 Total Visitas": stats.get('total_visits', '0'),
-                "⏱️ Promedio Estancia": stats.get('avg_visit_time', 'N/A'),
+                "Visitantes Hoy": stats.get('visitors_today', '0'),
+                "Zonas Activas": stats.get('active_zones', '0'),
+                "Total Visitas": stats.get('total_visits', '0'),
+                "Promedio Estancia": stats.get('avg_visit_time', 'N/A'),
             }
             for title, value in cards_map.items():
                 card = self.metric_cards.get(title)

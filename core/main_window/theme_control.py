@@ -3,6 +3,7 @@ from __future__ import annotations
 from PySide6.QtCore import Qt
 from PySide6.QtGui import QColor, QPalette
 from PySide6.QtWidgets import QApplication
+from core.ui.icon_loader import get_icon_for_emoji
 
 from .dependencies import DUOC_PRIMARY, DUOC_SECONDARY, get_standard_button_style
 
@@ -39,6 +40,7 @@ class ThemeMixin:
         self.dark_mode = not self.dark_mode
         self.settings.setValue("dark_mode", self.dark_mode)
         self.navigation_manager.set_theme(self.dark_mode)
+        self.update_theme_toggle()
 
     def on_theme_changed(self, dark_mode: bool) -> None:
         self.dark_mode = dark_mode
@@ -98,7 +100,7 @@ class ThemeMixin:
 
         self.toolbar_header.setStyleSheet(style)
         if hasattr(self, "theme_toggle_button"):
-            self.theme_toggle_button.setText(toggle_text)
+            self.update_theme_toggle()
 
     def _update_background_theme(self) -> None:
         if not hasattr(self, "background_widget"):
@@ -266,4 +268,19 @@ class ThemeMixin:
                 self.btn_open_login.setStyleSheet(
                     get_standard_button_style(DUOC_PRIMARY).replace("padding: 10px 16px;", "padding: 12px 20px;")
                 )
+
+    def update_theme_toggle(self) -> None:
+        """Actualiza el botón de toggle de tema con icono y texto"""
+        if not hasattr(self, "theme_toggle_button"):
+            return
+        
+        if self.dark_mode:
+            text = "Modo claro"
+            icon = get_icon_for_emoji("☀️", 18)
+        else:
+            text = "Modo oscuro"
+            icon = get_icon_for_emoji("🌙", 18)
+        
+        self.theme_toggle_button.setText(text)
+        self.theme_toggle_button.setIcon(icon)
 

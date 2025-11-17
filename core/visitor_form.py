@@ -15,6 +15,7 @@ from PySide6.QtWidgets import (
 )
 from PySide6.QtCore import Qt
 from PySide6.QtGui import QFont
+from core.ui.icon_loader import get_icon_for_emoji
 from .visitors import Visitor, VisitorManager
 
 # Importar funciones de normalización de RUT
@@ -72,8 +73,10 @@ class VisitorFormDialog(QDialog):
         header_layout.setSpacing(12)
         header_layout.setAlignment(Qt.AlignLeft)
 
-        self.title_icon = QLabel("👤")
-        self.title_icon.setFont(QFont("Segoe UI Emoji", 28))
+        self.title_icon = QLabel()
+        title_icon_pixmap = get_icon_for_emoji("👤", 28)
+        if not title_icon_pixmap.isNull():
+            self.title_icon.setPixmap(title_icon_pixmap.pixmap(28, 28))
         header_layout.addWidget(self.title_icon)
 
         self.title_label = QLabel("Registro de visitante" if not self.is_edit_mode else "Editar visitante")
@@ -93,33 +96,69 @@ class VisitorFormDialog(QDialog):
         self.rut_input = QLineEdit()
         self.rut_input.setStyleSheet("font-size: 13px;")
         self.rut_input.setPlaceholderText("Ej: 12345678-9 o 123456789")
-        self.rut_input.setToolTip("🔍 Ingrese el RUT del visitante (se formateará automáticamente)")
+        self.rut_input.setToolTip("Ingrese el RUT del visitante (se formateará automáticamente)")
         
         rut_help = QToolButton()
         rut_help.setText("?")
         rut_help.setToolTip("El RUT se normaliza automáticamente al formato XX.XXX.XXX-X. Acepta cualquier formato de entrada.")
         rut_help.setMaximumSize(25, 25)
         
+        # Crear layout horizontal para label con icono
+        rut_label_layout = QHBoxLayout()
+        rut_label_layout.setContentsMargins(0, 0, 0, 0)
+        rut_label_layout.setSpacing(6)
+        
+        rut_label_icon = get_icon_for_emoji("🆔", 16)
+        if not rut_label_icon.isNull():
+            icon_label = QLabel()
+            icon_label.setPixmap(rut_label_icon.pixmap(16, 16))
+            rut_label_layout.addWidget(icon_label)
+        
+        rut_label = QLabel("RUT:")
+        rut_label_layout.addWidget(rut_label)
+        rut_label_layout.addStretch()
+        
+        rut_label_container = QWidget()
+        rut_label_container.setLayout(rut_label_layout)
+        
         rut_layout = QHBoxLayout()
         rut_layout.addWidget(self.rut_input)
         rut_layout.addWidget(rut_help)
-        personal_layout.addRow("🆔 RUT:", rut_layout)
+        personal_layout.addRow(rut_label_container, rut_layout)
         
         # Nombre completo con tooltip
         self.nombre_input = QLineEdit()
         self.nombre_input.setStyleSheet("font-size: 13px;")
         self.nombre_input.setPlaceholderText("Nombre y apellidos completos")
-        self.nombre_input.setToolTip("👤 Ingrese el nombre completo del visitante")
+        self.nombre_input.setToolTip("Ingrese el nombre completo del visitante")
         
         nombre_help = QToolButton()
         nombre_help.setText("?")
         nombre_help.setToolTip("Ingrese nombre y apellidos completos (mínimo 3 caracteres)")
         nombre_help.setMaximumSize(25, 25)
         
+        # Crear layout horizontal para label con icono
+        nombre_label_layout = QHBoxLayout()
+        nombre_label_layout.setContentsMargins(0, 0, 0, 0)
+        nombre_label_layout.setSpacing(6)
+        
+        nombre_label_icon = get_icon_for_emoji("👤", 16)
+        if not nombre_label_icon.isNull():
+            icon_label = QLabel()
+            icon_label.setPixmap(nombre_label_icon.pixmap(16, 16))
+            nombre_label_layout.addWidget(icon_label)
+        
+        nombre_label = QLabel("Nombre Completo:")
+        nombre_label_layout.addWidget(nombre_label)
+        nombre_label_layout.addStretch()
+        
+        nombre_label_container = QWidget()
+        nombre_label_container.setLayout(nombre_label_layout)
+        
         nombre_layout = QHBoxLayout()
         nombre_layout.addWidget(self.nombre_input)
         nombre_layout.addWidget(nombre_help)
-        personal_layout.addRow("👤 Nombre Completo:", nombre_layout)
+        personal_layout.addRow(nombre_label_container, nombre_layout)
         
         self.visit_group = QGroupBox("Información de visita")
         self.visit_group.setFont(QFont("Segoe UI", 11, QFont.Bold))
@@ -131,32 +170,68 @@ class VisitorFormDialog(QDialog):
         self.acompañante_input = QLineEdit()
         self.acompañante_input.setStyleSheet("font-size: 13px;")
         self.acompañante_input.setPlaceholderText("Persona que invita o recibe al visitante")
-        self.acompañante_input.setToolTip("🤝 Ingrese el nombre de quien invita al visitante")
+        self.acompañante_input.setToolTip("Ingrese el nombre de quien invita al visitante")
         
         acompañante_help = QToolButton()
         acompañante_help.setText("?")
         acompañante_help.setToolTip("Nombre de la persona que invita o recibe al visitante en el establecimiento")
         acompañante_help.setMaximumSize(25, 25)
         
+        # Crear layout horizontal para label con icono
+        acompañante_label_layout = QHBoxLayout()
+        acompañante_label_layout.setContentsMargins(0, 0, 0, 0)
+        acompañante_label_layout.setSpacing(6)
+        
+        acompañante_label_icon = get_icon_for_emoji("🤝", 16)
+        if not acompañante_label_icon.isNull():
+            icon_label = QLabel()
+            icon_label.setPixmap(acompañante_label_icon.pixmap(16, 16))
+            acompañante_label_layout.addWidget(icon_label)
+        
+        acompañante_label = QLabel("Acompañante:")
+        acompañante_label_layout.addWidget(acompañante_label)
+        acompañante_label_layout.addStretch()
+        
+        acompañante_label_container = QWidget()
+        acompañante_label_container.setLayout(acompañante_label_layout)
+        
         acompañante_layout = QHBoxLayout()
         acompañante_layout.addWidget(self.acompañante_input)
         acompañante_layout.addWidget(acompañante_help)
-        visit_layout.addRow("🤝 Acompañante:", acompañante_layout)
+        visit_layout.addRow(acompañante_label_container, acompañante_layout)
         
         # Sector con tooltip
         self.sector_combo = QComboBox()
         self.sector_combo.addItems(["Financiamiento", "CITT", "Auditorio", "Administración"])
-        self.sector_combo.setToolTip("🏢 Seleccione el sector al que se dirige el visitante")
+        self.sector_combo.setToolTip("Seleccione el sector al que se dirige el visitante")
         
         sector_help = QToolButton()
         sector_help.setText("?")
         sector_help.setToolTip("Sector del establecimiento donde se dirigirá el visitante")
         sector_help.setMaximumSize(25, 25)
         
+        # Crear layout horizontal para label con icono
+        sector_label_layout = QHBoxLayout()
+        sector_label_layout.setContentsMargins(0, 0, 0, 0)
+        sector_label_layout.setSpacing(6)
+        
+        sector_label_icon = get_icon_for_emoji("🏢", 16)
+        if not sector_label_icon.isNull():
+            icon_label = QLabel()
+            icon_label.setPixmap(sector_label_icon.pixmap(16, 16))
+            sector_label_layout.addWidget(icon_label)
+        
+        sector_label = QLabel("Sector:")
+        sector_label_layout.addWidget(sector_label)
+        sector_label_layout.addStretch()
+        
+        sector_label_container = QWidget()
+        sector_label_container.setLayout(sector_label_layout)
+        
         sector_layout = QHBoxLayout()
         sector_layout.addWidget(self.sector_combo)
         sector_layout.addWidget(sector_help)
-        visit_layout.addRow("🏢 Sector:", sector_layout)
+        visit_layout.addRow(sector_label_container, sector_layout)
         container_layout.addWidget(self.personal_group)
         container_layout.addWidget(self.visit_group)
 
@@ -358,7 +433,7 @@ class VisitorFormDialog(QDialog):
                 self.accept()
                 
         except Exception as e:
-            QMessageBox.critical(self, "❌ Error", f"🚫 Error al guardar el visitante:<br><br>{str(e)}")
+            QMessageBox.critical(self, "Error", f"Error al guardar el visitante:<br><br>{str(e)}")
     
     def get_visitor(self) -> Visitor:
         """Retorna el visitante creado o editado"""

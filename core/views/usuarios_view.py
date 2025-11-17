@@ -8,6 +8,7 @@ from PySide6.QtWidgets import (
 )
 from PySide6.QtCore import Qt, Signal
 from PySide6.QtGui import QFont, QColor
+from core.ui.icon_loader import get_icon_for_emoji
 from core.auth_manager import AuthManager
 from datetime import datetime
 
@@ -416,9 +417,25 @@ class UsuariosView(QWidget):
         self.subtitle_label.setWordWrap(True)
         header_layout.addWidget(self.subtitle_label)
 
-        self.badge_label = QLabel("🔐 Solo administradores")
+        # Crear layout horizontal para badge con icono
+        badge_layout = QHBoxLayout()
+        badge_layout.setContentsMargins(0, 0, 0, 0)
+        badge_layout.setSpacing(6)
+        
+        badge_icon = get_icon_for_emoji("🔐", 16)
+        if not badge_icon.isNull():
+            icon_label = QLabel()
+            icon_label.setPixmap(badge_icon.pixmap(16, 16))
+            badge_layout.addWidget(icon_label)
+        
+        self.badge_label = QLabel("Solo administradores")
         self.badge_label.setAlignment(Qt.AlignCenter)
-        header_layout.addWidget(self.badge_label, alignment=Qt.AlignLeft)
+        badge_layout.addWidget(self.badge_label)
+        badge_layout.addStretch()
+        
+        badge_container = QWidget()
+        badge_container.setLayout(badge_layout)
+        header_layout.addWidget(badge_container, alignment=Qt.AlignLeft)
 
         main_layout.addWidget(self.header_card)
 
@@ -431,21 +448,25 @@ class UsuariosView(QWidget):
 
         self.action_buttons = []
 
-        self.btn_add = QPushButton("➕ Nuevo usuario")
+        self.btn_add = QPushButton("Nuevo usuario")
+        self.btn_add.setIcon(get_icon_for_emoji("➕", 18))
         self.btn_add.clicked.connect(self.add_user)
         self._configure_action_button(self.btn_add, "primary")
 
-        self.btn_edit = QPushButton("✏️ Editar seleccionado")
+        self.btn_edit = QPushButton("Editar seleccionado")
+        self.btn_edit.setIcon(get_icon_for_emoji("✏️", 18))
         self.btn_edit.clicked.connect(self.edit_user)
         self.btn_edit.setEnabled(False)
         self._configure_action_button(self.btn_edit, "info")
 
-        self.btn_delete = QPushButton("🗑️ Eliminar usuario")
+        self.btn_delete = QPushButton("Eliminar usuario")
+        self.btn_delete.setIcon(get_icon_for_emoji("🗑️", 18))
         self.btn_delete.clicked.connect(self.delete_user)
         self.btn_delete.setEnabled(False)
         self._configure_action_button(self.btn_delete, "danger")
 
-        self.btn_refresh = QPushButton("🔄 Actualizar lista")
+        self.btn_refresh = QPushButton("Actualizar lista")
+        self.btn_refresh.setIcon(get_icon_for_emoji("🔄", 18))
         self.btn_refresh.clicked.connect(self.load_users)
         self._configure_action_button(self.btn_refresh, "neutral")
 
@@ -490,13 +511,30 @@ class UsuariosView(QWidget):
         main_layout.addWidget(self.table_card)
 
         # Información adicional
-        self.info_label = QLabel("💡 Solo los administradores pueden gestionar usuarios.")
+        # Crear layout horizontal para info con icono
+        info_layout = QHBoxLayout()
+        info_layout.setContentsMargins(0, 0, 0, 0)
+        info_layout.setSpacing(6)
+        info_layout.setAlignment(Qt.AlignCenter)
+        
+        info_icon = get_icon_for_emoji("💡", 16)
+        if not info_icon.isNull():
+            icon_label = QLabel()
+            icon_label.setPixmap(info_icon.pixmap(16, 16))
+            info_layout.addWidget(icon_label)
+        
+        self.info_label = QLabel("Solo los administradores pueden gestionar usuarios.")
         self.info_label.setWordWrap(True)
         self.info_label.setAlignment(Qt.AlignCenter)
-        main_layout.addWidget(self.info_label)
+        info_layout.addWidget(self.info_label)
+        
+        info_container = QWidget()
+        info_container.setLayout(info_layout)
+        main_layout.addWidget(info_container)
 
         # Botón para volver al menú principal (ubicado al final como en otras vistas)
-        self.back_button = QPushButton("⬅️ Volver al Menú Principal")
+        self.back_button = QPushButton("Volver al Menú Principal")
+        self.back_button.setIcon(get_icon_for_emoji("⬅️", 18))
         self.back_button.setCursor(Qt.PointingHandCursor)
         self.back_button.setFixedHeight(44)
         self.back_button.setStyleSheet(

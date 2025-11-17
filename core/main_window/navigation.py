@@ -1,7 +1,7 @@
 from __future__ import annotations
 
-from PySide6.QtCore import Qt
-from PySide6.QtGui import QAction, QFont, QGuiApplication, QPixmap, QColor
+from PySide6.QtCore import Qt, QSize
+from PySide6.QtGui import QAction, QFont, QGuiApplication, QPixmap, QColor, QIcon
 from PySide6.QtWidgets import (
     QFrame,
     QGridLayout,
@@ -14,6 +14,7 @@ from PySide6.QtWidgets import (
     QMessageBox,
     QGraphicsDropShadowEffect,
 )
+from core.ui.icon_loader import load_icon, get_icon_for_emoji
 
 from .dependencies import (
     DUOC_PRIMARY,
@@ -77,7 +78,8 @@ class NavigationMixin:
 
         header_layout.addStretch()
 
-        self.home_button = QPushButton("🏠 Inicio")
+        self.home_button = QPushButton("Inicio")
+        self.home_button.setIcon(get_icon_for_emoji("🏠", 18))
         self.home_button.setCursor(Qt.PointingHandCursor)
         self.home_button.setFixedHeight(32)
         self.home_button.setVisible(False)
@@ -119,8 +121,9 @@ class NavigationMixin:
             """
         )
         self.theme_toggle_button.clicked.connect(self.toggle_theme)
-        self.theme_toggle_button.setText("☀️ Modo claro" if getattr(self, "dark_mode", False) else "🌙 Modo oscuro")
+        # El texto se actualizará en update_theme_toggle
         header_layout.addWidget(self.theme_toggle_button)
+        self.update_theme_toggle()
 
         self.setMenuWidget(self.toolbar_header)
 
@@ -198,7 +201,8 @@ class NavigationMixin:
         self.create_main_buttons(buttons_layout)
         card_layout.addLayout(buttons_layout)
 
-        self.btn_open_login = QPushButton("🔐 Administración")
+        self.btn_open_login = QPushButton("Administración")
+        self.btn_open_login.setIcon(get_icon_for_emoji("🔐", 20))
         self.btn_open_login.clicked.connect(self.open_login)
         self.btn_open_login.setMinimumHeight(46)
         self.btn_open_login.setMinimumWidth(260)
@@ -237,7 +241,12 @@ class NavigationMixin:
             callback,
             col_span: int = 1,
         ) -> QPushButton:
-            button = QPushButton(f"{icon} {title}\n{description}")
+            button = QPushButton(f"{title}\n{description}")
+            # Agregar icono si es un emoji conocido
+            icon_obj = get_icon_for_emoji(icon, 32)
+            if not icon_obj.isNull():
+                button.setIcon(icon_obj)
+                button.setIconSize(QSize(32, 32))
             button.clicked.connect(callback)
             button.setMinimumSize(btn_width, btn_height)
             button.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)

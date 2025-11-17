@@ -9,6 +9,7 @@ from PySide6.QtWidgets import (
 )
 from PySide6.QtCore import Qt
 from PySide6.QtGui import QFont
+from core.ui.icon_loader import get_icon_for_emoji
 
 
 class VisitasView(QWidget):
@@ -115,7 +116,8 @@ class VisitasView(QWidget):
 
         container_layout.addWidget(self.grid_card)
 
-        self.back_button = QPushButton("⬅️ Volver al menú principal")
+        self.back_button = QPushButton("Volver al menú principal")
+        self.back_button.setIcon(get_icon_for_emoji("⬅️", 18))
         self.back_button.setMinimumHeight(46)
         self.back_button.setCursor(Qt.PointingHandCursor)
         self.back_button.clicked.connect(self.go_to_main)
@@ -235,17 +237,45 @@ class VisitasView(QWidget):
         card_layout.setContentsMargins(22, 22, 22, 22)
         card_layout.setSpacing(16)
 
-        title = QLabel(f"{option['emoji']} {option['title']}")
+        # Crear layout horizontal para título con icono
+        title_layout = QHBoxLayout()
+        title_layout.setContentsMargins(0, 0, 0, 0)
+        title_layout.setSpacing(8)
+        
+        # Agregar icono al título
+        icon = get_icon_for_emoji(option['emoji'], 24)
+        if not icon.isNull():
+            icon_label = QLabel()
+            icon_label.setPixmap(icon.pixmap(24, 24))
+            title_layout.addWidget(icon_label)
+        
+        title = QLabel(option['title'])
         title.setFont(QFont("Segoe UI", 16, QFont.Bold))
         title.setAlignment(Qt.AlignLeft)
-        card_layout.addWidget(title)
+        title_layout.addWidget(title)
+        title_layout.addStretch()
+        
+        card_layout.addLayout(title_layout)
 
         description = QLabel(option["description"])
         description.setWordWrap(True)
         description.setAlignment(Qt.AlignLeft)
         card_layout.addWidget(description)
 
-        button = QPushButton(option["button"])
+        # Extraer emoji del texto del botón si existe
+        button_text = option["button"]
+        button_emoji = None
+        if " " in button_text:
+            parts = button_text.split(" ", 1)
+            if len(parts[0]) <= 2:  # Probablemente un emoji
+                button_emoji = parts[0]
+                button_text = parts[1] if len(parts) > 1 else button_text
+        
+        button = QPushButton(button_text)
+        if button_emoji:
+            button_icon = get_icon_for_emoji(button_emoji, 18)
+            if not button_icon.isNull():
+                button.setIcon(button_icon)
         button.setMinimumHeight(46)
         button.setCursor(Qt.PointingHandCursor)
         button.clicked.connect(option["handler"])
@@ -291,14 +321,14 @@ class VisitasView(QWidget):
                         from PySide6.QtWidgets import QMessageBox
                         QMessageBox.information(
                             self,
-                            "✅ Éxito",
+                            "Éxito",
                             f"Visitante {visitor.nombre_completo} registrado correctamente"
                         )
                     else:
                         from PySide6.QtWidgets import QMessageBox
                         QMessageBox.warning(
                             self,
-                            "⚠️ Advertencia",
+                            "Advertencia",
                             "El visitante ya existe en el sistema"
                         )
         except ImportError as e:

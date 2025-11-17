@@ -4,11 +4,12 @@ from PySide6.QtWidgets import (
 )
 from PySide6.QtCore import Qt
 from PySide6.QtGui import QFont
+from core.ui.icon_loader import get_icon_for_emoji
 
 class HelpDialog(QDialog):
     def __init__(self, parent=None):
         super().__init__(parent)
-        self.setWindowTitle("📖 Ayuda - Sistema de Gestión de Visitantes")
+        self.setWindowTitle("Ayuda - Sistema de Gestión de Visitantes")
         self.setModal(True)
         self.resize(600, 500)
         
@@ -21,8 +22,10 @@ class HelpDialog(QDialog):
         
         # Título
         title_layout = QHBoxLayout()
-        title_icon = QLabel("📖")
-        title_icon.setFont(QFont("Arial", 24))
+        title_icon = QLabel()
+        title_icon_pixmap = get_icon_for_emoji("📖", 24)
+        if not title_icon_pixmap.isNull():
+            title_icon.setPixmap(title_icon_pixmap.pixmap(24, 24))
         title = QLabel("Ayuda del Sistema")
         title.setFont(QFont("Arial", 16, QFont.Bold))
         title_layout.addWidget(title_icon)
@@ -35,19 +38,35 @@ class HelpDialog(QDialog):
         
         # Pestaña de inicio rápido
         quick_start_tab = self.create_quick_start_tab()
-        self.tab_widget.addTab(quick_start_tab, "🚀 Inicio Rápido")
+        quick_start_icon = get_icon_for_emoji("🚀", 16)
+        if not quick_start_icon.isNull():
+            self.tab_widget.addTab(quick_start_tab, quick_start_icon, "Inicio Rápido")
+        else:
+            self.tab_widget.addTab(quick_start_tab, "Inicio Rápido")
         
         # Pestaña de funciones
         functions_tab = self.create_functions_tab()
-        self.tab_widget.addTab(functions_tab, "⚙️ Funciones")
+        functions_icon = get_icon_for_emoji("⚙️", 16)
+        if not functions_icon.isNull():
+            self.tab_widget.addTab(functions_tab, functions_icon, "Funciones")
+        else:
+            self.tab_widget.addTab(functions_tab, "Funciones")
         
         # Pestaña de atajos
         shortcuts_tab = self.create_shortcuts_tab()
-        self.tab_widget.addTab(shortcuts_tab, "⌨️ Atajos")
+        shortcuts_icon = get_icon_for_emoji("⌨️", 16)
+        if not shortcuts_icon.isNull():
+            self.tab_widget.addTab(shortcuts_tab, shortcuts_icon, "Atajos")
+        else:
+            self.tab_widget.addTab(shortcuts_tab, "Atajos")
         
         # Pestaña de solución de problemas
         troubleshooting_tab = self.create_troubleshooting_tab()
-        self.tab_widget.addTab(troubleshooting_tab, "🔧 Problemas")
+        troubleshooting_icon = get_icon_for_emoji("🔧", 16)
+        if not troubleshooting_icon.isNull():
+            self.tab_widget.addTab(troubleshooting_tab, troubleshooting_icon, "Problemas")
+        else:
+            self.tab_widget.addTab(troubleshooting_tab, "Problemas")
         
         layout.addWidget(self.tab_widget)
         
@@ -55,7 +74,8 @@ class HelpDialog(QDialog):
         button_layout = QHBoxLayout()
         button_layout.addStretch()
         
-        close_btn = QPushButton("✅ Cerrar")
+        close_btn = QPushButton("Cerrar")
+        close_btn.setIcon(get_icon_for_emoji("✅", 18))
         close_btn.setStyleSheet("""
             QPushButton {
                 background-color: #28a745;

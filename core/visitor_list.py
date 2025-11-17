@@ -6,6 +6,7 @@ from PySide6.QtWidgets import (
 )
 from PySide6.QtCore import Qt, Signal, QTimer
 from PySide6.QtGui import QFont, QAction, QIcon, QColor, QPixmap
+from core.ui.icon_loader import get_icon_for_emoji, get_pixmap_for_emoji
 try:
     from .theme import (
         DUOC_PRIMARY, DUOC_SECONDARY, DUOC_SUCCESS, DUOC_DANGER, DUOC_INFO,
@@ -218,7 +219,8 @@ class VisitorListWidget(QWidget):
 
         controls_layout.addStretch()
 
-        self.refresh_btn = QPushButton("🔄 Actualizar")
+        self.refresh_btn = QPushButton("Actualizar")
+        self.refresh_btn.setIcon(get_icon_for_emoji("🔄", 18))
         self.refresh_btn.setCursor(Qt.PointingHandCursor)
         self.refresh_btn.setMinimumHeight(44)
         self.refresh_btn.setToolTip("Actualizar la lista de visitantes")
@@ -258,7 +260,8 @@ class VisitorListWidget(QWidget):
         actions_layout.setContentsMargins(24, 24, 24, 24)
         actions_layout.setSpacing(16)
 
-        self.add_btn = QPushButton("➕ Nuevo visitante")
+        self.add_btn = QPushButton("Nuevo visitante")
+        self.add_btn.setIcon(get_icon_for_emoji("➕", 18))
         self.add_btn.setCursor(Qt.PointingHandCursor)
         self.add_btn.setMinimumHeight(46)
         self.add_btn.setToolTip("Registrar un nuevo visitante en el sistema")
@@ -278,7 +281,8 @@ class VisitorListWidget(QWidget):
         )
         actions_layout.addWidget(self.add_btn)
 
-        self.edit_btn = QPushButton("✏️ Editar")
+        self.edit_btn = QPushButton("Editar")
+        self.edit_btn.setIcon(get_icon_for_emoji("✏️", 18))
         self.edit_btn.setEnabled(False)
         self.edit_btn.setCursor(Qt.PointingHandCursor)
         self.edit_btn.setMinimumHeight(46)
@@ -303,7 +307,8 @@ class VisitorListWidget(QWidget):
         )
         actions_layout.addWidget(self.edit_btn)
 
-        self.delete_btn = QPushButton("🗑️ Eliminar")
+        self.delete_btn = QPushButton("Eliminar")
+        self.delete_btn.setIcon(get_icon_for_emoji("🗑️", 18))
         self.delete_btn.setEnabled(False)
         self.delete_btn.setCursor(Qt.PointingHandCursor)
         self.delete_btn.setMinimumHeight(46)
@@ -333,9 +338,16 @@ class VisitorListWidget(QWidget):
 
         self.visitor_table = QTableWidget()
         self.visitor_table.setColumnCount(8)
-        self.visitor_table.setHorizontalHeaderLabels([
-            "🆔 ID", "📄 RUT", "👤 Nombre", "🤝 Acompañante", "🏢 Sector", "📍 Estado", "⏰ Ingreso", "👨‍💼 Registrado por"
-        ])
+        # Crear headers con iconos
+        from PySide6.QtWidgets import QTableWidgetItem
+        header_icons = ["🆔", "📄", "👤", "🤝", "🏢", "📍", "⏰", "👨‍💼"]
+        header_labels = ["ID", "RUT", "Nombre", "Acompañante", "Sector", "Estado", "Ingreso", "Registrado por"]
+        for i, (icon_emoji, label) in enumerate(zip(header_icons, header_labels)):
+            header_item = QTableWidgetItem(label)
+            icon = get_icon_for_emoji(icon_emoji, 16)
+            if not icon.isNull():
+                header_item.setIcon(icon)
+            self.visitor_table.setHorizontalHeaderItem(i, header_item)
 
         configure_modern_table(self.visitor_table)
         apply_modern_table_theme(self.visitor_table)
@@ -394,8 +406,14 @@ class VisitorListWidget(QWidget):
         stats_layout.setContentsMargins(20, 20, 20, 20)
         stats_layout.setSpacing(12)
 
-        self.stats_title = QLabel("📊 Resumen en vivo")
+        self.stats_title = QLabel()
         self.stats_title.setAlignment(Qt.AlignCenter)
+        # Agregar icono y texto al título
+        stats_title_pixmap = get_pixmap_for_emoji("📊", 20)
+        if not stats_title_pixmap.isNull():
+            self.stats_title.setPixmap(stats_title_pixmap)
+        else:
+            self.stats_title.setText("Resumen en vivo")
         stats_layout.addWidget(self.stats_title)
 
         self.stats_label = QLabel()
@@ -414,7 +432,8 @@ class VisitorListWidget(QWidget):
         self.content_splitter.setSizes([820, 320])
 
         # Botón de regreso
-        self.back_button = QPushButton("⬅️ Volver al menú principal")
+        self.back_button = QPushButton("Volver al menú principal")
+        self.back_button.setIcon(get_icon_for_emoji("⬅️", 18))
         self.back_button.setCursor(Qt.PointingHandCursor)
         self.back_button.setMinimumHeight(46)
         self.back_button.clicked.connect(self.go_to_main)
@@ -687,9 +706,9 @@ class VisitorListWidget(QWidget):
             visitor = dialog.get_visitor()
             if self.visitor_manager.add_visitor(visitor):
                 self.refresh_list()
-                QMessageBox.information(self, "✅ Éxito", f"👤 Visitante registrado en {sector}")
+                QMessageBox.information(self, "Éxito", f"Visitante registrado en {sector}")
             else:
-                QMessageBox.warning(self, "⚠️ Error", "🔍 Ya existe un visitante con ese RUT en el sistema")
+                QMessageBox.warning(self, "Error", "Ya existe un visitante con ese RUT en el sistema")
 
     def add_visitor(self):
         """Abre el formulario para agregar un nuevo visitante"""
@@ -698,9 +717,9 @@ class VisitorListWidget(QWidget):
             visitor = dialog.get_visitor()
             if self.visitor_manager.add_visitor(visitor):
                 self.refresh_list()
-                QMessageBox.information(self, "✅ Éxito", "👤 Visitante registrado correctamente en el sistema")
+                QMessageBox.information(self, "Éxito", "Visitante registrado correctamente en el sistema")
             else:
-                QMessageBox.warning(self, "⚠️ Error", "🔍 Ya existe un visitante con ese RUT en el sistema")
+                QMessageBox.warning(self, "Error", "Ya existe un visitante con ese RUT en el sistema")
     
     def edit_visitor(self):
         """Edita el visitante seleccionado"""
@@ -715,7 +734,7 @@ class VisitorListWidget(QWidget):
             dialog = VisitorFormDialog(self, visitor, auth_manager=self.auth_manager)
             if dialog.exec() == QDialog.Accepted:
                 self.refresh_list()
-                QMessageBox.information(self, "✅ Éxito", "✏️ Información del visitante actualizada correctamente")
+                QMessageBox.information(self, "Éxito", "Información del visitante actualizada correctamente")
     
     def delete_visitor(self):
         """Elimina el visitante seleccionado"""
@@ -728,8 +747,8 @@ class VisitorListWidget(QWidget):
         
         if visitor:
             reply = QMessageBox.question(
-                self, "🗑️ Confirmar Eliminación",
-                f"⚠️ ¿Está seguro de que desea eliminar al visitante:\n\n👤 {visitor.nombre_completo}\n🆔 {visitor.rut}\n\n❌ Esta acción no se puede deshacer",
+                self, "Confirmar Eliminación",
+                f"¿Está seguro de que desea eliminar al visitante:\n\n{visitor.nombre_completo}\n{visitor.rut}\n\nEsta acción no se puede deshacer",
                 QMessageBox.Yes | QMessageBox.No,
                 QMessageBox.No
             )
@@ -779,23 +798,27 @@ class VisitorListWidget(QWidget):
             return
         
         menu = QMenu(self)
-        menu.setTitle("🎯 Acciones")
+        menu.setTitle("Acciones")
+        menu.setIcon(get_icon_for_emoji("🎯", 16))
         
-        toggle_action = QAction("🔄 Cambiar Estado", self)
+        toggle_action = QAction("Cambiar Estado", self)
+        toggle_action.setIcon(get_icon_for_emoji("🔄", 16))
         toggle_action.setToolTip("Cambiar entre 'Dentro' y 'Fuera'")
         toggle_action.triggered.connect(lambda: self.toggle_visitor_status(
             self.visitor_table.itemAt(position)
         ))
         menu.addAction(toggle_action)
         
-        edit_action = QAction("✏️ Editar Información", self)
+        edit_action = QAction("Editar Información", self)
+        edit_action.setIcon(get_icon_for_emoji("✏️", 16))
         edit_action.setToolTip("Modificar datos del visitante")
         edit_action.triggered.connect(self.edit_visitor)
         menu.addAction(edit_action)
         
         menu.addSeparator()
         
-        delete_action = QAction("🗑️ Eliminar Visitante", self)
+        delete_action = QAction("Eliminar Visitante", self)
+        delete_action.setIcon(get_icon_for_emoji("🗑️", 16))
         delete_action.setToolTip("Eliminar permanentemente del sistema")
         delete_action.triggered.connect(self.delete_visitor)
         menu.addAction(delete_action)

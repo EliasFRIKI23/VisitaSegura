@@ -14,6 +14,7 @@ from PySide6.QtWidgets import (
 )
 from PySide6.QtCore import Qt, QTimer
 from PySide6.QtGui import QFont, QGuiApplication
+from core.ui.icon_loader import get_icon_for_emoji
 import sys
 import os
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
@@ -145,10 +146,27 @@ class ZonasView(QWidget):
         grid_layout.setContentsMargins(28, 28, 28, 28)
         grid_layout.setSpacing(20)
 
-        self.zones_title = QLabel("📍 Zonas disponibles")
+        # Crear layout horizontal para título con icono
+        title_layout = QHBoxLayout()
+        title_layout.setContentsMargins(0, 0, 0, 0)
+        title_layout.setSpacing(8)
+        
+        # Agregar icono al título
+        title_icon = get_icon_for_emoji("📍", 20)
+        if not title_icon.isNull():
+            icon_label = QLabel()
+            icon_label.setPixmap(title_icon.pixmap(20, 20))
+            title_layout.addWidget(icon_label)
+        
+        self.zones_title = QLabel("Zonas disponibles")
         self.zones_title.setAlignment(Qt.AlignLeft)
         self.zones_title.setStyleSheet("font-size: 18px; font-weight: 700;")
-        grid_layout.addWidget(self.zones_title)
+        title_layout.addWidget(self.zones_title)
+        title_layout.addStretch()
+        
+        title_container = QWidget()
+        title_container.setLayout(title_layout)
+        grid_layout.addWidget(title_container)
 
         self.zones_grid = QGridLayout()
         self.zones_grid.setSpacing(18)
@@ -161,7 +179,8 @@ class ZonasView(QWidget):
 
         container_layout.addWidget(self.grid_card)
 
-        self.back_button = QPushButton("⬅️ Volver al menú principal")
+        self.back_button = QPushButton("Volver al menú principal")
+        self.back_button.setIcon(get_icon_for_emoji("⬅️", 18))
         self.back_button.setMinimumHeight(46)
         container_layout.addWidget(self.back_button, alignment=Qt.AlignCenter)
 
@@ -357,9 +376,12 @@ class ZonasView(QWidget):
                 f"QFrame {{ background-color: {inner_card_bg}; border-radius: 20px; border: 1px solid {border_color}; }}"
             )
             info["title"].setStyleSheet(f"color: {accent}; font-weight: 700;")
-            info["count"].setStyleSheet(
-                "padding: 8px 12px; border-radius: 12px; font-weight: 600;"
-            )
+            # Aplicar estilo al label del contador si existe
+            count_label = info.get("count_label")
+            if count_label:
+                count_label.setStyleSheet(
+                    "padding: 8px 12px; border-radius: 12px; font-weight: 600;"
+                )
             info["description"].setStyleSheet(f"color: {muted_color};")
             info["view_btn"].setStyleSheet(self._ghost_button_style(accent))
             info["add_btn"].setStyleSheet(self._accent_button_style(accent))
@@ -426,15 +448,46 @@ class ZonasView(QWidget):
         card_layout.setContentsMargins(20, 20, 20, 20)
         card_layout.setSpacing(16)
 
-        title_label = QLabel(f"{emoji} {zone_name}")
+        # Crear layout horizontal para título con icono
+        title_layout = QHBoxLayout()
+        title_layout.setContentsMargins(0, 0, 0, 0)
+        title_layout.setSpacing(8)
+        
+        # Agregar icono al título
+        icon_obj = get_icon_for_emoji(emoji, 20)
+        if not icon_obj.isNull():
+            icon_label = QLabel()
+            icon_label.setPixmap(icon_obj.pixmap(20, 20))
+            title_layout.addWidget(icon_label)
+        
+        title_label = QLabel(zone_name)
         title_label.setAlignment(Qt.AlignLeft)
         title_label.setFont(QFont("Segoe UI", 15, QFont.Bold))
-        card_layout.addWidget(title_label)
+        title_layout.addWidget(title_label)
+        title_layout.addStretch()
+        
+        card_layout.addLayout(title_layout)
 
-        count_label = QLabel("👥 0 visitantes actuales")
+        # Crear layout horizontal para contador con icono
+        count_layout = QHBoxLayout()
+        count_layout.setContentsMargins(0, 0, 0, 0)
+        count_layout.setSpacing(6)
+        
+        count_icon = get_icon_for_emoji("👥", 16)
+        if not count_icon.isNull():
+            count_icon_label = QLabel()
+            count_icon_label.setPixmap(count_icon.pixmap(16, 16))
+            count_layout.addWidget(count_icon_label)
+        
+        count_label = QLabel("0 visitantes actuales")
         count_label.setAlignment(Qt.AlignLeft)
         count_label.setFont(QFont("Segoe UI", 12, QFont.Bold))
-        card_layout.addWidget(count_label)
+        count_layout.addWidget(count_label)
+        count_layout.addStretch()
+        
+        count_container = QWidget()
+        count_container.setLayout(count_layout)
+        card_layout.addWidget(count_container)
 
         progress = QProgressBar()
         progress.setRange(0, 20)
@@ -451,12 +504,14 @@ class ZonasView(QWidget):
         actions_layout = QHBoxLayout()
         actions_layout.setSpacing(12)
 
-        view_btn = QPushButton("👥 Ver visitantes")
+        view_btn = QPushButton("Ver visitantes")
+        view_btn.setIcon(get_icon_for_emoji("👥", 16))
         view_btn.setMinimumHeight(42)
         view_btn.setCursor(Qt.PointingHandCursor)
         view_btn.clicked.connect(lambda: self.go_to_visitors_with_filter(zone_name))
 
-        add_btn = QPushButton("➕ Registrar")
+        add_btn = QPushButton("Registrar")
+        add_btn.setIcon(get_icon_for_emoji("➕", 16))
         add_btn.setMinimumHeight(42)
         add_btn.setCursor(Qt.PointingHandCursor)
         add_btn.clicked.connect(lambda: self.open_new_visitor_in_zone(zone_name))
@@ -470,7 +525,8 @@ class ZonasView(QWidget):
             "frame": card,
             "accent": color,
             "title": title_label,
-            "count": count_label,
+            "count": count_container,  # Devolver el widget contenedor en lugar del label
+            "count_label": count_label,  # Guardar también la referencia al label para actualizar
             "progress": progress,
             "description": desc_label,
             "view_btn": view_btn,
@@ -504,11 +560,22 @@ class ZonasView(QWidget):
         self.visitor_manager.force_reload()
 
         for zone_name, info in self.zone_cards.items():
-            count_label = info["count"]
+            # Obtener el label del contador
+            count_label = info.get("count_label", None)
+            if not count_label:
+                # Fallback: intentar obtener desde el widget contenedor
+                count_widget = info.get("count")
+                if count_widget and hasattr(count_widget, 'layout'):
+                    count_layout = count_widget.layout()
+                    if count_layout and count_layout.count() > 1:
+                        count_label = count_layout.itemAt(1).widget()
+            
             progress = info["progress"]
             current_visitors = self.visitor_manager.get_visitors_by_sector(zone_name)
             current_count = len([v for v in current_visitors if v.estado == "Dentro"])
-            count_label.setText(f"👥 {current_count} visitantes actuales")
+            
+            if count_label:
+                count_label.setText(f"{current_count} visitantes actuales")
 
             if current_count >= 20:
                 level = "high"
@@ -517,7 +584,8 @@ class ZonasView(QWidget):
             else:
                 level = "low"
 
-            self._style_count_label(count_label, level)
+            if count_label:
+                self._style_count_label(count_label, level)
 
             progress.setValue(min(current_count, 20))
             if level == "high":

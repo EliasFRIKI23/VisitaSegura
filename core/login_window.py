@@ -7,6 +7,7 @@ from PySide6.QtGui import QAction, QPalette, QColor, QGuiApplication, QFont, QPi
 from PySide6.QtCore import Qt, Signal
 from core.auth_manager import AuthManager
 from core.theme import DUOC_PRIMARY
+from core.ui.icon_loader import get_icon_for_emoji
 
 class LoginDialog(QDialog):
     """Ventana de login con diseño profesional mejorado"""
@@ -17,7 +18,7 @@ class LoginDialog(QDialog):
         super().__init__(parent)
         self.dark_mode = dark_mode
         self.auth_manager = AuthManager()
-        self.setWindowTitle("🔐 Acceso Administrativo - VisitaSegura")
+        self.setWindowTitle("Acceso Administrativo - VisitaSegura")
         self.setModal(True)
         
         # Configuración de ventana
@@ -246,11 +247,30 @@ class LoginDialog(QDialog):
         return container
 
     def create_info_section(self):
-        tip_label = QLabel("💡 Usa tu cuenta creada por el administrador para acceder al panel administrativo.")
+        # Crear layout horizontal para tip con icono
+        tip_layout = QHBoxLayout()
+        tip_layout.setContentsMargins(0, 0, 0, 0)
+        tip_layout.setSpacing(6)
+        tip_layout.setAlignment(Qt.AlignCenter)
+        
+        tip_icon = get_icon_for_emoji("💡", 16)
+        if not tip_icon.isNull():
+            icon_label = QLabel()
+            icon_label.setPixmap(tip_icon.pixmap(16, 16))
+            tip_layout.addWidget(icon_label)
+        
+        tip_label = QLabel("Usa tu cuenta creada por el administrador para acceder al panel administrativo.")
+        tip_label.setWordWrap(True)
+        tip_label.setAlignment(Qt.AlignCenter)
+        tip_layout.addWidget(tip_label)
+        
         tip_label.setAlignment(Qt.AlignCenter)
         tip_label.setStyleSheet("font-size: 12px; color: #6b7280;")
         self.tip_label = tip_label
-        return tip_label
+        
+        tip_container = QWidget()
+        tip_container.setLayout(tip_layout)
+        return tip_container
 
     
     def setup_connections(self):
