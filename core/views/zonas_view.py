@@ -468,33 +468,79 @@ class ZonasView(QWidget):
         
         card_layout.addLayout(title_layout)
 
-        # Crear layout horizontal para contador con icono
-        count_layout = QHBoxLayout()
-        count_layout.setContentsMargins(0, 0, 0, 0)
-        count_layout.setSpacing(6)
+        # Contenedor del contador con diseño elegante usando colores institucionales
+        count_container = QFrame()
+        count_container.setObjectName("CountContainer")
+        count_container.setStyleSheet(f"""
+            QFrame#CountContainer {{
+                background: qlineargradient(x1:0, y1:0, x2:1, y2:0,
+                    stop:0 {DUOC_PRIMARY},
+                    stop:1 rgba(0, 58, 112, 0.15));
+                border-radius: 12px;
+                padding: 14px 18px;
+                border: 2px solid {DUOC_PRIMARY};
+            }}
+        """)
         
-        count_icon = get_icon_for_emoji("👥", 16)
+        count_layout = QHBoxLayout(count_container)
+        count_layout.setContentsMargins(0, 0, 0, 0)
+        count_layout.setSpacing(14)
+        
+        # Icono con fondo circular usando color secundario
+        icon_container = QFrame()
+        icon_container.setFixedSize(40, 40)
+        icon_container.setStyleSheet(f"""
+            QFrame {{
+                background-color: {DUOC_SECONDARY};
+                border-radius: 20px;
+            }}
+        """)
+        icon_layout = QHBoxLayout(icon_container)
+        icon_layout.setContentsMargins(0, 0, 0, 0)
+        icon_layout.setAlignment(Qt.AlignCenter)
+        
+        count_icon = get_icon_for_emoji("👥", 22)
         if not count_icon.isNull():
             count_icon_label = QLabel()
-            count_icon_label.setPixmap(count_icon.pixmap(16, 16))
-            count_layout.addWidget(count_icon_label)
+            count_icon_label.setPixmap(count_icon.pixmap(22, 22))
+            count_icon_label.setStyleSheet("background-color: transparent;")
+            icon_layout.addWidget(count_icon_label)
         
-        count_label = QLabel("0 visitantes actuales")
+        count_layout.addWidget(icon_container)
+        
+        # Layout vertical para número y texto
+        count_text_layout = QVBoxLayout()
+        count_text_layout.setContentsMargins(0, 0, 0, 0)
+        count_text_layout.setSpacing(3)
+        
+        # Número destacado con color institucional
+        count_number = QLabel("0")
+        count_number.setAlignment(Qt.AlignLeft | Qt.AlignVCenter)
+        count_number.setFont(QFont("Segoe UI", 36, QFont.Bold))
+        count_number.setStyleSheet(f"""
+            color: {DUOC_PRIMARY};
+            background-color: transparent;
+            padding: 0px;
+            margin: 0px;
+        """)
+        count_text_layout.addWidget(count_number)
+        
+        # Texto descriptivo con color secundario
+        count_label = QLabel("visitantes actuales")
         count_label.setAlignment(Qt.AlignLeft)
-        count_label.setFont(QFont("Segoe UI", 12, QFont.Bold))
-        count_layout.addWidget(count_label)
+        count_label.setFont(QFont("Segoe UI", 10, QFont.Bold))
+        count_label.setStyleSheet(f"""
+            color: {DUOC_SECONDARY};
+            background-color: transparent;
+            padding: 0px;
+            margin: 0px;
+        """)
+        count_text_layout.addWidget(count_label)
+        
+        count_layout.addLayout(count_text_layout)
         count_layout.addStretch()
         
-        count_container = QWidget()
-        count_container.setLayout(count_layout)
         card_layout.addWidget(count_container)
-
-        progress = QProgressBar()
-        progress.setRange(0, 20)
-        progress.setValue(0)
-        progress.setFormat("%v / %m")
-        progress.setAlignment(Qt.AlignCenter)
-        card_layout.addWidget(progress)
 
         desc_label = QLabel(description)
         desc_label.setWordWrap(True)
@@ -526,8 +572,8 @@ class ZonasView(QWidget):
             "accent": color,
             "title": title_label,
             "count": count_container,  # Devolver el widget contenedor en lugar del label
+            "count_number": count_number,  # Referencia al número destacado
             "count_label": count_label,  # Guardar también la referencia al label para actualizar
-            "progress": progress,
             "description": desc_label,
             "view_btn": view_btn,
             "add_btn": add_btn,
@@ -560,45 +606,33 @@ class ZonasView(QWidget):
         self.visitor_manager.force_reload()
 
         for zone_name, info in self.zone_cards.items():
-            # Obtener el label del contador
+            # Obtener el número destacado y el label del contador
+            count_number = info.get("count_number", None)
             count_label = info.get("count_label", None)
-            if not count_label:
-                # Fallback: intentar obtener desde el widget contenedor
+            if not count_number or not count_label:
+                # Fallback: intentar obtener desde el widget contenedor (QFrame)
                 count_widget = info.get("count")
                 if count_widget and hasattr(count_widget, 'layout'):
                     count_layout = count_widget.layout()
                     if count_layout and count_layout.count() > 1:
-                        count_label = count_layout.itemAt(1).widget()
+                        # El segundo item es el layout vertical con número y texto (índice 1)
+                        text_layout_item = count_layout.itemAt(1)
+                        if text_layout_item and text_layout_item.layout():
+                            text_layout = text_layout_item.layout()
+                            # El número está en el primer item del layout vertical (índice 0)
+                            if text_layout.count() > 0 and not count_number:
+                                count_number = text_layout.itemAt(0).widget()
+                            # El label está en el segundo item del layout vertical (índice 1)
+                            if text_layout.count() > 1 and not count_label:
+                                count_label = text_layout.itemAt(1).widget()
             
-            progress = info["progress"]
             current_visitors = self.visitor_manager.get_visitors_by_sector(zone_name)
             current_count = len([v for v in current_visitors if v.estado == "Dentro"])
             
+            if count_number:
+                count_number.setText(str(current_count))
             if count_label:
-                count_label.setText(f"{current_count} visitantes actuales")
-
-            if current_count >= 20:
-                level = "high"
-            elif current_count >= 10:
-                level = "medium"
-            else:
-                level = "low"
-
-            if count_label:
-                self._style_count_label(count_label, level)
-
-            progress.setValue(min(current_count, 20))
-            if level == "high":
-                chunk_color = DUOC_DANGER
-            elif level == "medium":
-                chunk_color = DUOC_WARNING
-            else:
-                chunk_color = DUOC_SUCCESS
-            style_sheet = self.progress_template.substitute(
-                chunk_color=chunk_color,
-                **self.progress_base_colors,
-            )
-            progress.setStyleSheet(style_sheet)
+                count_label.setText("visitantes actuales")
 
         # Actualizar visibilidad por filtros/búsqueda (en caso de cambios en tiempo real)
         self.filter_zones()
@@ -622,24 +656,11 @@ class ZonasView(QWidget):
         current_visitors = self.visitor_manager.get_visitors_by_sector(zone_name)
         current_count = len([v for v in current_visitors if v.estado == "Dentro"])
 
-        if current_count >= 20:
-            reply = QMessageBox.question(
-                self,
-                "⚠️ Cupo Máximo Alcanzado",
-                f"La zona {zone_name} ya tiene {current_count} visitantes (cupo máximo: 20).\n\n"
-                f"¿Estás seguro que quieres agregar más visitantes a esta zona?",
-                QMessageBox.Yes | QMessageBox.No,
-                QMessageBox.No
-            )
-            if reply == QMessageBox.No:
-                return
-
         QMessageBox.information(
             self,
             f"Gestión de {zone_name}",
             f"Zona: {zone_name}\n"
-            f"Visitantes actuales: {current_count}\n"
-            f"Cupo máximo: 20\n\n"
+            f"Visitantes actuales: {current_count}\n\n"
             f"Funcionalidad de gestión en desarrollo..."
         )
 

@@ -189,9 +189,20 @@ class NavigationMixin:
         intro_container_layout.setContentsMargins(24, 16, 24, 16)
         intro_container_layout.setSpacing(0)
 
-        intro_label = QLabel("Selecciona un módulo para continuar")
-        intro_label.setFont(body_font(14))
-        intro_label.setAlignment(Qt.AlignCenter)
+        # Logo de Duoc UC - Tamaño pequeño para no afectar el layout
+        intro_label = QLabel()
+        logo_pixmap = QPixmap("Logo Duoc .png")
+        if not logo_pixmap.isNull():
+            # Tamaño más pequeño y compacto para no afectar la resolución del resto
+            resized = logo_pixmap.scaled(200, 100, Qt.KeepAspectRatio, Qt.SmoothTransformation)
+            intro_label.setPixmap(resized)
+            intro_label.setAlignment(Qt.AlignCenter)
+            intro_label.setScaledContents(False)
+        else:
+            # Fallback si no se encuentra el logo
+            intro_label.setText("Duoc UC")
+            intro_label.setFont(heading_font(16))
+            intro_label.setAlignment(Qt.AlignCenter)
         self.intro_label = intro_label
         intro_container_layout.addWidget(intro_label)
         card_layout.addWidget(self.intro_container)
@@ -220,14 +231,14 @@ class NavigationMixin:
         available = QGuiApplication.primaryScreen().availableGeometry()
 
         if available.width() >= 1920:
-            btn_width, btn_height = 220, 140
-            font_size = 16
+            btn_width, btn_height = 180, 120
+            font_size = 15
         elif available.width() >= 1366:
-            btn_width, btn_height = 184, 122
-            font_size = 14
+            btn_width, btn_height = 160, 110
+            font_size = 13
         else:
-            btn_width, btn_height = 150, 100
-            font_size = 12
+            btn_width, btn_height = 140, 90
+            font_size = 11
 
         self.quick_access_buttons = []
 
