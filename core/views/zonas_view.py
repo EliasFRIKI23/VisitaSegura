@@ -376,12 +376,24 @@ class ZonasView(QWidget):
                 f"QFrame {{ background-color: {inner_card_bg}; border-radius: 20px; border: 1px solid {border_color}; }}"
             )
             info["title"].setStyleSheet(f"color: {accent}; font-weight: 700;")
-            # Aplicar estilo al label del contador si existe
+            # Actualizar estilos del contador con colores institucionales
+            count_number = info.get("count_number")
+            if count_number:
+                count_number.setStyleSheet("""
+                    color: #ffffff;
+                    background-color: transparent;
+                    padding: 0px;
+                    margin: 0px;
+                """)
             count_label = info.get("count_label")
             if count_label:
-                count_label.setStyleSheet(
-                    "padding: 8px 12px; border-radius: 12px; font-weight: 600;"
-                )
+                count_label.setStyleSheet("""
+                    color: rgba(255,255,255,0.85);
+                    background-color: transparent;
+                    padding: 0px;
+                    margin: 0px;
+                    font-weight: 600;
+                """)
             info["description"].setStyleSheet(f"color: {muted_color};")
             info["view_btn"].setStyleSheet(self._ghost_button_style(accent))
             info["add_btn"].setStyleSheet(self._accent_button_style(accent))
@@ -475,10 +487,10 @@ class ZonasView(QWidget):
             QFrame#CountContainer {{
                 background: qlineargradient(x1:0, y1:0, x2:1, y2:0,
                     stop:0 {DUOC_PRIMARY},
-                    stop:1 rgba(0, 58, 112, 0.15));
+                    stop:1 rgba(0, 58, 112, 0.8));
                 border-radius: 12px;
                 padding: 14px 18px;
-                border: 2px solid {DUOC_PRIMARY};
+                border: 2px solid rgba(0, 58, 112, 0.35);
             }}
         """)
         
@@ -517,8 +529,8 @@ class ZonasView(QWidget):
         count_number = QLabel("0")
         count_number.setAlignment(Qt.AlignLeft | Qt.AlignVCenter)
         count_number.setFont(QFont("Segoe UI", 36, QFont.Bold))
-        count_number.setStyleSheet(f"""
-            color: {DUOC_PRIMARY};
+        count_number.setStyleSheet("""
+            color: #ffffff;
             background-color: transparent;
             padding: 0px;
             margin: 0px;
@@ -529,8 +541,8 @@ class ZonasView(QWidget):
         count_label = QLabel("visitantes actuales")
         count_label.setAlignment(Qt.AlignLeft)
         count_label.setFont(QFont("Segoe UI", 10, QFont.Bold))
-        count_label.setStyleSheet(f"""
-            color: {DUOC_SECONDARY};
+        count_label.setStyleSheet("""
+            color: rgba(255,255,255,0.85);
             background-color: transparent;
             padding: 0px;
             margin: 0px;
