@@ -5,6 +5,7 @@ import os
 from pathlib import Path
 from PySide6.QtGui import QIcon, QPixmap
 from PySide6.QtCore import Qt
+from PySide6.QtWidgets import QLabel
 
 # Ruta base de los iconos
 ICONS_DIR = Path(__file__).parent / "icons"
@@ -159,4 +160,26 @@ def get_pixmap_for_emoji(emoji: str, size: int = 24) -> QPixmap:
     if icon_name:
         return load_pixmap(icon_name, size)
     return QPixmap()
+
+
+def create_icon_label(emoji: str, size: int = 24, parent=None) -> QLabel:
+    """
+    Crea un QLabel con un icono, sin bordes ni fondos
+    
+    Args:
+        emoji: El emoji a buscar (ej: "🏠")
+        size: Tamaño del icono en píxeles (por defecto 24)
+        parent: Widget padre (opcional)
+    
+    Returns:
+        QLabel con el icono configurado, o QLabel vacío si no se encuentra el icono
+    """
+    icon_label = QLabel(parent)
+    icon_label.setStyleSheet("border: none; background-color: transparent; padding: 0; margin: 0;")
+    
+    icon = get_icon_for_emoji(emoji, size)
+    if not icon.isNull():
+        icon_label.setPixmap(icon.pixmap(size, size))
+    
+    return icon_label
 

@@ -191,6 +191,7 @@ class QRScannerDialog(QDialog):
         droidcam_icon = get_icon_for_emoji("📱", 16)
         if not droidcam_icon.isNull():
             icon_label = QLabel()
+            icon_label.setStyleSheet("border: none; background-color: transparent; padding: 0; margin: 0;")
             icon_label.setPixmap(droidcam_icon.pixmap(16, 16))
             droidcam_layout.addWidget(icon_label)
         
@@ -216,6 +217,7 @@ class QRScannerDialog(QDialog):
         guide_icon = get_icon_for_emoji("💡", 18)
         if not guide_icon.isNull():
             icon_label = QLabel()
+            icon_label.setStyleSheet("border: none; background-color: transparent; padding: 0; margin: 0;")
             icon_label.setPixmap(guide_icon.pixmap(18, 18))
             guide_layout.addWidget(icon_label)
         
@@ -255,6 +257,7 @@ class QRScannerDialog(QDialog):
         self.camera_section.close_btn.clicked.connect(self.close)
 
         self.pistol_section.qr_detected.connect(self.on_qr_detected)
+        self.pistol_section.register_btn.clicked.connect(self.on_register_clicked)
 
     # ------------------------------------------------------------------
     # Gestión del método de escaneo
@@ -266,6 +269,8 @@ class QRScannerDialog(QDialog):
             self.pistol_section.setVisible(False)
             self.pistol_section.clear()
             self.pistol_section.scanner_input_timer.stop()
+            # Limpiar datos de carnet cuando se cambia a cámara
+            self.current_carnet_data = None
         else:
             self.camera_section.stop_camera()
             self.camera_section.setVisible(False)
@@ -274,6 +279,8 @@ class QRScannerDialog(QDialog):
             self.pistol_section.setVisible(True)
             self.pistol_section.clear()
             self.pistol_section.focus_input()
+            # Limpiar datos de carnet cuando se cambia a pistola
+            self.current_carnet_data = None
 
     # ------------------------------------------------------------------
     # Utilidades de autenticación
@@ -313,6 +320,8 @@ class QRScannerDialog(QDialog):
             self.show_carnet_info(qr_data)
         else:
             self.show_generic_qr_info(qr_data)
+        
+        # Si es pistola QR y se detectó un carnet, el botón de registro ya se muestra en show_carnet_info
 
     # ------------------------------------------------------------------
     # Manejo de QR tipo carnet
@@ -324,8 +333,10 @@ class QRScannerDialog(QDialog):
 
         info_text = "<b>Carnet Detectado:</b><br><br>"
 
+        # Limpiar acciones y ocultar botones de registro
         self.camera_section.clear_info_actions()
         self.camera_section.set_register_button_visible(False)
+        self.pistol_section.set_register_button_visible(False)
 
         if parsed_data.get("rut"):
             info_text += (
@@ -333,15 +344,25 @@ class QRScannerDialog(QDialog):
                 "<i>RUT extraído automáticamente del carnet.</i><br>"
                 "<i>Presione 'Iniciar Registro' para obtener el nombre completo.</i><br>"
             )
-            self.camera_section.set_register_button_visible(True)
-            self.camera_section.set_register_button_text("Iniciar Registro")
+            # Mostrar botón de registro en la sección activa
+            if self.camera_radio.isChecked():
+                self.camera_section.set_register_button_visible(True)
+                self.camera_section.set_register_button_text("Iniciar Registro")
+            else:
+                self.pistol_section.set_register_button_visible(True)
+                self.pistol_section.set_register_button_text("Iniciar Registro")
         else:
             info_text += (
                 f"<b>Contenido:</b> {qr_data[:100]}...<br><br>"
                 "<i>No se pudo extraer el RUT automáticamente.</i><br>"
             )
 
-        self.camera_section.set_info_content(info_text)
+        # Mostrar información en la sección activa
+        if self.camera_radio.isChecked():
+            self.camera_section.set_info_content(info_text)
+        else:
+            # Para la pistola, mostrar información en un QMessageBox o actualizar la UI
+            pass
 
     def on_register_clicked(self) -> None:
         if self.current_carnet_data and self.current_carnet_data.get("rut"):
@@ -357,25 +378,33 @@ class QRScannerDialog(QDialog):
             form_dialog = VisitorFormDialog(self, auth_manager=auth_manager, use_modern_theme=True)
 
             if parsed_data.get("rut"):
-                form_dialog.rut_input.setText(parsed_data["rut"])
+                # Usar método que evita la normalización automática al establecer el RUT
+                form_dialog.set_rut_without_normalization(parsed_data["rut"])
 
             nombre_obtenido = ""
             if parsed_data.get("rut"):
-                QMessageBox.information(
-                    self,
-                    "Consultando API",
-                    f"Obteniendo nombre para RUT {parsed_data['rut']}...\n\nPor favor espere un momento.",
-                )
-                nombre_obtenido = get_name_from_registry(parsed_data["rut"])
-                if nombre_obtenido not in [
-                    "Nombre no disponible - Ingrese manualmente",
-                    "RUT no encontrado - Ingrese manualmente",
-                    "Error en consulta - Ingrese manualmente",
-                    "Timeout en consulta - Ingrese manualmente",
-                    "Error de conexión - Ingrese manualmente",
-                    "API no disponible - Ingrese manualmente",
-                ]:
-                    form_dialog.nombre_input.setText(nombre_obtenido)
+                try:
+                    QMessageBox.information(
+                        self,
+                        "Consultando API",
+                        f"Obteniendo nombre para RUT {parsed_data['rut']}...\n\nPor favor espere un momento.",
+                    )
+                    nombre_obtenido = get_name_from_registry(parsed_data["rut"])
+                    if nombre_obtenido and nombre_obtenido not in [
+                        "Nombre no disponible - Ingrese manualmente",
+                        "RUT no encontrado - Ingrese manualmente",
+                        "Error en consulta - Ingrese manualmente",
+                        "Timeout en consulta - Ingrese manualmente",
+                        "Error de conexión - Ingrese manualmente",
+                        "API no disponible - Ingrese manualmente",
+                        "Respuesta vacía de la API - Ingrese manualmente",
+                        "Error en respuesta de la API - Ingrese manualmente",
+                    ]:
+                        form_dialog.nombre_input.setText(nombre_obtenido)
+                except Exception as api_error:
+                    # Si falla la consulta de la API, continuar sin el nombre
+                    print(f"Error al consultar API: {api_error}")
+                    nombre_obtenido = "Error en consulta - Ingrese manualmente"
 
             message = f"El RUT {parsed_data.get('rut', 'N/A')} ha sido extraído automáticamente del carnet.\n\n"
             if nombre_obtenido and nombre_obtenido not in [
@@ -418,7 +447,11 @@ class QRScannerDialog(QDialog):
                             "El visitante ya existe en el sistema",
                         )
         except Exception as exc:
-            QMessageBox.critical(self, "Error", f"Error al abrir registro:\n{str(exc)}")
+            error_msg = str(exc)
+            # Mensaje más claro para errores de JSON
+            if "Expecting value" in error_msg or "JSON" in error_msg:
+                error_msg = "Error al consultar la API para obtener el nombre.\n\nPor favor, ingrese el nombre manualmente en el formulario."
+            QMessageBox.critical(self, "Error", f"Error al abrir registro:\n{error_msg}")
 
     def open_manual_registration(self) -> None:
         try:

@@ -246,6 +246,7 @@ class VisitasView(QWidget):
         icon = get_icon_for_emoji(option['emoji'], 24)
         if not icon.isNull():
             icon_label = QLabel()
+            icon_label.setStyleSheet("border: none; background-color: transparent; padding: 0; margin: 0;")
             icon_label.setPixmap(icon.pixmap(24, 24))
             title_layout.addWidget(icon_label)
         

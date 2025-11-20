@@ -94,6 +94,12 @@ class PistolScannerSection(QWidget):
         self.process_btn.setMinimumHeight(50)
         input_layout.addWidget(self.process_btn)
 
+        self.register_btn = QPushButton("📝 Iniciar Registro")
+        self.register_btn.setFont(QFont("Arial", 13, QFont.Bold))
+        self.register_btn.setMinimumHeight(50)
+        self.register_btn.setVisible(False)  # Oculto por defecto, se muestra cuando hay RUT detectado
+        input_layout.addWidget(self.register_btn)
+
         main_layout.addWidget(self.input_frame)
         main_layout.addStretch()
 
@@ -107,6 +113,7 @@ class PistolScannerSection(QWidget):
         self.scanner_input.returnPressed.connect(self.process_input)
         self.scanner_input.textChanged.connect(self._on_text_changed)
         self.process_btn.clicked.connect(self.process_input)
+        # El botón de registro se conectará desde el diálogo padre
 
     # ------------------------------------------------------------------
     # Lógica de procesamiento
@@ -213,9 +220,18 @@ class PistolScannerSection(QWidget):
     def clear(self) -> None:
         self.scanner_input.clear()
         self._reset_input_style()
+        self.set_register_button_visible(False)
         if self._notification_label:
             self._notification_label.deleteLater()
             self._notification_label = None
+    
+    def set_register_button_visible(self, visible: bool) -> None:
+        """Muestra u oculta el botón de registro"""
+        self.register_btn.setVisible(visible)
+    
+    def set_register_button_text(self, text: str) -> None:
+        """Establece el texto del botón de registro"""
+        self.register_btn.setText(text)
 
     def set_theme(self, dark_mode: bool):
         self.dark_mode = dark_mode
@@ -282,6 +298,19 @@ class PistolScannerSection(QWidget):
                 font-weight: 600;
             }}
             QPushButton:hover {{ background-color: {self._darken_color(button_bg, 0.15)}; }}
+            """
+        )
+        self.register_btn.setStyleSheet(
+            f"""
+            QPushButton {{
+                background-color: {accent};
+                color: #ffffff;
+                border: none;
+                border-radius: 14px;
+                padding: 12px;
+                font-weight: 600;
+            }}
+            QPushButton:hover {{ background-color: {self._darken_color(accent, 0.15)}; }}
             """
         )
 

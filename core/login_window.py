@@ -256,6 +256,7 @@ class LoginDialog(QDialog):
         tip_icon = get_icon_for_emoji("💡", 16)
         if not tip_icon.isNull():
             icon_label = QLabel()
+            icon_label.setStyleSheet("border: none; background-color: transparent; padding: 0; margin: 0;")
             icon_label.setPixmap(tip_icon.pixmap(16, 16))
             tip_layout.addWidget(icon_label)
         

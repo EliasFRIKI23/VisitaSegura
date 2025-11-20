@@ -23,6 +23,7 @@ class HelpDialog(QDialog):
         # Título
         title_layout = QHBoxLayout()
         title_icon = QLabel()
+        title_icon.setStyleSheet("border: none; background-color: transparent; padding: 0; margin: 0;")
         title_icon_pixmap = get_icon_for_emoji("📖", 24)
         if not title_icon_pixmap.isNull():
             title_icon.setPixmap(title_icon_pixmap.pixmap(24, 24))

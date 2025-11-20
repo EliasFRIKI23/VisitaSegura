@@ -160,15 +160,21 @@ class UserFormDialog(QDialog):
             }
             QGroupBox {
                 font-weight: bold;
-                border: 2px solid #dee2e6;
+                border: none;
                 border-radius: 8px;
-                margin-top: 10px;
-                padding-top: 10px;
+                margin-top: 20px;
+                padding: 15px;
+                padding-top: 25px;
+                background-color: transparent;
             }
             QGroupBox::title {
                 subcontrol-origin: margin;
+                subcontrol-position: top left;
                 left: 10px;
-                padding: 0 5px 0 5px;
+                padding: 0 8px;
+                margin-top: 8px;
+                border: none;
+                background-color: transparent;
             }
             QLineEdit, QComboBox {
                 padding: 8px;
@@ -425,6 +431,7 @@ class UsuariosView(QWidget):
         badge_icon = get_icon_for_emoji("🔐", 16)
         if not badge_icon.isNull():
             icon_label = QLabel()
+            icon_label.setStyleSheet("border: none; background-color: transparent; padding: 0; margin: 0;")
             icon_label.setPixmap(badge_icon.pixmap(16, 16))
             badge_layout.addWidget(icon_label)
         
@@ -520,6 +527,7 @@ class UsuariosView(QWidget):
         info_icon = get_icon_for_emoji("💡", 16)
         if not info_icon.isNull():
             icon_label = QLabel()
+            icon_label.setStyleSheet("border: none; background-color: transparent; padding: 0; margin: 0;")
             icon_label.setPixmap(info_icon.pixmap(16, 16))
             info_layout.addWidget(icon_label)
         

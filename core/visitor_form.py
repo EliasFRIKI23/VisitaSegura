@@ -74,6 +74,7 @@ class VisitorFormDialog(QDialog):
         header_layout.setAlignment(Qt.AlignLeft)
 
         self.title_icon = QLabel()
+        self.title_icon.setStyleSheet("border: none; background-color: transparent; padding: 0; margin: 0;")
         title_icon_pixmap = get_icon_for_emoji("👤", 28)
         if not title_icon_pixmap.isNull():
             self.title_icon.setPixmap(title_icon_pixmap.pixmap(28, 28))
@@ -111,6 +112,7 @@ class VisitorFormDialog(QDialog):
         rut_label_icon = get_icon_for_emoji("🆔", 16)
         if not rut_label_icon.isNull():
             icon_label = QLabel()
+            icon_label.setStyleSheet("border: none; background-color: transparent; padding: 0; margin: 0;")
             icon_label.setPixmap(rut_label_icon.pixmap(16, 16))
             rut_label_layout.addWidget(icon_label)
         
@@ -145,6 +147,7 @@ class VisitorFormDialog(QDialog):
         nombre_label_icon = get_icon_for_emoji("👤", 16)
         if not nombre_label_icon.isNull():
             icon_label = QLabel()
+            icon_label.setStyleSheet("border: none; background-color: transparent; padding: 0; margin: 0;")
             icon_label.setPixmap(nombre_label_icon.pixmap(16, 16))
             nombre_label_layout.addWidget(icon_label)
         
@@ -185,6 +188,7 @@ class VisitorFormDialog(QDialog):
         acompañante_label_icon = get_icon_for_emoji("🤝", 16)
         if not acompañante_label_icon.isNull():
             icon_label = QLabel()
+            icon_label.setStyleSheet("border: none; background-color: transparent; padding: 0; margin: 0;")
             icon_label.setPixmap(acompañante_label_icon.pixmap(16, 16))
             acompañante_label_layout.addWidget(icon_label)
         
@@ -218,6 +222,7 @@ class VisitorFormDialog(QDialog):
         sector_label_icon = get_icon_for_emoji("🏢", 16)
         if not sector_label_icon.isNull():
             icon_label = QLabel()
+            icon_label.setStyleSheet("border: none; background-color: transparent; padding: 0; margin: 0;")
             icon_label.setPixmap(sector_label_icon.pixmap(16, 16))
             sector_label_layout.addWidget(icon_label)
         
@@ -260,10 +265,26 @@ class VisitorFormDialog(QDialog):
         self.rut_input.textChanged.connect(self.normalize_rut_input)
         self.rut_input.editingFinished.connect(self.finalize_rut_format)
     
+    def set_rut_without_normalization(self, rut: str):
+        """Establece el RUT sin disparar la normalización automática"""
+        try:
+            # Desconectar solo la función de normalización si está conectada
+            self.rut_input.textChanged.disconnect(self.normalize_rut_input)
+        except (TypeError, RuntimeError):
+            # Las señales no están conectadas todavía o ya fueron desconectadas
+            pass
+        self.rut_input.setText(rut)
+        try:
+            # Reconectar la función de normalización
+            self.rut_input.textChanged.connect(self.normalize_rut_input)
+        except (TypeError, RuntimeError):
+            # Las señales no están conectadas todavía
+            pass
+    
     def load_visitor_data(self):
         """Carga los datos del visitante en el formulario"""
         if self.visitor:
-            self.rut_input.setText(self.visitor.rut)
+            self.set_rut_without_normalization(self.visitor.rut)
             self.nombre_input.setText(self.visitor.nombre_completo)
             self.acompañante_input.setText(self.visitor.acompañante)
             
@@ -352,13 +373,36 @@ class VisitorFormDialog(QDialog):
         if not rut:
             errors.append("El RUT es obligatorio")
         else:
-            # Normalizar y validar el RUT
-            normalized_rut = normalize_rut(rut)
-            if not normalized_rut:
-                errors.append("El RUT ingresado no es válido")
-            else:
-                # Actualizar el campo con el RUT normalizado
-                self.rut_input.setText(normalized_rut)
+            # Intentar normalizar y validar el RUT con información detallada
+            try:
+                from .theme import normalize_rut_with_info
+                normalized_rut, error_msg, correct_dv = normalize_rut_with_info(rut)
+                
+                if not normalized_rut:
+                    # Si hay un dígito verificador correcto sugerido, mostrarlo
+                    if correct_dv:
+                        rut_clean = ''.join(c for c in rut.upper() if c.isdigit() or c == 'K')
+                        if len(rut_clean) >= 8:
+                            numero = rut_clean[:-1] if len(rut_clean) > 8 else rut_clean[:7]
+                            rut_correcto = normalize_rut(f"{numero}-{correct_dv}")
+                            errors.append(f"El RUT ingresado no es válido. El dígito verificador correcto es {correct_dv}. RUT sugerido: {rut_correcto}")
+                        else:
+                            errors.append(f"El RUT ingresado no es válido: {error_msg}")
+                    else:
+                        errors.append(f"El RUT ingresado no es válido: {error_msg}")
+                else:
+                    # Actualizar el campo con el RUT normalizado sin disparar normalización automática
+                    if normalized_rut != rut:
+                        self.set_rut_without_normalization(normalized_rut)
+            except ImportError:
+                # Fallback a la función original
+                normalized_rut = normalize_rut(rut)
+                if not normalized_rut:
+                    errors.append("El RUT ingresado no es válido. Verifique el formato y el dígito verificador.")
+                else:
+                    # Actualizar el campo con el RUT normalizado sin disparar normalización automática
+                    if normalized_rut != rut:
+                        self.set_rut_without_normalization(normalized_rut)
         
         # Validar nombre
         nombre = self.nombre_input.text().strip()
@@ -476,7 +520,29 @@ class VisitorFormDialog(QDialog):
 
         for group in (self.personal_group, self.visit_group):
             group.setStyleSheet(
-                f"QGroupBox {{ background-color: {card_bg}; border: 1px solid {border_color}; border-radius: 18px; margin-top: 16px; padding: 20px; color: {text_color}; }}"
+                f"""
+                QGroupBox {{
+                    background-color: {card_bg};
+                    border: none;
+                    border-radius: 18px;
+                    margin-top: 24px;
+                    padding: 20px;
+                    padding-top: 45px;
+                    color: {text_color};
+                }}
+                QGroupBox::title {{
+                    subcontrol-origin: margin;
+                    subcontrol-position: top left;
+                    padding: 0 8px;
+                    margin-left: 8px;
+                    margin-top: 12px;
+                    margin-bottom: 12px;
+                    border: none;
+                    background-color: transparent;
+                    color: {text_color};
+                    font-weight: bold;
+                }}
+                """
             )
 
         input_style = (

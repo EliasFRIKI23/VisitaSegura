@@ -435,6 +435,7 @@ class ReportesView(QWidget):
         charts_title_icon = get_icon_for_emoji("📊", 20)
         if not charts_title_icon.isNull():
             icon_label = QLabel()
+            icon_label.setStyleSheet("border: none; background-color: transparent; padding: 0; margin: 0;")
             icon_label.setPixmap(charts_title_icon.pixmap(20, 20))
             charts_title_layout.addWidget(icon_label)
         
@@ -509,6 +510,7 @@ class ReportesView(QWidget):
         chart1_icon = get_icon_for_emoji("👥", 16)
         if not chart1_icon.isNull():
             icon_label = QLabel()
+            icon_label.setStyleSheet("border: none; background-color: transparent; padding: 0; margin: 0;")
             icon_label.setPixmap(chart1_icon.pixmap(16, 16))
             chart1_title_layout.addWidget(icon_label)
         
@@ -566,6 +568,7 @@ class ReportesView(QWidget):
         chart2_icon = get_icon_for_emoji("👤", 16)
         if not chart2_icon.isNull():
             icon_label = QLabel()
+            icon_label.setStyleSheet("border: none; background-color: transparent; padding: 0; margin: 0;")
             icon_label.setPixmap(chart2_icon.pixmap(16, 16))
             chart2_title_layout.addWidget(icon_label)
         
@@ -622,6 +625,7 @@ class ReportesView(QWidget):
         chart3_icon = get_icon_for_emoji("🏢", 16)
         if not chart3_icon.isNull():
             icon_label = QLabel()
+            icon_label.setStyleSheet("border: none; background-color: transparent; padding: 0; margin: 0;")
             icon_label.setPixmap(chart3_icon.pixmap(16, 16))
             chart3_title_layout.addWidget(icon_label)
         
@@ -698,6 +702,7 @@ class ReportesView(QWidget):
         visitors_title_icon = get_icon_for_emoji("👥", 20)
         if not visitors_title_icon.isNull():
             icon_label = QLabel()
+            icon_label.setStyleSheet("border: none; background-color: transparent; padding: 0; margin: 0;")
             icon_label.setPixmap(visitors_title_icon.pixmap(20, 20))
             current_visitors_title_layout.addWidget(icon_label)
         
@@ -913,6 +918,7 @@ class ReportesView(QWidget):
         title_icon = get_icon_for_emoji(emoji, 18)
         if not title_icon.isNull():
             icon_label = QLabel()
+            icon_label.setStyleSheet("border: none; background-color: transparent; padding: 0; margin: 0;")
             icon_label.setPixmap(title_icon.pixmap(18, 18))
             title_layout.addWidget(icon_label)
         

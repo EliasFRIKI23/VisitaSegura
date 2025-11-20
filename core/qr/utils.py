@@ -40,33 +40,40 @@ def validate_rut_dv(numero: str, dv: str) -> bool:
 
 def format_rut_without_validation(rut_input: str) -> str:
     """
-    Formatea un RUT al formato XX.XXX.XXX-X sin validar el dígito verificador.
+    Formatea un RUT al formato XX.XXX.XXX-X (o X.XXX.XXX-X para RUTs de 7 dígitos) 
+    sin validar el dígito verificador. Maneja correctamente el dígito verificador 'K'.
     """
     if not rut_input:
         return ""
 
+    # Limpiar el RUT: solo números y K/k (convertir a mayúscula)
     rut_clean = "".join(c for c in str(rut_input).upper() if c.isdigit() or c == "K")
 
     if len(rut_clean) < 8 or len(rut_clean) > 9:
         return ""
 
+    # Separar número y dígito verificador
     if len(rut_clean) == 8:
+        # Caso: 7 dígitos + 1 dígito verificador (formato X.XXX.XXX-X)
         numero = rut_clean[:7]
         dv = rut_clean[7]
-        if not validate_rut_dv(numero, dv):
-            numero = rut_clean[:7]
-            dv = rut_clean[7]
     else:
+        # Caso: 8 dígitos + 1 dígito verificador (formato XX.XXX.XXX-X)
         numero = rut_clean[:-1]
         dv = rut_clean[-1]
 
+    # Formatear según la longitud del número
     if len(numero) == 7:
+        # Formato: X.XXX.XXX-X
         numero_formateado = f"{numero[:1]}.{numero[1:4]}.{numero[4:]}"
         return f"{numero_formateado}-{dv}"
-    if len(numero) == 8:
+    elif len(numero) == 8:
+        # Formato: XX.XXX.XXX-X (formato estándar preferido)
         numero_formateado = f"{numero[:2]}.{numero[2:5]}.{numero[5:]}"
         return f"{numero_formateado}-{dv}"
-    return f"{numero}-{dv}"
+    else:
+        # Fallback para otros casos
+        return f"{numero}-{dv}"
 
 
 # ---------------------------------------------------------------------------
@@ -226,11 +233,19 @@ def get_name_from_registry(rut: str) -> str:
         return "Error de conexión - Ingrese manualmente"
 
     if response.status_code == 200:
-        data = response.json()
-        if "nombre" in data and data["nombre"]:
-            return data["nombre"].strip().title()
-        if "razon_social" in data and data["razon_social"]:
-            return data["razon_social"].strip().title()
+        try:
+            # Verificar que la respuesta tenga contenido antes de parsear
+            if not response.text or not response.text.strip():
+                return "Respuesta vacía de la API - Ingrese manualmente"
+            
+            data = response.json()
+            if "nombre" in data and data["nombre"]:
+                return data["nombre"].strip().title()
+            if "razon_social" in data and data["razon_social"]:
+                return data["razon_social"].strip().title()
+        except (ValueError, json.JSONDecodeError) as e:
+            # Error al parsear JSON (respuesta vacía o inválida)
+            return "Error en respuesta de la API - Ingrese manualmente"
     elif response.status_code == 404:
         return "RUT no encontrado - Ingrese manualmente"
     else:
