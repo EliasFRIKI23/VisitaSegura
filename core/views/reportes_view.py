@@ -5,6 +5,7 @@ from PySide6.QtWidgets import (QWidget, QVBoxLayout, QHBoxLayout, QLabel, QPushB
 from PySide6.QtCore import Qt, QThread, Signal, QTimer
 from PySide6.QtGui import QFont, QPixmap, QColor, QGuiApplication
 from core.ui.icon_loader import get_icon_for_emoji
+from core.ui.resource_paths import get_logo_path
 import sys
 import os
 from datetime import datetime, timedelta
@@ -389,7 +390,7 @@ class ReportesView(QWidget):
         
         # Logo Duoc
         logo_label = QLabel()
-        logo_pixmap = QPixmap("Logo Duoc .png")
+        logo_pixmap = QPixmap(get_logo_path())
         if not logo_pixmap.isNull():
             scaled_pixmap = logo_pixmap.scaled(120, 60, Qt.KeepAspectRatio, Qt.SmoothTransformation)
             logo_label.setPixmap(scaled_pixmap)

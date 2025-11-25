@@ -25,10 +25,22 @@ if opencv_path.exists():
     for dll in opencv_path.rglob('*.dll'):
         binaries_to_add.append((str(dll), 'cv2'))
 
-# Datos adicionales (logo, etc)
+# Datos adicionales (logo, iconos, etc)
 datas_to_add = []
 if os.path.exists('Logo Duoc .png'):
     datas_to_add.append(('Logo Duoc .png', '.'))
+
+# Incluir todos los iconos de la aplicación
+# Incluir el directorio completo manteniendo la estructura
+icons_dir = Path('core/ui/icons')
+if icons_dir.exists():
+    # Incluir todos los archivos PNG del directorio manteniendo la estructura
+    for icon_file in icons_dir.glob('*.png'):
+        # La tupla es (origen, destino) donde destino es relativo a la raíz del EXE
+        datas_to_add.append((str(icon_file), 'core/ui/icons'))
+    # También incluir otros archivos si los hay (ICO, etc.)
+    for icon_file in icons_dir.glob('*.ico'):
+        datas_to_add.append((str(icon_file), 'core/ui/icons'))
 
 a = Analysis(
     ['Main.py'],
@@ -61,6 +73,14 @@ a = Analysis(
 )
 pyz = PYZ(a.pure)
 
+# Ruta del icono del ejecutable
+icon_path = None
+if os.path.exists('core/ui/icons/Main_logo.ico'):
+    icon_path = 'core/ui/icons/Main_logo.ico'
+elif os.path.exists('core/ui/icons/Main_logo.png'):
+    # PyInstaller puede usar PNG pero es mejor usar ICO
+    icon_path = 'core/ui/icons/Main_logo.png'
+
 exe = EXE(
     pyz,
     a.scripts,
@@ -80,4 +100,5 @@ exe = EXE(
     target_arch=None,
     codesign_identity=None,
     entitlements_file=None,
+    icon=icon_path,  # Icono del ejecutable
 )

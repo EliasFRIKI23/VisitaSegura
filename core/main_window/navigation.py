@@ -15,6 +15,7 @@ from PySide6.QtWidgets import (
     QGraphicsDropShadowEffect,
 )
 from core.ui.icon_loader import load_icon, get_icon_for_emoji
+from core.ui.resource_paths import get_logo_path
 
 from .dependencies import (
     DUOC_PRIMARY,
@@ -60,7 +61,7 @@ class NavigationMixin:
         title_layout.setSpacing(12)
 
         logo_label = QLabel()
-        logo_pixmap = QPixmap("Logo Duoc .png")
+        logo_pixmap = QPixmap(get_logo_path())
         if not logo_pixmap.isNull():
             resized = logo_pixmap.scaled(110, 55, Qt.KeepAspectRatio, Qt.SmoothTransformation)
             logo_label.setPixmap(resized)
@@ -191,7 +192,7 @@ class NavigationMixin:
 
         # Logo de Duoc UC - Tamaño pequeño para no afectar el layout
         intro_label = QLabel()
-        logo_pixmap = QPixmap("Logo Duoc .png")
+        logo_pixmap = QPixmap(get_logo_path())
         if not logo_pixmap.isNull():
             # Tamaño más pequeño y compacto para no afectar la resolución del resto
             resized = logo_pixmap.scaled(200, 100, Qt.KeepAspectRatio, Qt.SmoothTransformation)

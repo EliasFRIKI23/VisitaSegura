@@ -2,13 +2,25 @@
 Módulo para cargar iconos PNG desde core/ui/icons
 """
 import os
+import sys
 from pathlib import Path
 from PySide6.QtGui import QIcon, QPixmap
 from PySide6.QtCore import Qt
 from PySide6.QtWidgets import QLabel
 
-# Ruta base de los iconos
-ICONS_DIR = Path(__file__).parent / "icons"
+# Ruta base de los iconos - compatible con PyInstaller
+def get_icons_dir() -> Path:
+    """Obtiene el directorio de iconos, funcionando tanto en desarrollo como en EXE"""
+    try:
+        # PyInstaller crea un directorio temporal y almacena la ruta en _MEIPASS
+        # Los iconos están empaquetados en core/ui/icons dentro de _MEIPASS
+        base_path = Path(sys._MEIPASS) / "core" / "ui"
+    except AttributeError:
+        # Si no estamos en un EXE, usar la ruta relativa normal
+        base_path = Path(__file__).parent
+    
+    icons_path = base_path / "icons"
+    return icons_path
 
 # Mapeo de emojis a nombres de archivos PNG
 EMOJI_TO_ICON = {
@@ -66,7 +78,8 @@ EMOJI_TO_ICON = {
 
 def get_icon_path(icon_name: str) -> Path:
     """Retorna la ruta completa de un icono"""
-    return ICONS_DIR / icon_name
+    icons_dir = get_icons_dir()
+    return icons_dir / icon_name
 
 
 def load_icon(icon_name: str, size: int = 24) -> QIcon:
@@ -83,11 +96,22 @@ def load_icon(icon_name: str, size: int = 24) -> QIcon:
     icon_path = get_icon_path(icon_name)
     
     if not icon_path.exists():
-        print(f"⚠️ Icono no encontrado: {icon_path}")
+        # Mensaje de depuración más detallado
+        icons_dir = get_icons_dir()
+        print(f"⚠️ Icono no encontrado: {icon_name}")
+        print(f"   Buscado en: {icon_path}")
+        print(f"   Directorio de iconos: {icons_dir}")
+        print(f"   ¿Existe el directorio?: {icons_dir.exists()}")
+        if icons_dir.exists():
+            # Listar archivos disponibles para depuración
+            available = list(icons_dir.glob("*.png"))
+            if available:
+                print(f"   Iconos disponibles: {[f.name for f in available[:5]]}...")
         return QIcon()
     
     pixmap = QPixmap(str(icon_path))
     if pixmap.isNull():
+        print(f"⚠️ No se pudo cargar el icono (QPixmap vacío): {icon_path}")
         return QIcon()
     
     # Escalar si es necesario

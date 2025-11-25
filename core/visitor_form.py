@@ -15,7 +15,7 @@ from PySide6.QtWidgets import (
 )
 from PySide6.QtCore import Qt
 from PySide6.QtGui import QFont
-from core.ui.icon_loader import get_icon_for_emoji
+from core.ui.icon_loader import get_icon_for_emoji, get_pixmap_for_emoji
 from .visitors import Visitor, VisitorManager
 
 # Importar funciones de normalización de RUT
@@ -603,15 +603,24 @@ class QuickVisitorForm(QWidget):
         self.visitor_manager = VisitorManager()
         self.auth_manager = auth_manager  # Guardar referencia al AuthManager
         self.setup_ui()
+        self.setup_connections()
     
     def setup_ui(self):
         layout = QVBoxLayout(self)
         layout.setSpacing(20)
         layout.setContentsMargins(0, 0, 0, 0)
 
+        # Importar funciones para iconos
+        from .ui.icon_loader import get_icon_for_emoji, get_pixmap_for_emoji
+        
         title_layout = QHBoxLayout()
-        self.title_icon = QLabel("⚡")
-        self.title_icon.setFont(QFont("Arial", 20))
+        self.title_icon = QLabel()
+        title_icon_pixmap = get_pixmap_for_emoji("⚡", 20)
+        if not title_icon_pixmap.isNull():
+            self.title_icon.setPixmap(title_icon_pixmap)
+        else:
+            self.title_icon.setText("⚡")
+            self.title_icon.setFont(QFont("Arial", 20))
         self.title_label = QLabel("Registro Rápido")
         self.title_label.setFont(QFont("Arial", 14, QFont.Bold))
         self.title_label.setStyleSheet("padding-bottom: 6px;")
@@ -619,6 +628,39 @@ class QuickVisitorForm(QWidget):
         title_layout.addWidget(self.title_label)
         title_layout.addStretch()
         layout.addLayout(title_layout)
+
+        # Crear labels con iconos para el formulario
+        rut_label = QLabel()
+        rut_icon = get_pixmap_for_emoji("🆔", 16)
+        if not rut_icon.isNull():
+            rut_label.setPixmap(rut_icon)
+        else:
+            rut_label.setText("🆔 RUT")
+        rut_label.setToolTip("RUT del visitante en formato XX.XXX.XXX-X")
+        
+        nombre_label = QLabel()
+        nombre_icon = get_pixmap_for_emoji("👤", 16)
+        if not nombre_icon.isNull():
+            nombre_label.setPixmap(nombre_icon)
+        else:
+            nombre_label.setText("👤 Nombre")
+        nombre_label.setToolTip("Nombre completo del visitante")
+        
+        acompañante_label = QLabel()
+        acompañante_icon = get_pixmap_for_emoji("🤝", 16)
+        if not acompañante_icon.isNull():
+            acompañante_label.setPixmap(acompañante_icon)
+        else:
+            acompañante_label.setText("🤝 Acompañante")
+        acompañante_label.setToolTip("Nombre de quien invita al visitante")
+        
+        sector_label = QLabel()
+        sector_icon = get_pixmap_for_emoji("🏢", 16)
+        if not sector_icon.isNull():
+            sector_label.setPixmap(sector_icon)
+        else:
+            sector_label.setText("🏢 Sector")
+        sector_label.setToolTip("Zona o sector de destino")
 
         self.form_group = QGroupBox("📝 Datos del Visitante")
         self.form_group.setFont(QFont("Arial", 10, QFont.Bold))
@@ -632,34 +674,54 @@ class QuickVisitorForm(QWidget):
         self.rut_input.setPlaceholderText("Ej: 12.345.678-9")
         self.rut_input.setStyleSheet("font-size: 13px;")
         self.rut_input.setMinimumHeight(42)
-        form_layout.addRow("🆔 RUT", self.rut_input)
+        form_layout.addRow(rut_label, self.rut_input)
 
         self.nombre_input = QLineEdit()
         self.nombre_input.setPlaceholderText("Nombre completo del visitante")
         self.nombre_input.setStyleSheet("font-size: 13px;")
         self.nombre_input.setMinimumHeight(42)
-        form_layout.addRow("👤 Nombre", self.nombre_input)
+        form_layout.addRow(nombre_label, self.nombre_input)
 
         self.acompañante_input = QLineEdit()
         self.acompañante_input.setPlaceholderText("Nombre de quien invita")
         self.acompañante_input.setStyleSheet("font-size: 13px;")
         self.acompañante_input.setMinimumHeight(42)
-        form_layout.addRow("🤝 Acompañante", self.acompañante_input)
+        form_layout.addRow(acompañante_label, self.acompañante_input)
 
         self.sector_combo = QComboBox()
         self.sector_combo.addItems(["Financiamiento", "CITT", "Auditorio", "Administración"])
         self.sector_combo.setMinimumHeight(42)
-        form_layout.addRow("🏢 Sector", self.sector_combo)
+        form_layout.addRow(sector_label, self.sector_combo)
 
         layout.addWidget(self.form_group)
 
-        self.registrar_btn = QPushButton("🚀 Registrar Rápido")
+        self.registrar_btn = QPushButton("Registrar Rápido")
+        self.registrar_btn.setIcon(get_icon_for_emoji("🚀", 18))
         self.registrar_btn.setMinimumHeight(46)
         self.registrar_btn.setCursor(Qt.PointingHandCursor)
         layout.addWidget(self.registrar_btn)
 
         layout.addStretch()
         self.setMinimumHeight(400)
+    
+    def setup_connections(self):
+        """Configura las conexiones del formulario rápido"""
+        # Conectar el botón de registro rápido
+        self.registrar_btn.clicked.connect(self.handle_register_button)
+        
+        # Conectar el formato automático del RUT
+        self.rut_input.textChanged.connect(self.normalize_rut_input)
+    
+    def handle_register_button(self):
+        """Maneja el clic en el botón de registro rápido"""
+        # Si el padre tiene el método handle_quick_registration, usarlo
+        # para que actualice la lista automáticamente
+        if self.parent() and hasattr(self.parent(), 'handle_quick_registration'):
+            self.parent().handle_quick_registration()
+        else:
+            # Si no, llamar directamente al método de registro
+            if self.register_visitor():
+                self.parent().refresh_list() if hasattr(self.parent(), 'refresh_list') else None
 
     def apply_theme(self, dark_mode: bool):
         if dark_mode:

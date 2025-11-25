@@ -8,6 +8,7 @@ from PySide6.QtCore import Qt, Signal
 from core.auth_manager import AuthManager
 from core.theme import DUOC_PRIMARY
 from core.ui.icon_loader import get_icon_for_emoji
+from core.ui.resource_paths import get_logo_path
 
 class LoginDialog(QDialog):
     """Ventana de login con diseño profesional mejorado"""
@@ -87,7 +88,7 @@ class LoginDialog(QDialog):
         layout.addStretch()
 
         logo_label = QLabel()
-        logo_pixmap = QPixmap("Logo Duoc .png")
+        logo_pixmap = QPixmap(get_logo_path())
         if not logo_pixmap.isNull():
             scaled_pixmap = logo_pixmap.scaled(120, 60, Qt.KeepAspectRatio, Qt.SmoothTransformation)
             logo_label.setPixmap(scaled_pixmap)
