@@ -6,6 +6,11 @@ from PySide6.QtWidgets import QApplication
 from core.ui.icon_loader import get_icon_for_emoji
 
 from .dependencies import DUOC_PRIMARY, DUOC_SECONDARY, get_standard_button_style
+from core.theme import (
+    DUOC_BG_LIGHT, DUOC_BG_LIGHT_CARD, DUOC_BG_LIGHT_TOOLBAR, DUOC_BG_LIGHT_SECONDARY,
+    DUOC_BG_DARK, DUOC_BG_DARK_CARD, DUOC_BG_DARK_TOOLBAR, DUOC_BG_DARK_SECONDARY,
+    DUOC_LOGO_GOLD, DUOC_LOGO_BLUE, DUOC_LOGO_GRAY
+)
 
 
 class ThemeMixin:
@@ -14,18 +19,19 @@ class ThemeMixin:
     def apply_theme(self) -> None:
         if self.dark_mode:
             palette = QPalette()
-            palette.setColor(QPalette.Window, QColor(30, 30, 30))
+            # Usar un fondo oscuro basado en el azul UC pero más claro para legibilidad
+            palette.setColor(QPalette.Window, QColor(0x1a, 0x2f, 0x45))  # Variante más clara de #002138
             palette.setColor(QPalette.WindowText, Qt.white)
-            palette.setColor(QPalette.Base, QColor(25, 25, 25))
-            palette.setColor(QPalette.AlternateBase, QColor(40, 40, 40))
-            palette.setColor(QPalette.ToolTipBase, Qt.white)
+            palette.setColor(QPalette.Base, QColor(0x15, 0x27, 0x38))  # Base un poco más oscura
+            palette.setColor(QPalette.AlternateBase, QColor(0x20, 0x37, 0x4d))  # Alternativo basado en UC
+            palette.setColor(QPalette.ToolTipBase, QColor(0x54, 0x65, 0x75))  # Usar el gris del logo
             palette.setColor(QPalette.ToolTipText, Qt.white)
             palette.setColor(QPalette.Text, Qt.white)
-            palette.setColor(QPalette.Button, QColor(40, 40, 40))
+            palette.setColor(QPalette.Button, QColor(0x20, 0x37, 0x4d))
             palette.setColor(QPalette.ButtonText, Qt.white)
-            palette.setColor(QPalette.BrightText, Qt.red)
-            palette.setColor(QPalette.Highlight, QColor(DUOC_SECONDARY))
-            palette.setColor(QPalette.HighlightedText, Qt.black)
+            palette.setColor(QPalette.BrightText, QColor(0xf8, 0xb3, 0x1c))  # Amarillo DUOC
+            palette.setColor(QPalette.Highlight, QColor(0xf8, 0xb3, 0x1c))  # Amarillo DUOC para highlights
+            palette.setColor(QPalette.HighlightedText, QColor(0x00, 0x21, 0x38))  # Azul UC oscuro para texto sobre highlight
         else:
             palette = QApplication.style().standardPalette()
             palette.setColor(QPalette.Highlight, QColor(DUOC_PRIMARY))
@@ -78,23 +84,24 @@ class ThemeMixin:
             return
 
         if self.dark_mode:
-            style = """
-                QWidget#ToolbarContainer {
-                    background-color: #1e1e1e;
-                }
-                QLabel#ToolbarTitle {
+            # Toolbar con fondo más claro que el fondo principal para contraste (como en modo claro)
+            style = f"""
+                QWidget#ToolbarContainer {{
+                    background-color: {DUOC_BG_DARK_TOOLBAR};
+                }}
+                QLabel#ToolbarTitle {{
                     color: #f8f9fa;
-                }
+                }}
             """
             toggle_text = "☀️ Modo claro"
         else:
-            style = """
-                QWidget#ToolbarContainer {
-                    background-color: #ffffff;
-                }
-                QLabel#ToolbarTitle {
+            style = f"""
+                QWidget#ToolbarContainer {{
+                    background-color: {DUOC_BG_LIGHT_TOOLBAR};
+                }}
+                QLabel#ToolbarTitle {{
                     color: #1f2933;
-                }
+                }}
             """
             toggle_text = "🌙 Modo oscuro"
 
@@ -107,74 +114,60 @@ class ThemeMixin:
             return
 
         if self.dark_mode:
-            self.background_widget.setStyleSheet("background-color: #1e2024;")
+            # Fondo oscuro basado en el azul UC (#002138) pero más claro
+            self.background_widget.setStyleSheet(f"background-color: {DUOC_BG_DARK};")
         else:
-            self.background_widget.setStyleSheet("background-color: #f3f4f7;")
+            self.background_widget.setStyleSheet(f"background-color: {DUOC_BG_LIGHT_SECONDARY};")
 
     def _update_card_theme(self) -> None:
         if not hasattr(self, "central_card"):
             return
 
         if self.dark_mode:
-            duoc_blue = "#0D47A1"
-            duoc_gold = "#FFCA45"
-            card_style = """
-                QFrame {
-                    background-color: #252830;
+            # Usar los colores exactos del logo para modo oscuro
+            duoc_blue = DUOC_LOGO_BLUE  # Azul UC oscuro
+            duoc_gold = DUOC_LOGO_GOLD  # Amarillo DUOC exacto
+            duoc_logo_gray = DUOC_LOGO_GRAY  # Gris del logo católica
+            card_style = f"""
+                QFrame {{
+                    background-color: {DUOC_BG_DARK_CARD};
                     border-radius: 28px;
-                    border: 1px solid rgba(255, 255, 255, 0.08);
+                    border: 1px solid rgba(84, 101, 117, 0.25);
                     padding: 40px 48px;
-                }
+                }}
             """
-            button_bg = "#2f3240"
-            button_border = "rgba(255, 255, 255, 0.08)"
+            button_bg = DUOC_BG_DARK_SECONDARY
+            button_border = "rgba(84, 101, 117, 0.3)"
             text_color = "#f5f7fa"
         else:
-            card_style = """
-                QFrame {
-                    background-color: #ffffff;
+            card_style = f"""
+                QFrame {{
+                    background-color: {DUOC_BG_LIGHT_CARD};
                     border-radius: 28px;
                     border: 1px solid rgba(0, 0, 0, 0.06);
                     padding: 40px 48px;
-                }
+                }}
             """
-            button_bg = "#ffffff"
+            button_bg = DUOC_BG_LIGHT_CARD
             button_border = "rgba(0, 0, 0, 0.08)"
             text_color = "#1f2933"
 
         self.central_card.setStyleSheet(card_style)
 
         if hasattr(self, "intro_label"):
-            intro_color = "#e2e8f0" if self.dark_mode else "#4a5568"
-            self.intro_label.setStyleSheet(f"color: {intro_color}; font-size: 14px;")
-
-        if hasattr(self, "intro_container"):
             if self.dark_mode:
-                self.intro_container.setStyleSheet(
-                    """
-                    QFrame#IntroContainer {
-                        background-color: #1f2a37;
-                        border-radius: 30px;
-                        border: 1px solid rgba(255, 255, 255, 0.08);
-                    }
-                    """
-                )
+                # Usar un color más claro y vibrante en modo oscuro
+                intro_color = "#f8f9fa"
             else:
-                self.intro_container.setStyleSheet(
-                    """
-                    QFrame#IntroContainer {
-                        background-color: rgba(255, 255, 255, 0.96);
-                        border-radius: 30px;
-                        border: 1px solid rgba(15, 23, 42, 0.08);
-                    }
-                    """
-                )
+                intro_color = "#4a5568"
+            self.intro_label.setStyleSheet(f"color: {intro_color}; font-size: 28px; font-weight: bold;")
 
         if hasattr(self, "card_shadow"):
             if self.dark_mode:
-                self.card_shadow.setColor(QColor(0, 0, 0, 180))
-                self.card_shadow.setBlurRadius(55)
-                self.card_shadow.setOffset(0, 30)
+                # Sombra más sutil con tinte azul que complementa el fondo
+                self.card_shadow.setColor(QColor(0, 33, 56, 220))  # Sombra basada en el azul UC
+                self.card_shadow.setBlurRadius(60)
+                self.card_shadow.setOffset(0, 32)
             else:
                 self.card_shadow.setColor(QColor(0, 0, 0, 55))
                 self.card_shadow.setBlurRadius(45)
@@ -210,11 +203,25 @@ class ThemeMixin:
                 font_size = button.property("fontSize") or 14
                 
                 if self.dark_mode:
-                    # Mantener colores institucionales vibrantes
-                    button_bg_color = accent
-                    hover_bg = lighten_color(accent, 0.1)
+                    # Usar los colores exactos del logo en modo oscuro
+                    # Si el accent es el azul UC (#003A70 o similar), usar el azul oscuro del logo
+                    # Si el accent es el amarillo DUOC, usar el amarillo exacto del logo
+                    if accent == DUOC_PRIMARY or accent == "#003A70":
+                        # Para botones azules, usar el azul UC oscuro del logo con texto claro
+                        button_bg_color = DUOC_LOGO_BLUE
+                        hover_bg = "#003350"
+                        text_color_button = DUOC_LOGO_GOLD  # Texto amarillo DUOC sobre fondo azul UC
+                    elif accent == DUOC_SECONDARY or "#FF" in accent.upper():
+                        # Para botones amarillos, usar el amarillo DUOC exacto del logo
+                        button_bg_color = DUOC_LOGO_GOLD
+                        hover_bg = "#ffc640"
+                        text_color_button = DUOC_LOGO_BLUE  # Texto azul UC oscuro sobre fondo amarillo DUOC
+                    else:
+                        # Fallback para otros colores
+                        button_bg_color = accent
+                        hover_bg = lighten_color(accent, 0.1)
+                        text_color_button = "#f8fafc"
                     border_color_btn = "transparent"
-                    text_color_button = "#f8fafc"
                 else:
                     button_bg_color = accent
                     if is_dark_color(accent):
@@ -234,7 +241,7 @@ class ThemeMixin:
                         padding: 16px 20px;
                         text-align: left;
                         font-size: {font_size}px;
-                        font-weight: 600;
+                        font-weight: bold;
                         color: {text_color_button};
                     }}
                     QPushButton:hover {{
@@ -249,18 +256,19 @@ class ThemeMixin:
 
         if hasattr(self, "btn_open_login"):
             if self.dark_mode:
+                # Botón con el amarillo DUOC para destacar en modo oscuro
                 self.btn_open_login.setStyleSheet(
                     f"""
                     QPushButton {{
-                        background-color: {DUOC_PRIMARY};
-                        color: #ffffff;
+                        background-color: {DUOC_LOGO_GOLD};
+                        color: {DUOC_LOGO_BLUE};
                         border-radius: 18px;
                         padding: 12px 24px;
                         font-size: 14px;
-                        font-weight: 600;
+                        font-weight: bold;
                     }}
                     QPushButton:hover {{
-                        background-color: rgba(0, 58, 112, 0.8);
+                        background-color: #ffc640;
                     }}
                     """
                 )

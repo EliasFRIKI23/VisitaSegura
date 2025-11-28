@@ -183,30 +183,27 @@ class NavigationMixin:
         card_layout.setSpacing(28)
         card_layout.setAlignment(Qt.AlignCenter)
 
-        # Encabezado estilo "pill" con mensaje principal
-        self.intro_container = QFrame()
-        self.intro_container.setObjectName("IntroContainer")
-        intro_container_layout = QVBoxLayout(self.intro_container)
-        intro_container_layout.setContentsMargins(24, 16, 24, 16)
-        intro_container_layout.setSpacing(0)
-
-        # Logo de Duoc UC - Tamaño pequeño para no afectar el layout
-        intro_label = QLabel()
+        # Logo de Duoc UC centrado
+        logo_label = QLabel()
         logo_pixmap = QPixmap(get_logo_path())
         if not logo_pixmap.isNull():
-            # Tamaño más pequeño y compacto para no afectar la resolución del resto
             resized = logo_pixmap.scaled(200, 100, Qt.KeepAspectRatio, Qt.SmoothTransformation)
-            intro_label.setPixmap(resized)
-            intro_label.setAlignment(Qt.AlignCenter)
-            intro_label.setScaledContents(False)
+            logo_label.setPixmap(resized)
+            logo_label.setAlignment(Qt.AlignCenter)
+            logo_label.setScaledContents(False)
         else:
-            # Fallback si no se encuentra el logo
-            intro_label.setText("Duoc UC")
-            intro_label.setFont(heading_font(16))
-            intro_label.setAlignment(Qt.AlignCenter)
-        self.intro_label = intro_label
-        intro_container_layout.addWidget(intro_label)
-        card_layout.addWidget(self.intro_container)
+            logo_label.setText("Duoc UC")
+            logo_label.setFont(heading_font(16))
+            logo_label.setAlignment(Qt.AlignCenter)
+        card_layout.addWidget(logo_label, alignment=Qt.AlignCenter)
+
+        # Mensaje de bienvenida
+        welcome_label = QLabel("Bienvenido a VisitaSegura")
+        welcome_label.setFont(heading_font(28))  # Aumentado de 20 a 28
+        welcome_label.setAlignment(Qt.AlignCenter)
+        welcome_label.setStyleSheet("color: inherit;")
+        self.intro_label = welcome_label  # Mantener referencia para compatibilidad con theme_control
+        card_layout.addWidget(welcome_label, alignment=Qt.AlignCenter)
 
         buttons_layout = QGridLayout()
         buttons_layout.setSpacing(20)

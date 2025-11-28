@@ -9,6 +9,23 @@ DUOC_INFO = "#17a2b8"
 DUOC_DANGER = "#dc3545"
 DUOC_BLUE = "#007bff"  # Mantener para acentos existentes
 
+# Colores del logo exactos
+DUOC_LOGO_GOLD = "#f8b31c"      # Amarillo DUOC del logo
+DUOC_LOGO_BLUE = "#002138"      # Azul UC oscuro del logo
+DUOC_LOGO_GRAY = "#546575"      # Gris del logo católica
+
+# Colores de fondo globales para modo claro
+DUOC_BG_LIGHT = "#e5e7eb"       # Fondo principal modo claro (gris suave, menos blanco)
+DUOC_BG_LIGHT_CARD = "#e5e7eb"  # Fondo de tarjetas modo claro
+DUOC_BG_LIGHT_TOOLBAR = "#e5e7eb"  # Fondo de toolbar modo claro
+DUOC_BG_LIGHT_SECONDARY = "#f3f4f7"  # Fondo secundario modo claro (más claro que el principal)
+
+# Colores de fondo globales para modo oscuro (basados en el azul UC)
+DUOC_BG_DARK = "#1a2f45"        # Fondo principal modo oscuro (variante clara de #002138)
+DUOC_BG_DARK_CARD = "#1f2835"   # Fondo de tarjetas modo oscuro (más oscuro para que el logo gris #546575 tenga mejor contraste)
+DUOC_BG_DARK_TOOLBAR = "#253243"  # Fondo de toolbar modo oscuro (más claro que el fondo principal para contraste)
+DUOC_BG_DARK_SECONDARY = "#20374d"  # Fondo secundario modo oscuro
+
 # Colores estandarizados para tablas y botones
 DUOC_TABLE_HEADER_BG = DUOC_PRIMARY    # Fondo del encabezado de tabla (azul institucional)
 DUOC_TABLE_HEADER_TEXT = "#ffffff"     # Texto del encabezado de tabla

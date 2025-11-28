@@ -279,8 +279,9 @@ class QRScannerDialog(QDialog):
             self.pistol_section.setVisible(True)
             self.pistol_section.clear()
             self.pistol_section.focus_input()
-            # Limpiar datos de carnet cuando se cambia a pistola
+            # Limpiar datos de carnet cuando se cambia a pistola para nuevo escaneo
             self.current_carnet_data = None
+            self.pistol_section.set_register_button_visible(False)
 
     # ------------------------------------------------------------------
     # Utilidades de autenticación
@@ -312,6 +313,10 @@ class QRScannerDialog(QDialog):
             QMessageBox.critical(self, "Error", qr_data)
             return
 
+        # Limpiar datos del carnet anterior cuando se detecta un nuevo QR
+        # Esto asegura que no se usen datos del escaneo anterior
+        self.current_carnet_data = None
+        
         qr_type = detect_qr_type(qr_data)
 
         if qr_type == "visitor":
@@ -328,7 +333,10 @@ class QRScannerDialog(QDialog):
     # ------------------------------------------------------------------
 
     def show_carnet_info(self, qr_data: str) -> None:
+        # Siempre parsear y actualizar con los nuevos datos del QR escaneado
         parsed_data = parse_carnet_data(qr_data)
+        # Limpiar datos anteriores antes de asignar los nuevos
+        self.current_carnet_data = None
         self.current_carnet_data = parsed_data
 
         info_text = "<b>Carnet Detectado:</b><br><br>"
@@ -375,7 +383,13 @@ class QRScannerDialog(QDialog):
             from core.visitor_form import VisitorFormDialog
 
             auth_manager = self.get_auth_manager()
+            # Crear nuevo formulario (siempre limpio)
             form_dialog = VisitorFormDialog(self, auth_manager=auth_manager, use_modern_theme=True)
+            
+            # Asegurarse de que los campos estén limpios antes de establecer los nuevos datos
+            form_dialog.rut_input.clear()
+            form_dialog.nombre_input.clear()
+            form_dialog.acompañante_input.clear()
 
             if parsed_data.get("rut"):
                 # Usar método que evita la normalización automática al establecer el RUT
@@ -438,8 +452,15 @@ class QRScannerDialog(QDialog):
                             "Éxito",
                             f"Visitante {visitor.nombre_completo} registrado correctamente",
                         )
+                        # Limpiar datos del carnet anterior para permitir nuevo escaneo
+                        self.current_carnet_data = None
                         self.camera_section.clear_info()
                         self.camera_section.set_register_button_visible(False)
+                        self.pistol_section.set_register_button_visible(False)
+                        # Limpiar el campo de entrada de la pistola para nuevo escaneo
+                        if self.scanner_radio.isChecked():
+                            self.pistol_section.clear()
+                            self.pistol_section.focus_input()
                     else:
                         QMessageBox.warning(
                             self,
