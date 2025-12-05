@@ -1,38 +1,38 @@
-# 🚀 Sistema Completo VisitaSegura - Integración Total
+#  Sistema Completo VisitaSegura - Integración Total
 
-## 📋 Descripción
+##  Descripción
 Sistema completo de gestión de visitantes integrado con navegación fluida, login administrativo y todas las funcionalidades unidas en una sola aplicación.
 
-## ✨ Características Principales
+##  Características Principales
 
-### 🎯 **Sistema Integrado Completo**
-- **🔐 Login Administrativo** con diseño profesional
-- **🏠 Menú Principal** con navegación intuitiva
-- **👥 Gestión de Visitantes** (CRUD completo implementado)
-- **📋 Registro de Visitas** (módulo en desarrollo)
-- **🏢 Gestión de Zonas** (módulo en desarrollo)
-- **📊 Reportes y Estadísticas** (módulo en desarrollo)
+###  **Sistema Integrado Completo**
+- ** Login Administrativo** con diseño profesional
+- ** Menú Principal** con navegación intuitiva
+- ** Gestión de Visitantes** (CRUD completo implementado)
+- ** Registro de Visitas** (módulo en desarrollo)
+- ** Gestión de Zonas** (módulo en desarrollo)
+- ** Reportes y Estadísticas** (módulo en desarrollo)
 
-### 🎨 **Interfaz de Usuario Mejorada**
-- **📱 Iconos descriptivos** en toda la aplicación
-- **❓ Tooltips explicativos** en cada elemento
-- **🌙 Tema claro/oscuro** configurable y persistente
-- **📖 Sistema de ayuda** integrado con 4 pestañas
-- **🔄 Navegación fluida** entre todas las secciones
-- **🏢 Logo Duoc UC** integrado en todas las vistas
+###  **Interfaz de Usuario Mejorada**
+- ** Iconos descriptivos** en toda la aplicación
+- ** Tooltips explicativos** en cada elemento
+- ** Tema claro/oscuro** configurable y persistente
+- ** Sistema de ayuda** integrado con 4 pestañas
+- ** Navegación fluida** entre todas las secciones
+- ** Logo Duoc UC** integrado en todas las vistas
 
-### 🚀 **Sistema de Navegación Completo**
-- **🏠 Botón Inicio** para regresar al menú principal
-- **⬅️ Botones de Regreso** en todas las vistas
-- **📱 Widget apilado** para transiciones suaves
-- **🎯 Navegación centralizada** con NavigationManager
-- **💾 Estado persistente** de configuración
-- **🔄 Títulos dinámicos** según la sección activa
-- **🎮 Navegación fluida** entre todas las secciones
+###  **Sistema de Navegación Completo**
+- ** Botón Inicio** para regresar al menú principal
+- ** Botones de Regreso** en todas las vistas
+- ** Widget apilado** para transiciones suaves
+- ** Navegación centralizada** con NavigationManager
+- ** Estado persistente** de configuración
+- ** Títulos dinámicos** según la sección activa
+- ** Navegación fluida** entre todas las secciones
 
-## 🏗️ Arquitectura del Sistema
+##  Arquitectura del Sistema
 
-### 📁 **Estructura de Archivos**
+###  **Estructura de Archivos**
 ```
 core/
 ├── main_window.py              # Ventana principal con navegación
@@ -49,7 +49,7 @@ core/
     └── reportes_view.py        # Vista de reportes y estadísticas
 ```
 
-### 🔧 **Componentes Principales**
+###  **Componentes Principales**
 
 #### **1. NavigationManager**
 - Centraliza la navegación entre vistas
@@ -75,9 +75,9 @@ core/
 - **ReportesView**: Estadísticas y reportes con tarjetas visuales
 - **VisitorListWidget**: Sistema completo de gestión de visitantes
 
-## 🎮 Guía de Uso
+##  Guía de Uso
 
-### 🚀 **Inicio Rápido**
+###  **Inicio Rápido**
 ```bash
 # Ejecutar el sistema completo con navegación
 python demo_completo.py
@@ -89,81 +89,81 @@ python demo_navegacion_completa.py
 python demo_visitors.py
 ```
 
-### 🏠 **Navegación Principal**
+###  **Navegación Principal**
 1. **Menú Principal**: Vista inicial con botones de navegación
 2. **Botones de Sección**: 
-   - 📋 Registrar Visitas (con botón de regreso)
-   - 👥 Visitantes Actuales (con botón de regreso)
-   - 🏢 Zonas (con botón de regreso)
-   - 📊 Reportes (con botón de regreso)
-3. **🔐 Administración**: Abre el sistema de login
-4. **🔄 Botones de Regreso**: "⬅️ Volver al Menú Principal" en todas las vistas
-5. **🏠 Botón Inicio**: Aparece automáticamente en la barra superior
+   -  Registrar Visitas (con botón de regreso)
+   -  Visitantes Actuales (con botón de regreso)
+   -  Zonas (con botón de regreso)
+   -  Reportes (con botón de regreso)
+3. ** Administración**: Abre el sistema de login
+4. ** Botones de Regreso**: "⬅️ Volver al Menú Principal" en todas las vistas
+5. ** Botón Inicio**: Aparece automáticamente en la barra superior
 
-### 👥 **Gestión de Visitantes (Completo)**
-- **➕ Nuevo Visitante**: Formulario completo con validaciones
-- **⚡ Registro Rápido**: Panel lateral para registro rápido
-- **🔄 Cambio de Estado**: Doble clic o menú contextual
-- **🔍 Filtros**: Por estado (Dentro/Fuera) y sector
-- **📊 Estadísticas**: En tiempo real con indicadores visuales
-- **❓ Ayuda**: Diálogo completo con 4 pestañas
+###  **Gestión de Visitantes (Completo)**
+- ** Nuevo Visitante**: Formulario completo con validaciones
+- ** Registro Rápido**: Panel lateral para registro rápido
+- ** Cambio de Estado**: Doble clic o menú contextual
+- ** Filtros**: Por estado (Dentro/Fuera) y sector
+- ** Estadísticas**: En tiempo real con indicadores visuales
+- ** Ayuda**: Diálogo completo con 4 pestañas
 
-### 🔐 **Sistema de Login**
+###  **Sistema de Login**
 - **Diseño Profesional**: Con logo Duoc UC y gradientes
 - **Campos Validados**: Correo electrónico y contraseña
 - **Tema Adaptativo**: Se ajusta al tema de la aplicación
 - **Persistencia**: Recuerda configuración entre sesiones
 
-### 🌙 **Sistema de Temas**
+###  **Sistema de Temas**
 - **Cambio Dinámico**: Botón en barra de herramientas
 - **Persistencia**: Guarda preferencia del usuario
 - **Propagación**: Se aplica a todas las vistas automáticamente
 - **Indicadores**: Iconos que cambian según el tema
 
-## 🎯 Funcionalidades por Módulo
+##  Funcionalidades por Módulo
 
-### ✅ **Módulos Implementados Completamente**
+###  **Módulos Implementados Completamente**
 
 #### **👥 Gestión de Visitantes**
-- ✅ CRUD completo (Crear, Leer, Actualizar, Eliminar)
-- ✅ Interfaz intuitiva con iconos y tooltips
-- ✅ Validaciones de datos con mensajes descriptivos
-- ✅ Filtros por estado y sector
-- ✅ Estadísticas en tiempo real
-- ✅ Sistema de ayuda integrado
-- ✅ Almacenamiento persistente en JSON
-- ✅ Cambio de estado con doble clic
-- ✅ Menú contextual con opciones
+-  CRUD completo (Crear, Leer, Actualizar, Eliminar)
+-  Interfaz intuitiva con iconos y tooltips
+-  Validaciones de datos con mensajes descriptivos
+-  Filtros por estado y sector
+-  Estadísticas en tiempo real
+-  Sistema de ayuda integrado
+-  Almacenamiento persistente en JSON
+-  Cambio de estado con doble clic
+-  Menú contextual con opciones
 
-### 🚧 **Módulos en Desarrollo**
+###  **Módulos en Desarrollo**
 
-#### **📋 Registro de Visitas**
-- 🚧 Sistema de registro rápido
-- 🚧 Búsqueda y filtrado
-- 🚧 Historial de visitas
-- 🚧 Notificaciones automáticas
+#### ** Registro de Visitas**
+-  Sistema de registro rápido
+-  Búsqueda y filtrado
+-  Historial de visitas
+-  Notificaciones automáticas
 
-#### **🏢 Gestión de Zonas**
-- 🚧 Configuración de zonas
-- 🚧 Capacidad por zona
-- 🚧 Monitoreo en tiempo real
-- 🚧 Alertas de ocupación
+#### ** Gestión de Zonas**
+-  Configuración de zonas
+-  Capacidad por zona
+-  Monitoreo en tiempo real
+-  Alertas de ocupación
 
-#### **📊 Reportes y Estadísticas**
-- 🚧 Reportes detallados
-- 🚧 Exportación a Excel/PDF
-- 🚧 Gráficos y visualizaciones
-- 🚧 Reportes programados
+#### ** Reportes y Estadísticas**
+-  Reportes detallados
+-  Exportación a Excel/PDF
+-  Gráficos y visualizaciones
+-  Reportes programados
 
-## 🎨 Diseño y UX
+##  Diseño y UX
 
-### 🎯 **Principios de Diseño**
+###  **Principios de Diseño**
 - **Consistencia**: Mismo estilo en todas las vistas
 - **Intuitividad**: Iconos reconocibles y tooltips
 - **Accesibilidad**: Colores contrastantes y textos legibles
 - **Responsividad**: Se adapta a diferentes tamaños de ventana
 
-### 🌈 **Paleta de Colores**
+###  **Paleta de Colores**
 - **Primario**: #007bff (Azul)
 - **Éxito**: #28a745 (Verde)
 - **Advertencia**: #ffc107 (Amarillo)
@@ -171,21 +171,21 @@ python demo_visitors.py
 - **Info**: #17a2b8 (Cian)
 - **Secundario**: #6c757d (Gris)
 
-### 📱 **Elementos de Interfaz**
+###  **Elementos de Interfaz**
 - **Botones**: Bordes redondeados con efectos hover
 - **Tarjetas**: Sombras sutiles y bordes definidos
 - **Formularios**: Grupos organizados con validaciones visuales
 - **Tablas**: Filas alternadas y colores de estado
 - **Navegación**: Breadcrumbs y botones de regreso
 
-## 🔧 Configuración Técnica
+##  Configuración Técnica
 
-### 📋 **Requisitos**
+###  **Requisitos**
 - Python 3.11+
 - PySide6
 - Sistema operativo: Windows, macOS, Linux
 
-### 🚀 **Instalación**
+###  **Instalación**
 ```bash
 # Clonar el repositorio
 git clone [url-del-repositorio]
@@ -197,43 +197,43 @@ pip install -r Requisitos.txt.txt
 python demo_completo.py
 ```
 
-### ⚙️ **Configuración**
+###  **Configuración**
 - **Tema**: Se guarda automáticamente en configuración del sistema
 - **Datos**: Se almacenan en archivos JSON en el directorio del proyecto
 - **Logo**: Colocar "Logo Duoc .png" en el directorio raíz
 
-## 🔮 Próximas Mejoras
+##  Próximas Mejoras
 
-### 🎯 **Funcionalidades Planificadas**
-1. **🔐 Autenticación Real**: Base de datos de usuarios
-2. **📱 Escaneo QR**: Integración con códigos QR
-3. **🌐 API REST**: Interfaz para integración externa
-4. **📊 Dashboard**: Panel de control en tiempo real
-5. **🔔 Notificaciones**: Sistema de alertas automáticas
-6. **📈 Analytics**: Análisis avanzado de datos
-7. **🌍 Multiidioma**: Soporte para múltiples idiomas
+###  **Funcionalidades Planificadas**
+1. ** Autenticación Real**: Base de datos de usuarios
+2. ** Escaneo QR**: Integración con códigos QR
+3. ** API REST**: Interfaz para integración externa
+4. ** Dashboard**: Panel de control en tiempo real
+5. ** Notificaciones**: Sistema de alertas automáticas
+6. ** Analytics**: Análisis avanzado de datos
+7. ** Multiidioma**: Soporte para múltiples idiomas
 
-### 🛠️ **Mejoras Técnicas**
-1. **🗄️ Base de Datos**: Migración de JSON a SQLite/PostgreSQL
-2. **☁️ Cloud**: Sincronización en la nube
-3. **📱 Mobile**: Aplicación móvil complementaria
-4. **🔒 Seguridad**: Encriptación de datos sensibles
-5. **⚡ Rendimiento**: Optimización de consultas y UI
+###  **Mejoras Técnicas**
+1. ** Base de Datos**: Migración de JSON a SQLite/PostgreSQL
+2. ** Cloud**: Sincronización en la nube
+3. ** Mobile**: Aplicación móvil complementaria
+4. ** Seguridad**: Encriptación de datos sensibles
+5. ** Rendimiento**: Optimización de consultas y UI
 
-## 📞 Soporte y Contacto
+##  Soporte y Contacto
 
 Para reportar problemas, solicitar nuevas funcionalidades o obtener soporte técnico, contactar al equipo de desarrollo.
 
 ---
 
-## 🎉 ¡Sistema Completo Listo!
+##  ¡Sistema Completo Listo!
 
 El sistema VisitaSegura está completamente integrado con:
-- ✅ Login administrativo funcional
-- ✅ Navegación fluida entre vistas
-- ✅ Módulo de visitantes completamente implementado
-- ✅ Diseño consistente y profesional
-- ✅ Sistema de temas y configuración persistente
-- ✅ Ayuda integrada y tooltips explicativos
+-  Login administrativo funcional
+-  Navegación fluida entre vistas
+-  Módulo de visitantes completamente implementado
+-  Diseño consistente y profesional
+-  Sistema de temas y configuración persistente
+-  Ayuda integrada y tooltips explicativos
 
-¡Disfruta usando el sistema completo de gestión de visitantes! 🚀
+¡Disfruta usando el sistema completo de gestión de visitantes! 

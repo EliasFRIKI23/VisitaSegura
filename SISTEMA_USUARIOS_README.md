@@ -8,10 +8,10 @@ Se ha implementado un sistema completo de gestión de usuarios (CRUD) que permit
 ### 1. Vista de Gestión de Usuarios (`core/views/usuarios_view.py`)
 - **Tabla de usuarios**: Muestra todos los usuarios con sus datos principales
 - **Operaciones CRUD completas**:
-  - ➕ **Agregar Usuario**: Crear nuevos usuarios con validación
-  - ✏️ **Editar Usuario**: Modificar datos existentes (incluyendo contraseña)
-  - 🗑️ **Eliminar Usuario**: Eliminar usuarios con confirmación
-  - 🔄 **Actualizar**: Refrescar la lista de usuarios
+  -  **Agregar Usuario**: Crear nuevos usuarios con validación
+  -  **Editar Usuario**: Modificar datos existentes (incluyendo contraseña)
+  -  **Eliminar Usuario**: Eliminar usuarios con confirmación
+  -  **Actualizar**: Refrescar la lista de usuarios
 
 ### 2. Interfaz de Usuario
 - **Diseño profesional**: Interfaz moderna con colores institucionales
@@ -26,7 +26,7 @@ Se ha implementado un sistema completo de gestión de usuarios (CRUD) que permit
 - **Verificación de permisos**: Verificación en cada operación
 
 ### 4. Integración con el Sistema Principal
-- **Botón dinámico**: El botón "👥 Usuarios" solo aparece para administradores
+- **Botón dinámico**: El botón " Usuarios" solo aparece para administradores
 - **Navegación integrada**: Se integra perfectamente con el sistema de navegación
 - **Títulos dinámicos**: El título de la ventana cambia según la vista activa
 
@@ -34,8 +34,8 @@ Se ha implementado un sistema completo de gestión de usuarios (CRUD) que permit
 
 ### Para Administradores:
 1. **Iniciar sesión** con credenciales de administrador (admin/admin123)
-2. **Ver el botón "👥 Usuarios"** en el menú principal (solo visible para admins)
-3. **Hacer clic en "👥 Usuarios"** para acceder a la gestión
+2. **Ver el botón " Usuarios"** en el menú principal (solo visible para admins)
+3. **Hacer clic en " Usuarios"** para acceder a la gestión
 4. **Usar las operaciones CRUD**:
    - Agregar nuevos usuarios
    - Editar usuarios existentes
